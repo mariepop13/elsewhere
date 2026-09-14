@@ -13,6 +13,7 @@ import type { PromptItem, PromptSettings } from '../process/prompt';
 import type { OobaChatCompletionRequestParams } from '../model/ooba';
 import { type HypaV3Settings, type HypaV3Preset, createHypaV3Preset } from '../process/memory/hypav3'
 import { normalizeTranslatorPresetState, type TranslatorPreset } from '../translator/presets'
+import type { OpenRouterReasoningEffort } from '../model/openrouter'
 import { isTauri, isNodeServer } from "src/ts/platform"
 import { safeStructuredClone } from '../polyfill';
 import {
@@ -26,6 +27,26 @@ export let appVer = "2026.8.250" //<APP_VERSION_POINT>
 export let appSubVer = ''
 
 export type StreamingDisplayOptimizationMode = 'off'|'balanced'|'strong'
+
+export type OpenRouterReasoningConfig = {
+    enabled?: boolean
+    effort?: OpenRouterReasoningEffort
+    maxTokens?: number
+}
+
+function normalizeOpenRouterReasoningConfig(value: unknown): OpenRouterReasoningConfig | undefined {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined
+
+    const source = value as Record<string, unknown>
+    const config: OpenRouterReasoningConfig = {}
+    if (typeof source.enabled === 'boolean') config.enabled = source.enabled
+    if (typeof source.effort === 'string') config.effort = source.effort as OpenRouterReasoningEffort
+    if (typeof source.maxTokens === 'number' && Number.isInteger(source.maxTokens) && source.maxTokens > 0) {
+        config.maxTokens = source.maxTokens
+    }
+
+    return Object.keys(config).length ? config : undefined
+}
 
 export function setDatabase(data:Database){
     if(checkNullish(data.characters)){
@@ -487,8 +508,10 @@ export function setDatabase(data:Database){
             ignore: []
         }
     }
+    data.openrouterReasoning = normalizeOpenRouterReasoningConfig(data.openrouterReasoning)
     if (data.botPresets) {
         for (const preset of data.botPresets) {
+            preset.openrouterReasoning = normalizeOpenRouterReasoningConfig(preset.openrouterReasoning)
             if(Array.isArray(preset.promptTemplate)){
                 preset.promptTemplate = normalizePromptTemplate(preset.promptTemplate)
             }
@@ -942,6 +965,7 @@ export interface Database{
     ainconfig: AINsettings
     personaPrompt:string
     openrouterRequestModel:string
+    openrouterReasoning?: OpenRouterReasoningConfig
     openrouterKey:string
     openrouterMiddleOut:boolean
     nanogptKey:string
@@ -1605,6 +1629,7 @@ export interface botPreset{
     bias: [string, number][]
     proxyRequestModel?:string
     openrouterRequestModel?:string
+    openrouterReasoning?: OpenRouterReasoningConfig
     proxyKey?:string
     ooba: OobaSettings
     ainconfig: AINsettings
@@ -2071,6 +2096,7 @@ export function saveCurrentPreset(){
         ainconfig: safeStructuredClone(db.ainconfig),
         proxyRequestModel: db.proxyRequestModel,
         openrouterRequestModel: db.openrouterRequestModel,
+        openrouterReasoning: safeStructuredClone(db.openrouterReasoning),
         NAISettings: safeStructuredClone(db.NAIsettings),
         promptTemplate: normalizePromptTemplate(db.promptTemplate) ?? null,
         NAIadventure: db.NAIadventure ?? false,
@@ -2182,6 +2208,7 @@ export function setPreset(db:Database, newPres: botPreset){
     db.ooba = safeStructuredClone(newPres.ooba ?? db.ooba)
     db.ainconfig = safeStructuredClone(newPres.ainconfig ?? db.ainconfig)
     db.openrouterRequestModel = newPres.openrouterRequestModel ?? db.openrouterRequestModel
+    db.openrouterReasoning = safeStructuredClone(newPres.openrouterReasoning)
     db.proxyRequestModel = newPres.proxyRequestModel ?? db.proxyRequestModel
     db.NAIsettings = newPres.NAISettings ?? db.NAIsettings
     db.autoSuggestPrompt = newPres.autoSuggestPrompt ?? db.autoSuggestPrompt
