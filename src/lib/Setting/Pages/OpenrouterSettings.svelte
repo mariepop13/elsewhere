@@ -7,7 +7,8 @@
     import ChatFormatSettings from "./ChatFormatSettings.svelte";
     import OpenrouterProviderList from "src/lib/UI/OpenrouterProviderList.svelte";
     import { PlusIcon, TrashIcon } from "@lucide/svelte";
-    import { getOpenRouterProviders } from 'src/ts/model/openrouter'
+    import { getOpenRouterModels, getOpenRouterProviders } from 'src/ts/model/openrouter'
+    import OpenrouterReasoningSettings from './OpenrouterReasoningSettings.svelte'
 </script>
 
 <Accordion name={`OpenRouter ${language.settings}`} styled>
@@ -20,6 +21,9 @@
     <div class="flex items-center mb-4">
         <Check bind:check={DBState.db.useInstructPrompt} name={language.useInstructPrompt}/>
     </div>
+    {#await getOpenRouterModels() then openRouterModels}
+        <OpenrouterReasoningSettings model={(openRouterModels ?? []).find((model) => model.id === DBState.db.openrouterRequestModel)} />
+    {/await}
     {#await getOpenRouterProviders()}
         <Accordion name={language.openRouterProviderOrder} help="openRouterProviderOrder" styled>
             <p>{language.loading}...</p>
