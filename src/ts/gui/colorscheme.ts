@@ -21,15 +21,15 @@ export interface ColorScheme{
 
 
 export const defaultColorScheme: ColorScheme = {
-    bgcolor: "#282a36",
-    darkbg: "#21222c",
-    borderc: "#6272a4",
-    selected: "#44475a",
-    draculared: "#ff5555",
-    textcolor: "#f8f8f2",
-    textcolor2: "#64748b",
-    darkBorderc: "#4b5563",
-    darkbutton: "#374151",
+    bgcolor: "#0A0B1D",
+    darkbg: "#11142F",
+    borderc: "#6D5DFB",
+    selected: "#28D7C5",
+    draculared: "#F45B9A",
+    textcolor: "#F5F7FF",
+    textcolor2: "#A8ADD0",
+    darkBorderc: "#6D5DFB",
+    darkbutton: "#11142F",
     type:'dark'
 }
 

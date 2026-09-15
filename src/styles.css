@@ -3,15 +3,22 @@
 @plugin '@tailwindcss/typography';
 
 @theme {
-  --color-bgcolor: var(--risu-theme-bgcolor);
-  --color-darkbg: var(--risu-theme-darkbg);
-  --color-borderc: var(--risu-theme-borderc);
-  --color-selected: var(--risu-theme-selected);
-  --color-draculared: var(--risu-theme-draculared);
+  --color-bgcolor: var(--risu-theme-canvas);
+  --color-darkbg: var(--risu-theme-surface-elevated);
+  --color-borderc: var(--risu-theme-action-primary);
+  --color-selected: var(--risu-theme-focus);
+  --color-draculared: var(--risu-theme-ambient);
   --color-textcolor: var(--risu-theme-textcolor);
   --color-textcolor2: var(--risu-theme-textcolor2);
   --color-darkborderc: var(--risu-theme-darkborderc);
-  --color-darkbutton: var(--risu-theme-darkbutton);
+  --color-darkbutton: var(--risu-theme-surface-subtle);
+
+  --color-canvas: var(--risu-theme-canvas);
+  --color-surface-elevated: var(--risu-theme-surface-elevated);
+  --color-surface-subtle: var(--risu-theme-surface-subtle);
+  --color-action-primary: var(--risu-theme-action-primary);
+  --color-focus: var(--risu-theme-focus);
+  --color-ambient: var(--risu-theme-ambient);
 
   --color-primary-50: var(--risu-theme-primary-50);
   --color-primary-100: var(--risu-theme-primary-100);
@@ -116,7 +123,7 @@
   --height-124: 32rem;
   --height-138: 36rem;
 
-  --default-ring-color: rgb(59 130 246 / 0.5);
+  --default-ring-color: var(--risu-theme-focus);
 }
 
 /*
@@ -143,11 +150,36 @@
 
   input::placeholder,
   textarea::placeholder {
-    color: var(--color-gray-400);
+    color: var(--risu-theme-textcolor2);
+  }
+
+  input:not([type="checkbox"]):not([type="color"]):not([type="file"]):not([type="radio"]):not([type="range"]),
+  select,
+  textarea {
+    background-color: var(--risu-theme-surface-subtle);
+    border-color: var(--risu-theme-darkborderc);
+    color: var(--risu-theme-textcolor);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--risu-theme-focus);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background-color: var(--risu-theme-focus);
   }
 
   dialog {
     margin: auto;
+    background-color: var(--risu-theme-surface-elevated);
+    border-color: var(--risu-theme-darkborderc);
+    color: var(--risu-theme-textcolor);
+  }
+
+  dialog::backdrop {
+    background-color: rgb(0 0 0 / 0.55);
+    background-color: var(--risu-theme-overlay);
   }
 }
 
@@ -161,22 +193,30 @@ body {
 }
 
 :root {
-  --FontColorStandard: #fafafa;
-  --FontColorBold: #e5e5e5;
+  --FontColorStandard: #F5F7FF;
+  --FontColorBold: #F5F7FF;
   --FontColorItalic: #8c8d93;
   --FontColorItalicBold: #8c8d93;
   --FontColorQuote1: #8c8d93;
   --FontColorQuote2: #8c8d93;
   --risu-animation-speed: 0.2s;
-  --risu-theme-bgcolor: #282a36;
-  --risu-theme-darkbg: #21222c;
-  --risu-theme-borderc: #6272a4;
-  --risu-theme-selected: #44475a;
-  --risu-theme-draculared: #ff5555;
-  --risu-theme-textcolor: #f5f5f5;
-  --risu-theme-textcolor2: #64748b;
-  --risu-theme-darkborderc: #4b5563;
-  --risu-theme-darkbutton: #374151;
+  --risu-theme-bgcolor: #0A0B1D;
+  --risu-theme-darkbg: #11142F;
+  --risu-theme-borderc: #6D5DFB;
+  --risu-theme-selected: #28D7C5;
+  --risu-theme-draculared: #F45B9A;
+  --risu-theme-textcolor: #F5F7FF;
+  --risu-theme-textcolor2: #A8ADD0;
+  --risu-theme-darkborderc: #6D5DFB;
+  --risu-theme-darkbutton: #11142F;
+
+  --risu-theme-canvas: var(--risu-theme-bgcolor);
+  --risu-theme-surface-elevated: var(--risu-theme-darkbg);
+  --risu-theme-surface-subtle: var(--risu-theme-darkbutton);
+  --risu-theme-action-primary: var(--risu-theme-borderc);
+  --risu-theme-focus: var(--risu-theme-selected);
+  --risu-theme-ambient: var(--risu-theme-draculared);
+  --risu-theme-overlay: rgb(0 0 0 / 0.55);
   --risu-height-size: 100%;
   --risu-font-family: Arial, sans-serif, serif;
 
@@ -319,12 +359,12 @@ body {
 
 /* Handle */
 ::-webkit-scrollbar-thumb {
-  background: rgba(136, 136, 136, 0.5);
+  background: var(--risu-theme-darkborderc);
 }
 
 /* Handle on hover */
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(85, 85, 85, 0.5);
+  background: var(--risu-theme-focus);
 }
 
 .n-scroll::-webkit-scrollbar-thumb {
@@ -341,6 +381,23 @@ body {
 .n-scroll:focus::-webkit-scrollbar-thumb {
   visibility: visible;
   opacity: 1;
+}
+
+@supports (background-color: color-mix(in srgb, black, transparent)) {
+  :root {
+    --risu-theme-overlay: color-mix(in srgb, var(--risu-theme-canvas) 70%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 * {
