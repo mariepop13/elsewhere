@@ -23,15 +23,11 @@
     height: 3.5rem;
     width: 3.5rem;
     min-height: 3.5rem;
-    --tw-shadow-color: 0, 0, 0;
-    --tw-shadow: 0 10px 15px -3px rgba(var(--tw-shadow-color), 0.1),
-      0 4px 6px -2px rgba(var(--tw-shadow-color), 0.05);
-    -webkit-box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000),
-      var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
-    box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000),
-      var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
-    --tw-bg-opacity: 1;
-    background-color: rgba(107, 114, 128, var(--tw-bg-opacity));
+    border: 1px solid var(--risu-theme-darkborderc);
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.18),
+      0 4px 6px -2px rgb(0 0 0 / 0.12);
+    background-color: var(--risu-theme-surface-subtle);
+    color: var(--risu-theme-textcolor);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -41,7 +37,12 @@
   }
 
   .ico:hover {
-    --tw-bg-opacity: 1;
-    background-color: rgba(16, 185, 129, var(--tw-bg-opacity));
+    background-color: var(--risu-theme-action-primary);
+    color: var(--risu-theme-textcolor);
+  }
+
+  .ico:focus-visible {
+    outline: 2px solid var(--risu-theme-focus);
+    outline-offset: 2px;
   }
 </style>

@@ -33,7 +33,7 @@
 </script>
 
 <!-- svelte-ignore a11y_click_events_have_key_events -->
-<span class="flex shrink-0 items-center justify-center avatar"
+<span class="flex shrink-0 items-center justify-center avatar sidebar-avatar-trigger"
       class:border = {bordered}
       class:border-selected={bordered}
       class:rounded-md={bordered}
@@ -118,3 +118,10 @@
 ></div>
   {/if}
 </span>
+
+<style>
+  .sidebar-avatar-trigger:focus-visible .sidebar-avatar {
+    outline: 2px solid var(--risu-theme-focus);
+    outline-offset: 3px;
+  }
+</style>

@@ -69,13 +69,26 @@
     <div class="grow h-full min-w-0 relative justify-center flex">
         <SideBarArrow />
         <BackgroundDom />
-        <div style={bgImg} class="h-full w-full" class:max-w-6xl={DBState.db.classicMaxWidth}>
+        <div style={bgImg} class="conversation-stage h-full w-full flex flex-col" class:max-w-6xl={DBState.db.classicMaxWidth}>
             {#if $selectedCharID >= 0}
-                {#if DBState.db.characters[$selectedCharID].viewScreen !== 'none' && (DBState.db.characters[$selectedCharID].type === 'group' || (!DBState.db.characters[$selectedCharID].inlayViewScreen))}
-                    <ResizeBox />
-                {/if}
+                <header class="conversation-header shrink-0">
+                    <div class="flex min-w-0 items-center gap-3">
+                        <span class="conversation-presence" aria-hidden="true"></span>
+                        <div class="min-w-0">
+                            <h1 class="truncate">{DBState.db.characters[$selectedCharID]?.name}</h1>
+                        </div>
+                    </div>
+                    <span class="conversation-context truncate">{DBState.db.characters[$selectedCharID]?.chats?.[DBState.db.characters[$selectedCharID]?.chatPage]?.name}</span>
+                </header>
             {/if}
-            <DefaultChatScreen customStyle={bgImg.length > 2 ? `${externalStyles}`: ''} bind:openChatList bind:openModuleList/>
+            <div class="conversation-reading-stage relative min-h-0 grow">
+                {#if $selectedCharID >= 0}
+                    {#if DBState.db.characters[$selectedCharID].viewScreen !== 'none' && (DBState.db.characters[$selectedCharID].type === 'group' || (!DBState.db.characters[$selectedCharID].inlayViewScreen))}
+                        <ResizeBox />
+                    {/if}
+                {/if}
+                <DefaultChatScreen customStyle={bgImg.length > 2 ? `${externalStyles}`: ''} bind:openChatList bind:openModuleList/>
+            </div>
         </div>
     </div>
 {/if}
@@ -94,5 +107,51 @@
     }
     .per33{
         height: 33.333333%;
+    }
+
+    .conversation-stage {
+        margin-inline: auto;
+    }
+
+    .conversation-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        min-height: 4.25rem;
+        padding: 0.625rem clamp(1rem, 3vw, 2rem);
+        border-bottom: 1px solid var(--risu-theme-darkborderc);
+        background: var(--risu-theme-surface-elevated);
+    }
+
+    .conversation-presence {
+        width: 0.5rem;
+        height: 0.5rem;
+        flex: none;
+        border-radius: 999px;
+        background: var(--risu-theme-focus);
+        box-shadow: 0 0 0 3px var(--risu-theme-surface-subtle);
+    }
+
+    .conversation-context {
+        color: var(--risu-theme-textcolor2);
+        font-size: 0.8125rem;
+    }
+
+    .conversation-header h1 {
+        margin: 0;
+        color: var(--risu-theme-textcolor);
+        font-size: 0.9375rem;
+        font-weight: 600;
+        line-height: 1.25;
+    }
+
+    .conversation-context {
+        max-width: 40%;
+        text-align: right;
+    }
+
+    .conversation-reading-stage {
+        min-width: 0;
     }
 </style>
