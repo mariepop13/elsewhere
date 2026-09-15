@@ -96,11 +96,11 @@ describe('GUI rendering without a browser session', () => {
 
         expect(primaryButton.textContent?.trim()).toBe('Save')
         expect(primaryButton.classList.contains('px-6')).toBe(true)
-        expect(primaryButton.classList.contains('bg-bg-selected')).toBe(true)
+        expect(primaryButton.classList.contains('bg-focus')).toBe(true)
 
         expect(disabledButton.textContent?.trim()).toBe('Delete')
         expect(disabledButton.disabled).toBe(true)
-        expect(disabledButton.classList.contains('opacity-50')).toBe(true)
+        expect(disabledButton.classList.contains('disabled:opacity-50')).toBe(true)
 
         expect(iconButton.textContent?.replace(/\s+/g, ' ').trim()).toBe('i Details')
 

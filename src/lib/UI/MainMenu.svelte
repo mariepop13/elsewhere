@@ -7,7 +7,6 @@
     import { language } from "src/lang";
     import { getRisuHub, hubAdditionalHTML } from "src/ts/characterCards";
     import RisuHubIcon from "./Realm/RealmHubIcon.svelte";
-    import Title from "./Title.svelte";
 
     type RelatedLink = {
       title: string;
@@ -46,10 +45,12 @@
       }
     ];
 </script>
-<div class="h-full w-full flex flex-col overflow-y-auto items-center">
+<div class="main-menu-shell h-full w-full flex flex-col overflow-y-auto items-center">
     {#if !$OpenRealmStore}
-      <Title />
-      <h3 class="text-textcolor2 mt-1">Version {getVersionString()}</h3>
+      <header class="main-menu-brand">
+        <span aria-hidden="true">ELSE<span>//</span>WHERE</span>
+        <small>Version {getVersionString()}</small>
+      </header>
     {/if}
     <div class="w-full flex p-4 flex-col text-textcolor max-w-4xl">
       {#if !$OpenRealmStore}
@@ -124,3 +125,32 @@
       {/if}
   </div>
 </div>
+
+<style>
+  .main-menu-shell {
+    background: radial-gradient(circle at 82% 8%, color-mix(in srgb, var(--risu-theme-action-primary) 10%, transparent), transparent 28%), var(--risu-theme-canvas);
+  }
+
+  .main-menu-brand {
+    width: min(100% - 2rem, 56rem);
+    padding: 1.75rem 0 1.25rem;
+    border-bottom: 1px solid var(--risu-theme-darkborderc);
+  }
+
+  .main-menu-brand > span {
+    color: var(--risu-theme-textcolor);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: clamp(1.75rem, 4vw, 2.75rem);
+    font-weight: 600;
+    letter-spacing: -0.08em;
+  }
+
+  .main-menu-brand > span span { color: var(--risu-theme-focus); }
+
+  .main-menu-brand small {
+    display: block;
+    margin-top: 0.35rem;
+    color: var(--risu-theme-textcolor2);
+    font-size: 0.75rem;
+  }
+</style>
