@@ -4,7 +4,7 @@
     import Button from "src/lib/UI/GUI/Button.svelte";
     import TextInput from "src/lib/UI/GUI/TextInput.svelte";
     import type { RisuModule } from "src/ts/process/modules";
-    
+
     import { DBState, ReloadGUIPointer } from 'src/ts/stores.svelte';
     import { selectedCharID } from "src/ts/stores.svelte";
     import { SettingsMenuIndex, settingsOpen } from "src/ts/stores.svelte";
@@ -22,7 +22,7 @@
         return modules.filter((v) => {
             if(search === '') return true
             return v.name.toLowerCase().includes(search.toLowerCase())
-        
+
         }).sort((a, b) => {
             let score = a.name.toLowerCase().localeCompare(b.name.toLowerCase())
             return score
@@ -32,12 +32,12 @@
 </script>
 
 
-<div class="absolute w-full h-full z-40 bg-black/50 flex justify-center items-center">
+<div class="absolute w-full h-full z-40 bg-[var(--risu-theme-overlay)] flex justify-center items-center">
     <div class="bg-darkbg p-4 break-any rounded-md flex flex-col max-w-3xl w-full max-h-full overflow-y-auto">
         <div class="flex items-center text-textcolor">
             <h2 class="mt-0 mb-0 text-lg">{language.modules}</h2>
             <div class="grow flex justify-end">
-                <button class="text-textcolor2 hover:text-green-500 mr-2 cursor-pointer items-center" onclick={() => {
+                <button class="text-textcolor2 hover:text-focus mr-2 cursor-pointer items-center" onclick={() => {
                     close('')
                 }}>
                     <XIcon size={24}/>
@@ -69,7 +69,7 @@
                         <div class="grow flex justify-end">
 
                             {#if alertMode}
-                                <button class={"text-textcolor2 mr-2 cursor-pointer hover:text-blue-500 transition-colors"} onclick={async (e) => {
+                                <button class={"text-textcolor2 mr-2 cursor-pointer hover:text-focus transition-colors"} onclick={async (e) => {
                                     e.stopPropagation()
 
                                     close(rmodule.id)
@@ -81,10 +81,10 @@
                                 </button>
                             {:else}
                                 <button class={(DBState.db.characters[$selectedCharID].chats[DBState.db.characters[$selectedCharID].chatPage].modules.includes(rmodule.id)) ?
-                                        "mr-2 cursor-pointer text-blue-500" :
+                                        "mr-2 cursor-pointer text-focus" :
                                         (DBState.db.characters[$selectedCharID]?.modules?.includes(rmodule.id)) ?
                                         "mr-2 cursor-pointer text-violet-500" :
-                                        "text-textcolor2 hover:text-blue-400 mr-2 cursor-pointer"
+                                        "text-textcolor2 hover:text-focus mr-2 cursor-pointer"
                                 } onclick={async (e) => {
                                     e.stopPropagation()
                                     if(DBState.db.characters[$selectedCharID].chats[DBState.db.characters[$selectedCharID].chatPage].modules.includes(rmodule.id)){

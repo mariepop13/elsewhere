@@ -43,7 +43,7 @@
     }}>
         <img src="https://c5.patreon.com/external/logo/become_a_patron_button.png" alt="patreon button" class="w-full h-full"/>
     </button>
-    <button class="h-12 w-44 bg-slate-700 font-bold text-sm" onclick={() => {
+    <button class="h-12 w-44 bg-surface-elevated font-bold text-sm" onclick={() => {
         openURL("https://sv.risuai.xyz/patreon")
     }}>
         ADD YOUR NAME
@@ -57,7 +57,7 @@
 
 {:then supporter}
     <h3 class="text-xl font-bold mt-4">Supporter V</h3>
-    <div class="flex w-full max-w-full flex-wrap gap-2"> 
+    <div class="flex w-full max-w-full flex-wrap gap-2">
         {#each supporter.V as support}
             <div class="flex flex-col items-center justify-center border-selected border rounded-sm">
                 <div class="flex justify-center items-center py-4 px-8">
@@ -67,7 +67,7 @@
         {/each}
     </div>
     <h3 class="text-xl font-bold mt-4">Supporter IV</h3>
-    <div class="flex w-full max-w-3xl flex-wrap gap-2"> 
+    <div class="flex w-full max-w-3xl flex-wrap gap-2">
         {#each supporter.IV as support}
             <div class="flex flex-col items-center justify-center border-selected border rounded-sm">
                 <div class="flex justify-center items-center py-4 px-8">
@@ -77,7 +77,7 @@
         {/each}
     </div>
     <h3 class="text-xl font-bold mt-4">Supporter III</h3>
-    <div class="flex w-full max-w-3xl flex-wrap gap-2"> 
+    <div class="flex w-full max-w-3xl flex-wrap gap-2">
         {#each supporter.III as support}
             <!-- make a card -->
             <div class="flex flex-col items-center justify-center border-selected border rounded-sm">
@@ -88,7 +88,7 @@
         {/each}
     </div>
     <h3 class="text-xl font-bold mt-4">Supporter II</h3>
-    <div class="flex w-full max-w-3xl flex-wrap gap-2"> 
+    <div class="flex w-full max-w-3xl flex-wrap gap-2">
         {#each supporter.II as support}
             <!-- make a card -->
             <div class="flex flex-col items-center justify-center border-selected border rounded-sm">
@@ -99,7 +99,7 @@
         {/each}
     </div>
     <h3 class="text-xl font-bold mt-4">Supporter I</h3>
-    <div class="flex w-full max-w-3xl flex-wrap gap-2"> 
+    <div class="flex w-full max-w-3xl flex-wrap gap-2">
         {#each supporter.I as support}
             <!-- make a card -->
             <div class="flex flex-col items-center justify-center border-selected border rounded-sm">

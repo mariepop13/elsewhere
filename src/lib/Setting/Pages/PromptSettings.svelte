@@ -4,7 +4,7 @@
     import PromptDataItem from "src/lib/UI/PromptDataItem.svelte";
     import { tokenizePreset, type PromptItem } from "src/ts/process/prompt";
     import { templateCheck } from "src/ts/process/templates/templateCheck";
-    
+
     import { DBState } from 'src/ts/stores.svelte';
     import Check from "src/lib/UI/GUI/CheckInput.svelte";
     import TextInput from "src/lib/UI/GUI/TextInput.svelte";
@@ -148,7 +148,7 @@
     </div>
 {/if}
 {#if warns.length > 0 && subMenu === 0}
-    <div class="text-red-500 flex flex-col items-start p-2 rounded-md border-red-500 border mt-4">
+    <div class="text-danger-500 flex flex-col items-start p-2 rounded-md border-danger-500 border mt-4">
         <h2 class="text-xl font-bold">Warning</h2>
         <div class="border-b border-b-red-500 mt-1 mb-2 w-full"></div>
         {#each warns as warn}
@@ -242,7 +242,7 @@
         {/key}
     </div>
 
-    <button class="font-medium cursor-pointer hover:text-green-500" onclick={() => {
+    <button class="font-medium cursor-pointer hover:text-focus" onclick={() => {
         let value = DBState.db.promptTemplate ?? []
         value.push({
             type: "plain",
@@ -308,7 +308,7 @@
     {#if !DBState.db.auxModelUnderModelSettings}
         <AuxModelSelectors />
     {/if}
-    
+
     {#snippet fallbackModelList(arg:'model'|'memory'|'translate'|'emotion'|'otherAx')}
         {#each DBState.db.fallbackModels[arg] as model, i}
             <span class="text-textcolor mt-4">
@@ -322,7 +322,7 @@
                 value.push('')
                 DBState.db.fallbackModels[arg] = value
             }}><PlusIcon /></button>
-            <button class="bg-red-500 text-white p-2 rounded-md" onclick={() => {
+            <button class="bg-danger-500 text-textcolor p-2 rounded-md" onclick={() => {
                 let value = DBState.db.fallbackModels[arg] ?? []
                 value.pop()
                 DBState.db.fallbackModels[arg] = value

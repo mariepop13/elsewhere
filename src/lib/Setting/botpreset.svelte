@@ -76,7 +76,7 @@
             secondPresetId = null
             return
         }
-        
+
         selectedDiffPreset = id
 
         if (firstPresetId === null) {
@@ -99,12 +99,12 @@
 
 </script>
 
-<div class="absolute w-full h-full z-40 bg-black/50 flex justify-center items-center">
+<div class="absolute w-full h-full z-40 bg-[var(--risu-theme-overlay)] flex justify-center items-center">
     <div class="bg-darkbg p-4 break-any rounded-md flex flex-col max-w-3xl w-124 max-h-full overflow-y-auto">
         <div class="flex items-center text-textcolor mb-4">
             <h2 class="mt-0 mb-0">{language.presets}</h2>
             <div class="grow flex justify-end">
-                <button class="text-textcolor2 hover:text-green-500 mr-2 cursor-pointer items-center" onclick={close}>
+                <button class="text-textcolor2 hover:text-focus mr-2 cursor-pointer items-center" onclick={close}>
                     <XIcon size={24}/>
                 </button>
             </div>
@@ -113,9 +113,9 @@
             <div class="w-full transition-all duration-200"
                 class:h-0.5={!isDragging || dragOverIndex !== i}
                 class:h-1={isDragging && dragOverIndex === i}
-                class:bg-blue-500={isDragging && dragOverIndex === i}
+                class:bg-action-primary={isDragging && dragOverIndex === i}
                 class:shadow-lg={isDragging && dragOverIndex === i}
-                class:hover:bg-gray-600={!isDragging}
+                class:hover:bg-surface-subtle={!isDragging}
                 role="listitem"
                 ondragover={(e) => {
                     if (!isPresetDrag(e)) {
@@ -134,14 +134,14 @@
                     dragOverIndex = -1
                 }}>
             </div>
-            
+
             <button onclick={() => {
                 if(!editMode){
                     changeToPreset(i)
                     close()
                 }
-            }} 
-            class="flex items-center text-textcolor border-t-1 border-solid border-0 border-darkborderc p-2 cursor-pointer" 
+            }}
+            class="flex items-center text-textcolor border-t-1 border-solid border-0 border-darkborderc p-2 cursor-pointer"
             class:bg-selected={i === DBState.db.botPresetsId}
             class:draggable-preset={!editMode}
             draggable={!editMode ? "true" : "false"}
@@ -202,7 +202,7 @@
                 {/if}
                 <div class="grow flex justify-end">
                     {#if DBState.db.showPromptComparison}
-                        <div class="{selectedDiffPreset === i ? 'text-green-500' : 'text-textcolor2 hover:text-green-500'} cursor-pointer mr-2" role="button" tabindex="0" onclick={(e) => {
+                        <div class="{selectedDiffPreset === i ? 'text-green-500' : 'text-textcolor2 hover:text-focus'} cursor-pointer mr-2" role="button" tabindex="0" onclick={(e) => {
                             e.stopPropagation()
                             handleDiffMode(i)
                         }} onkeydown={(e) => {
@@ -213,7 +213,7 @@
                             <GitCompare size={18}/>
                         </div>
                     {/if}
-                    <div class="text-textcolor2 hover:text-green-500 cursor-pointer mr-2" role="button" tabindex="0" onclick={(e) => {
+                    <div class="text-textcolor2 hover:text-focus cursor-pointer mr-2" role="button" tabindex="0" onclick={(e) => {
                         e.stopPropagation()
                         copyPreset(i)
                     }} onkeydown={(e) => {
@@ -223,7 +223,7 @@
                     }}>
                         <CopyIcon size={18}/>
                     </div>
-                    <div class="text-textcolor2 hover:text-green-500 cursor-pointer mr-2" role="button" tabindex="0" onclick={async (e) => {
+                    <div class="text-textcolor2 hover:text-focus cursor-pointer mr-2" role="button" tabindex="0" onclick={async (e) => {
                         e.stopPropagation()
                         const data = await alertCardExport('preset')
                         console.log(data.type)
@@ -241,7 +241,7 @@
 
                         <Share2Icon size={18} />
                     </div>
-                    <div class="text-textcolor2 hover:text-green-500 cursor-pointer" role="button" tabindex="0" onclick={async (e) => {
+                    <div class="text-textcolor2 hover:text-focus cursor-pointer" role="button" tabindex="0" onclick={async (e) => {
                         e.stopPropagation()
                         if(DBState.db.botPresets.length === 1){
                             alertError(language.errors.onlyOneChat)
@@ -269,9 +269,9 @@
         <div class="w-full transition-all duration-200"
             class:h-0.5={!isDragging || dragOverIndex !== DBState.db.botPresets.length}
             class:h-1={isDragging && dragOverIndex === DBState.db.botPresets.length}
-            class:bg-blue-500={isDragging && dragOverIndex === DBState.db.botPresets.length}
+            class:bg-action-primary={isDragging && dragOverIndex === DBState.db.botPresets.length}
             class:shadow-lg={isDragging && dragOverIndex === DBState.db.botPresets.length}
-            class:hover:bg-gray-600={!isDragging}
+            class:hover:bg-surface-subtle={!isDragging}
             role="listitem"
             ondragover={(e) => {
                 if (!isPresetDrag(e)) {
@@ -290,9 +290,9 @@
                 dragOverIndex = -1
             }}>
         </div>
-        
+
         <div class="flex mt-2 items-center">
-            <button class="text-textcolor2 hover:text-green-500 cursor-pointer mr-1" onclick={() => {
+            <button class="text-textcolor2 hover:text-focus cursor-pointer mr-1" onclick={() => {
                 let botPresets = DBState.db.botPresets
                 let newPreset = safeStructuredClone(prebuiltPresets.OAI2)
                 newPreset.name = `New Preset`
@@ -302,12 +302,12 @@
             }}>
                 <PlusIcon/>
             </button>
-            <button class="text-textcolor2 hover:text-green-500 mr-2 cursor-pointer" onclick={() => {
+            <button class="text-textcolor2 hover:text-focus mr-2 cursor-pointer" onclick={() => {
                 importPreset()
             }}>
                 <HardDriveUploadIcon size={18}/>
             </button>
-            <button class="text-textcolor2 hover:text-green-500 cursor-pointer" onclick={() => {
+            <button class="text-textcolor2 hover:text-focus cursor-pointer" onclick={() => {
                 editMode = !editMode
             }}>
                 <PencilIcon size={18}/>

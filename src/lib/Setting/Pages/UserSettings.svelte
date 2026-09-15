@@ -2,7 +2,7 @@
     import { language } from "src/lang";
     import { hubURL } from "src/ts/characterCards";
     import { loadRisuAccountBackup, loadRisuAccountData, saveRisuAccountData } from "src/ts/drive/accounter";
-    
+
     import { DBState } from 'src/ts/stores.svelte';
     import Check from "src/lib/UI/GUI/CheckInput.svelte";
     import { alertConfirm} from "src/ts/alert";
@@ -102,7 +102,7 @@
     onclick={async () => {
         if(await alertConfirm(language.backupConfirm)){
             localStorage.setItem('backup', 'save')
-            
+
             if(isTauri || isNodeServer){
                 checkDriver('savetauri')
             }
@@ -136,19 +136,19 @@
 <div class="bg-darkbg p-3 rounded-md mb-2 flex flex-col items-start mt-2">
     <div class="w-full">
         <h1 class="text-3xl font-black min-w-0">Risu Account{#if DBState.db.account}
-            <button class="bg-selected p-1 text-sm font-light rounded-md hover:bg-blue-500 transition-colors float-right" onclick={async () => {
+            <button class="bg-selected p-1 text-sm font-light rounded-md hover:bg-action-primary transition-colors float-right" onclick={async () => {
                 if(DBState.db.account.useSync || forageStorage.isAccount){
                     unMigrationAccount()
                 }
-                
+
                 DBState.db.account = undefined
             }}>{language.logout}</button>
                 {#if import.meta.env.DEV}
-                <button class="bg-selected p-1 text-sm font-light rounded-md hover:bg-blue-500 transition-colors float-right" onclick={async () => {
+                <button class="bg-selected p-1 text-sm font-light rounded-md hover:bg-action-primary transition-colors float-right" onclick={async () => {
                     loginToSionyw()
                 }}>{language.loginSionyw}</button>
 
-                <button class="bg-selected p-1 text-sm font-light rounded-md hover:bg-blue-500 transition-colors float-right" onclick={async () => {
+                <button class="bg-selected p-1 text-sm font-light rounded-md hover:bg-action-primary transition-colors float-right" onclick={async () => {
                     testSionywLogin()
                 }}>TestSionyw</button>
             {/if}
@@ -176,7 +176,7 @@
         {/if}
     {:else}
         <span>{language.notLoggedIn}</span>
-        <button class="bg-selected p-2 rounded-md mt-2 hover:bg-blue-500 transition-colors" onclick={() => {
+        <button class="bg-selected p-2 rounded-md mt-2 hover:bg-action-primary transition-colors" onclick={() => {
             openIframeURL = hubURL + '/hub/login'
             openIframe = true
         }}>
@@ -187,7 +187,7 @@
 
 </div>
 {#if openIframe}
-    <div class="fixed top-0 left-0 bg-black/50 w-full h-full flex justify-center items-center">
+    <div class="fixed top-0 left-0 bg-[var(--risu-theme-overlay)] w-full h-full flex justify-center items-center">
         <iframe src={openIframeURL} title="login" class="w-full h-full">
         </iframe>
     </div>

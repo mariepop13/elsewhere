@@ -51,13 +51,13 @@
 
         <div class="grow flex justify-end">
             <button
-                class="text-textcolor2 hover:text-green-500 mr-2 cursor-pointer"
+                class="text-textcolor2 hover:text-focus mr-2 cursor-pointer"
                 onclick={() => exportColorScheme()}
             >
                 <DownloadIcon size={18} />
             </button>
             <button
-                class="text-textcolor2 hover:text-green-500 cursor-pointer"
+                class="text-textcolor2 hover:text-focus cursor-pointer"
                 onclick={() => importColorScheme()}
             >
                 <HardDriveUploadIcon size={18} />
