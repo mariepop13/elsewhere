@@ -39,17 +39,20 @@
     {#if chara.hasEmotion || chara.hasAsset || chara.hasLore}
         <div class="realm-entry-assets">
             {#if chara.hasEmotion}
-                <button type="button" aria-label="Emotion images" onclick={() => {
+                <button type="button" aria-label="Emotion images" onclick={(event) => {
+                    event.stopPropagation();
                     alertNormal('This character includes emotion images');
                 }}><SmileIcon size={16} /></button>
             {/if}
             {#if chara.hasAsset}
-                <button type="button" aria-label="Additional assets" onclick={() => {
+                <button type="button" aria-label="Additional assets" onclick={(event) => {
+                    event.stopPropagation();
                     alertNormal('This character includes additional assets');
                 }}><ImageIcon size={16} /></button>
             {/if}
             {#if chara.hasLore}
-                <button type="button" aria-label="Lorebook" onclick={() => {
+                <button type="button" aria-label="Lorebook" onclick={(event) => {
+                    event.stopPropagation();
                     alertNormal('This character includes lorebook');
                 }}><BookIcon size={16} /></button>
             {/if}
