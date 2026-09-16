@@ -62,6 +62,8 @@
     }
 
     .mobile-sidebar-stage {
+        width: 100%;
+        max-width: 100vw;
         min-height: 100%;
     }
 
@@ -76,6 +78,10 @@
         padding-inline: 0.75rem;
         border-bottom: 3px solid transparent;
         color: var(--risu-theme-textcolor2);
+    }
+
+    .mobile-sidebar-tab:not(:last-child) {
+        min-width: 5.5rem;
     }
 
     .mobile-sidebar-tab:hover {

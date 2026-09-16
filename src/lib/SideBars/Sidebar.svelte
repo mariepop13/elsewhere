@@ -417,7 +417,7 @@
 </script>
 {#if DBState.db.menuSideBar}
 <div
-  class="signal-rail h-full w-[58px] min-w-[58px] flex-col items-center border-r border-darkborderc bg-surface-elevated text-textcolor shadow-lg relative rs-sidebar"
+  class="signal-rail h-full w-14.5 min-w-14.5 flex-col items-center border-r border-darkborderc bg-surface-elevated text-textcolor shadow-lg relative rs-sidebar"
   class:editMode
   class:flex={true}
 >
@@ -490,7 +490,7 @@
 </div>
 {:else}
 <div
-  class="signal-rail h-full w-[58px] min-w-[58px] flex-col items-center border-r border-darkborderc bg-surface-elevated text-textcolor shadow-lg relative rs-sidebar"
+  class="signal-rail h-full w-14.5 min-w-14.5 flex-col items-center border-r border-darkborderc bg-surface-elevated text-textcolor shadow-lg relative rs-sidebar"
   class:editMode
   class:flex={true}
 >
@@ -1011,21 +1011,6 @@
     {:else}
       <div class="correspondent-context">
         <span class="library-wordmark" aria-hidden="true">ELSE<span>//</span>WHERE</span>
-        <div class="selected-correspondent">
-          {#if DBState.db.characters[$selectedCharID]?.image}
-            {#await getCharImage(DBState.db.characters[$selectedCharID].image, 'plain')}
-              <span class="selected-correspondent-avatar" aria-hidden="true">{DBState.db.characters[$selectedCharID]?.name?.slice(0, 1)}</span>
-            {:then image}
-              <img class="selected-correspondent-avatar" src={image ?? '/none.webp'} alt="" />
-            {/await}
-          {:else}
-            <span class="selected-correspondent-avatar" aria-hidden="true">{DBState.db.characters[$selectedCharID]?.name?.slice(0, 1)}</span>
-          {/if}
-          <span class="min-w-0">
-            <b class="truncate">{DBState.db.characters[$selectedCharID]?.name}</b>
-            <small class="truncate">{DBState.db.characters[$selectedCharID]?.chats?.[DBState.db.characters[$selectedCharID]?.chatPage]?.name ?? language.Chat}</small>
-          </span>
-        </div>
       </div>
       <div class="conversation-tabs flex w-full h-10 min-h-10 border border-selected rounded-lg">
         <button onclick={() => {
@@ -1136,7 +1121,7 @@
   }
 
   .recent-chat-avatar,
-  .selected-correspondent-avatar {
+  :global(.selected-chat-avatar) {
     display: grid;
     flex: none;
     place-items: center;
@@ -1196,41 +1181,6 @@
     margin-top: 0.08rem;
     color: var(--risu-theme-textcolor2);
     font-size: 0.68rem;
-  }
-
-  .selected-correspondent {
-    display: flex;
-    min-width: 0;
-    align-items: center;
-    gap: 0.7rem;
-    padding: 0.7rem 0.55rem;
-    border-left: 3px solid var(--risu-theme-focus);
-    border-radius: 0.5rem;
-    background: var(--risu-theme-surface-subtle);
-    color: var(--risu-theme-textcolor);
-  }
-
-  .selected-correspondent-avatar {
-    width: 2.5rem;
-    height: 2.5rem;
-    font-size: 0.9rem;
-  }
-
-  .selected-correspondent b,
-  .selected-correspondent small {
-    display: block;
-    max-width: 100%;
-  }
-
-  .selected-correspondent b {
-    font-size: 0.9rem;
-    font-weight: 600;
-  }
-
-  .selected-correspondent small {
-    margin-top: 0.1rem;
-    color: var(--risu-theme-textcolor2);
-    font-size: 0.7rem;
   }
 
   .conversation-tabs {
@@ -1380,12 +1330,12 @@
   }
 
   .sidebar-dark-animation{
-    animation-name: sidebar-dark-transition;
+    animation-name: sidebar-dark-animation;
     animation-duration: var(--risu-animation-speed);
     background-color: rgba(0,0,0,0.5)
   }
   .sidebar-dark-close-animation{
-    animation-name: sidebar-dark-closing-transition;
+    animation-name: sidebar-dark-closing-animation;
     animation-duration: var(--risu-animation-speed);
     background-color: rgba(0,0,0,0)
   }
