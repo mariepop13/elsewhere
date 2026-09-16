@@ -556,7 +556,7 @@
         {/if}
     {/if}
     {#if isScrollingToMessage}
-        <div class="absolute inset-0 z-50 flex items-center justify-center bg-[var(--risu-theme-overlay)] text-textcolor text-xl font-bold backdrop-blur-sm">
+        <div class="absolute inset-0 z-50 flex items-center justify-center bg-(--risu-theme-overlay) text-textcolor text-xl font-bold backdrop-blur-sm">
             Loading...
         </div>
     {/if}
