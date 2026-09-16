@@ -6,3 +6,6 @@ allowBuilds:
   onnxruntime-node: true
   protobufjs: true
   sharp: false
+
+pmOnFail: ignore
+strictDepBuilds: false
