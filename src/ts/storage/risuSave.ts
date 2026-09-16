@@ -549,7 +549,17 @@ export class RisuSaveDecoder {
                     }
                     case RisuSaveType.PLUGIN_STORAGE:{
                         try {
-                            db.pluginCustomStorage = JSON.parse(this.blocks[key].content) ?? {};
+                            const parsedPluginStorage = JSON.parse(this.blocks[key].content);
+                            if(
+                                parsedPluginStorage &&
+                                typeof parsedPluginStorage === 'object' &&
+                                !Array.isArray(parsedPluginStorage)
+                            ){
+                                db.pluginCustomStorage = parsedPluginStorage;
+                            } else {
+                                console.warn('Ignoring corrupted pluginStorage block.');
+                                db.pluginCustomStorage = {};
+                            }
                         } catch (error) {
                             console.warn('Ignoring corrupted pluginStorage block.', error);
                             db.pluginCustomStorage = {};

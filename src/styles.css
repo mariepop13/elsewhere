@@ -6,7 +6,7 @@
   --color-bgcolor: var(--risu-theme-canvas);
   --color-darkbg: var(--risu-theme-surface-elevated);
   --color-borderc: var(--risu-theme-action-primary);
-  --color-selected: var(--risu-theme-focus);
+  --color-selected: var(--risu-theme-selected);
   --color-draculared: var(--risu-theme-ambient);
   --color-textcolor: var(--risu-theme-textcolor);
   --color-textcolor2: var(--risu-theme-textcolor2);
@@ -203,7 +203,7 @@ body {
   --risu-theme-bgcolor: #0A0B1D;
   --risu-theme-darkbg: #11142F;
   --risu-theme-borderc: #6D5DFB;
-  --risu-theme-selected: #28D7C5;
+  --risu-theme-selected: #1A1E40;
   --risu-theme-draculared: #F45B9A;
   --risu-theme-textcolor: #F5F7FF;
   --risu-theme-textcolor2: #A8ADD0;
@@ -214,7 +214,7 @@ body {
   --risu-theme-surface-elevated: var(--risu-theme-darkbg);
   --risu-theme-surface-subtle: var(--risu-theme-darkbutton);
   --risu-theme-action-primary: var(--risu-theme-borderc);
-  --risu-theme-focus: var(--risu-theme-selected);
+  --risu-theme-focus: var(--risu-theme-action-primary);
   --risu-theme-ambient: var(--risu-theme-draculared);
   --risu-theme-overlay: rgb(0 0 0 / 0.55);
   --risu-height-size: 100%;
@@ -385,7 +385,7 @@ body {
 
 @supports (background-color: color-mix(in srgb, black, transparent)) {
   :root {
-    --risu-theme-overlay: color-mix(in srgb, var(--risu-theme-canvas) 70%, transparent);
+    --risu-theme-overlay: color-mix(in srgb, black 55%, transparent);
   }
 }
 

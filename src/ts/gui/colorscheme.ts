@@ -24,7 +24,7 @@ export const defaultColorScheme: ColorScheme = {
     bgcolor: "#0A0B1D",
     darkbg: "#11142F",
     borderc: "#6D5DFB",
-    selected: "#28D7C5",
+    selected: "#1A1E40",
     draculared: "#F45B9A",
     textcolor: "#F5F7FF",
     textcolor2: "#A8ADD0",

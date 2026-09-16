@@ -968,7 +968,7 @@
       <div class="home-conversations">
         <span class="library-wordmark" aria-hidden="true">ELSE<span>//</span>WHERE</span>
         <h1>{language.home}</h1>
-        <p>Recently active</p>
+        <p>{language.recentlyActive}</p>
         <div class="recent-chat-list">
           {#each getRecentChats() as recentChat}
             <button class="recent-chat" onclick={() => openRecentChat(recentChat.characterIndex, recentChat.chatIndex)}>
@@ -986,11 +986,19 @@
                 <small class="truncate">{recentChat.chatName}</small>
               </span>
             </button>
+          {:else}
+            <div class="recent-chat-empty">
+              <p>{language.recentChatsEmpty}</p>
+              <button class="recent-chat-empty-action" type="button" onclick={() => {
+                reseter();
+                openGrid();
+              }}>{language.addCharacter}</button>
+            </div>
           {/each}
         </div>
       </div>
     {:else if !$settingsOpen && DBState.db.characters[$selectedCharID]?.chaId === '§playground'}
-      <div class="library-heading"><span class="library-wordmark" aria-hidden="true">ELSE<span>//</span>WHERE</span><h1>Conversations</h1><p>Recently active</p></div>
+      <div class="library-heading"><span class="library-wordmark" aria-hidden="true">ELSE<span>//</span>WHERE</span><h1>{language.conversations}</h1><p>{language.recentlyActive}</p></div>
       <SideChatList bind:chara={ DBState.db.characters[$selectedCharID]} />
     {:else if $ConnectionOpenStore}
       <div class="flex flex-col">
@@ -1036,7 +1044,7 @@
       {:else if $botMakerMode}
         <CharConfig />
       {:else}
-        <div class="library-heading"><h1>Conversations</h1><p>Recently active</p></div>
+        <div class="library-heading"><h1>{language.conversations}</h1><p>{language.recentlyActive}</p></div>
         <SideChatList bind:chara={ DBState.db.characters[$selectedCharID]} />
       {/if}
     {/if}
@@ -1136,6 +1144,38 @@
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
+  }
+
+  .recent-chat-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.6rem 0.45rem;
+    color: var(--risu-theme-textcolor2);
+    font-size: 0.75rem;
+  }
+
+  .recent-chat-empty p {
+    margin: 0;
+  }
+
+  .recent-chat-empty-action {
+    padding: 0.45rem 0.8rem;
+    border: 1px solid var(--risu-theme-darkborderc);
+    border-radius: 0.45rem;
+    background: var(--risu-theme-surface-subtle);
+    color: var(--risu-theme-textcolor);
+    font-size: 0.75rem;
+    transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+  }
+
+  .recent-chat-empty-action:hover,
+  .recent-chat-empty-action:focus-visible {
+    border-color: var(--risu-theme-focus);
+    background: var(--risu-theme-surface-elevated);
+    color: var(--risu-theme-focus);
+    outline: none;
   }
 
   .recent-chat {
