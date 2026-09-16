@@ -419,7 +419,8 @@
 <div
   class="signal-rail h-full w-14.5 min-w-14.5 flex-col items-center border-r border-darkborderc bg-surface-elevated text-textcolor shadow-lg relative rs-sidebar"
   class:editMode
-  class:flex={true}
+  class:hidden={hidden}
+  class:flex={!hidden}
 >
 <button
   class="rail-navigation-item flex items-center justify-center py-2 flex-col gap-1 w-full mt-4"
@@ -931,12 +932,12 @@
 <div
   class="context-deck setting-area h-full flex-col overflow-y-auto overflow-x-hidden border-r border-darkborderc bg-surface-elevated py-6 text-textcolor max-h-full"
   class:risu-sidebar={!$sideBarClosing}
-  class:w-80={$sideBarSize === 0}
+  class:w-96={$sideBarSize === 0}
   class:w-110={$sideBarSize === 1}
   class:w-124={$sideBarSize === 2}
   class:w-138={$sideBarSize === 3}
   class:risu-sidebar-close={$sideBarClosing}
-  class:min-w-80={!$DynamicGUI && $sideBarSize === 0}
+  class:min-w-96={!$DynamicGUI && $sideBarSize === 0}
   class:min-w-110={!$DynamicGUI && $sideBarSize === 1}
   class:min-w-124={!$DynamicGUI && $sideBarSize === 2}
   class:min-w-138={!$DynamicGUI && $sideBarSize === 3}
