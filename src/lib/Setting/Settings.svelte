@@ -58,7 +58,7 @@
                 class:bg-darkbg={!$MobileGUI} class:bg-bgcolor={$MobileGUI}
             >
                 <div class="settings-index-heading">
-                    <span class="settings-index-wordmark">Risuai<span aria-hidden="true">//</span></span>
+                    <span class="settings-index-wordmark">ELSE<span aria-hidden="true">//</span>WHERE</span>
                     <span class="settings-index-caption">{language.settings}</span>
                 </div>
                 <nav class="settings-index-list" aria-label={language.settings}>
