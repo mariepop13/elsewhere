@@ -493,7 +493,8 @@
 <div
   class="signal-rail h-full w-14.5 min-w-14.5 flex-col items-center border-r border-darkborderc bg-surface-elevated text-textcolor shadow-lg relative rs-sidebar"
   class:editMode
-  class:flex={true}
+  class:hidden={hidden}
+  class:flex={!hidden}
 >
   {#if !DBState.db.hamburgerButtonBottom}
   <div class="signal-actions">

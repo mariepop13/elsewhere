@@ -26,9 +26,9 @@
             <div class="realm-entry-footer">
                 <div class="realm-entry-tags">
                     {#each chara.tags as tag, i}
-                        {#if i < 3}
+                        {#if i < 4}
                             <span>{tag}</span>
-                        {:else if i === 3}
+                        {:else if i === 4}
                             <span>…</span>
                         {/if}
                     {/each}
