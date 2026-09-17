@@ -13,8 +13,10 @@
   onclick={onClick}
   class="flex h-[56px] w-[56px] cursor-pointer select-none items-center justify-center
    transition-colors rounded-full
-   border border-textcolor2 text-gray-300
-   hover:border-gray-300 
+   border border-darkborderc text-textcolor
+   hover:border-focus hover:bg-surface-subtle
+   focus-visible:outline-2 focus-visible:outline-focus focus-visible:outline-offset-2
+   disabled:cursor-not-allowed disabled:opacity-50
    {isDisabled ? 'cursor-not-allowed!' : ''}"
 >
   {@render children?.()}

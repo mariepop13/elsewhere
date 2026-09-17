@@ -23,6 +23,6 @@
     popupStore.mouseY = e.clientY
     popupStore.children = children
     popupStore.openId = buttonId
-}} class="hover:text-blue-500 transition-colors button-icon-menu">
+}} class="text-textcolor2 hover:text-focus transition-colors button-icon-menu focus-visible:outline-2 focus-visible:outline-focus focus-visible:outline-offset-2">
     <MenuIcon size={20} />
 </button>

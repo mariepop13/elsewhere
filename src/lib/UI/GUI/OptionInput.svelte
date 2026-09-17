@@ -1,4 +1,4 @@
-<option value={value} selected={selected} class="bg-darkbg appearance-none">{@render children?.()}</option>
+<option value={value} selected={selected} class="bg-surface-elevated appearance-none">{@render children?.()}</option>
 <script lang="ts">
     interface Props {
         value: string | number;

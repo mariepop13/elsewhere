@@ -15,27 +15,27 @@
 </script>
 
 {#if $MobileSideBar > 0 && !$isLite}
-<div class="w-full px-2 py-1 text-textcolor2 border-b border-b-darkborderc bg-darkbg flex justify-start items-center gap-2">
-    <button class="flex-1 border-r border-r-darkborderc" class:text-textcolor={$MobileSideBar === 1} onclick={() => {
+<div class="mobile-sidebar-tabs w-full shrink-0 px-2 py-1 text-textcolor2 border-b border-b-darkborderc bg-darkbg flex justify-start items-center gap-2">
+    <button class="mobile-sidebar-tab flex-1 border-r border-r-darkborderc" class:mobile-sidebar-tab-active={$MobileSideBar === 1} aria-current={$MobileSideBar === 1 ? 'page' : undefined} onclick={() => {
         $MobileSideBar = 1
     }}>
         {language.Chat}
     </button>
-    <button class="flex-1 border-r border-r-darkborderc" class:text-textcolor={$MobileSideBar === 2} onclick={() => {
+    <button class="mobile-sidebar-tab flex-1 border-r border-r-darkborderc" class:mobile-sidebar-tab-active={$MobileSideBar === 2} aria-current={$MobileSideBar === 2 ? 'page' : undefined} onclick={() => {
         $MobileSideBar = 2
     }}>
         {language.character}
     </button>
-    <button class:text-textcolor={$MobileSideBar === 3} onclick={() => {
+    <button class="mobile-sidebar-tab" class:mobile-sidebar-tab-active={$MobileSideBar === 3} aria-current={$MobileSideBar === 3 ? 'page' : undefined} aria-label={language.advanced} onclick={() => {
         $MobileSideBar = 3
     }}>
         <WrenchIcon size={18} />
     </button>
 </div>
 {/if}
-<div class="w-full flex-1 overflow-y-auto bg-bgcolor relative">
+<div class="mobile-body w-full min-w-0 min-h-0 flex-1 overflow-y-auto bg-bgcolor relative">
     {#if $MobileSideBar > 0}
-        <div class="w-full flex flex-col p-2 mt-2 h-full">
+        <div class="mobile-sidebar-stage w-full min-w-0 flex flex-col p-3 h-full">
             {#if $MobileSideBar === 1}
                 <SideChatList bind:chara={DBState.db.characters[$selectedCharID]} />
             {:else if $MobileSideBar === 2}
@@ -54,3 +54,43 @@
         <Settings />
     {/if}
 </div>
+
+<style>
+    .mobile-body {
+        background-color: var(--risu-theme-canvas);
+        overscroll-behavior: contain;
+    }
+
+    .mobile-sidebar-stage {
+        width: 100%;
+        max-width: 100vw;
+        min-height: 100%;
+    }
+
+    .mobile-sidebar-tabs {
+        background-color: var(--risu-theme-surface-elevated);
+        box-shadow: 0 1px 0 var(--risu-theme-darkborderc);
+    }
+
+    .mobile-sidebar-tab {
+        min-height: 2.75rem;
+        min-width: 0;
+        padding-inline: 0.75rem;
+        border-bottom: 3px solid transparent;
+        color: var(--risu-theme-textcolor2);
+    }
+
+    .mobile-sidebar-tab:not(:last-child) {
+        min-width: 5.5rem;
+    }
+
+    .mobile-sidebar-tab:hover {
+        background-color: var(--risu-theme-surface-subtle);
+        color: var(--risu-theme-textcolor);
+    }
+
+    .mobile-sidebar-tab-active {
+        border-bottom-color: var(--risu-theme-focus);
+        color: var(--risu-theme-textcolor);
+    }
+</style>

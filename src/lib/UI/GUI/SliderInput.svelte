@@ -30,10 +30,10 @@
     aria-valuemax={max}
     aria-valuenow={sliderValue}
     aria-valuetext={displayText}
-    class="relative w-full h-8 border-darkborderc border rounded-full cursor-pointer"
+    class="relative w-full h-8 border-darkborderc border rounded-full cursor-pointer focus-visible:outline-2 focus-visible:outline-focus focus-visible:outline-offset-2"
     class:rounded-l-none={disableable}
     style:background={
-      `linear-gradient(to right, var(--risu-theme-darkbutton) 0%, var(--risu-theme-darkbutton) ${sliderPercent}%, var(--risu-theme-darkbg) ${sliderPercent}%, var(--risu-theme-darkbg) 100%)`
+      `linear-gradient(to right, var(--risu-theme-focus) 0%, var(--risu-theme-focus) ${sliderPercent}%, var(--risu-theme-surface-elevated) ${sliderPercent}%, var(--risu-theme-surface-elevated) 100%)`
     }
     onpointerdown={(event) => {
       mouseDown = true;

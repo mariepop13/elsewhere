@@ -23,7 +23,6 @@
     import {
     ShellIcon,
     Settings,
-    ListIcon,
     LayoutGridIcon,
     FolderIcon,
     FolderOpenIcon,
@@ -43,7 +42,7 @@
     import BaseRoundedButton from "../UI/BaseRoundedButton.svelte";
     import { getCharacterIndexObject, selectSingleFile } from "src/ts/util";
     import { v4 } from "uuid";
-    import { checkCharOrder, getFileSrc, saveAsset } from "src/ts/globalApi.svelte";
+    import { changeChatTo, checkCharOrder, getFileSrc, saveAsset } from "src/ts/globalApi.svelte";
     import { alertInput, alertSelect } from "src/ts/alert";
     import SideChatList from "./SideChatList.svelte";
     import { ConnectionIsHost, ConnectionOpenStore, RoomIdStore } from "src/ts/sync/multiuser";
@@ -56,6 +55,27 @@
   let editMode = $state(false);
   let menuMode = $state(0);
   let devTool = $state(false)
+
+  function getRecentChats() {
+    return DBState.db.characters
+      .flatMap((character, characterIndex) => character.chats.map((chat, chatIndex) => ({
+        characterIndex,
+        chatIndex,
+        characterName: character.name,
+        characterImage: character.image,
+        chatName: chat.name,
+        lastActivity: chat.lastDate ?? chat.message.at(-1)?.time ?? 0,
+      })))
+      .sort((a, b) => b.lastActivity - a.lastActivity)
+      .slice(0, 8)
+  }
+
+  async function openRecentChat(characterIndex: number, chatIndex: number) {
+    await changeChar(characterIndex, { reseter })
+    if ($selectedCharID === characterIndex) {
+      changeChatTo(chatIndex)
+    }
+  }
 
   function reseter() {
     menuMode = 0;
@@ -397,15 +417,14 @@
 </script>
 {#if DBState.db.menuSideBar}
 <div
-  class="h-full w-20 min-w-20 flex-col items-center bg-bgcolor text-textcolor shadow-lg relative rs-sidebar"
+  class="signal-rail h-full w-14.5 min-w-14.5 flex-col items-center border-r border-darkborderc bg-surface-elevated text-textcolor shadow-lg relative rs-sidebar"
   class:editMode
-  class:risu-sub-sidebar={$sideBarClosing}
-  class:risu-sub-sidebar-close={$sideBarClosing}
   class:hidden={hidden}
   class:flex={!hidden}
 >
 <button
-  class="flex items-center justify-center py-2 flex-col gap-1 w-full mt-4"
+  class="rail-navigation-item flex items-center justify-center py-2 flex-col gap-1 w-full mt-4"
+  class:rail-navigation-item-active={$selectedCharID < 0 && $PlaygroundStore === 0 && !$settingsOpen}
   class:text-textcolor2={!(
     $selectedCharID < 0 &&
     $PlaygroundStore === 0 &&
@@ -422,7 +441,8 @@
   <span class="text-xs">{language.home}</span>
 </button>
 <button
-  class="flex items-center justify-center py-2 flex-col gap-1 w-full"
+  class="rail-navigation-item flex items-center justify-center py-2 flex-col gap-1 w-full"
+  class:rail-navigation-item-active={$settingsOpen}
   class:text-textcolor2={!$settingsOpen}
   onclick={() => {
     if ($settingsOpen) {
@@ -438,7 +458,8 @@
   <span class="text-xs">{language.settings}</span>
 </button>
 <button
-  class="flex items-center justify-center py-2 flex-col gap-1 w-full"
+  class="rail-navigation-item flex items-center justify-center py-2 flex-col gap-1 w-full"
+  class:rail-navigation-item-active={$selectedCharID >= 0}
   class:text-textcolor2={!(
     $selectedCharID >= 0
   )}
@@ -452,7 +473,8 @@
   <span class="text-xs">{language.character}</span>
 </button>
 <button
-  class="flex items-center justify-center py-2 flex-col gap-1 w-full"
+  class="rail-navigation-item flex items-center justify-center py-2 flex-col gap-1 w-full"
+  class:rail-navigation-item-active={$selectedCharID < 0 && $PlaygroundStore !== 0}
   class:text-textcolor2={!(
     $selectedCharID < 0 &&
     $PlaygroundStore !== 0
@@ -469,20 +491,27 @@
 </div>
 {:else}
 <div
-  class="h-full w-20 min-w-20 flex-col items-center bg-bgcolor text-textcolor shadow-lg relative rs-sidebar"
+  class="signal-rail h-full w-14.5 min-w-14.5 flex-col items-center border-r border-darkborderc bg-surface-elevated text-textcolor shadow-lg relative rs-sidebar"
   class:editMode
-  class:risu-sub-sidebar={$sideBarClosing}
-  class:risu-sub-sidebar-close={$sideBarClosing}
   class:hidden={hidden}
   class:flex={!hidden}
 >
   {#if !DBState.db.hamburgerButtonBottom}
-  <button
-    class="flex h-8 min-h-8 w-14 min-w-14 cursor-pointer text-white mt-2 items-center justify-center rounded-md bg-textcolor2 transition-colors hover:bg-blue-500"
-    onclick={() => {
+  <div class="signal-actions">
+    <button class="signal-action" aria-label={language.home} title={language.home} onclick={() => {
+      reseter();
+      selectedCharID.set(-1)
+      PlaygroundStore.set(0)
+      OpenRealmStore.set(false)
+    }}>◎</button>
+    <button class="signal-action" aria-label={language.character} title={language.character} onclick={() => {
+      reseter();
+      openGrid();
+    }}>⌕</button>
+    <button class="signal-action" aria-label={language.menu} title={language.menu} onclick={() => {
       menuMode = 1 - menuMode;
-    }}><ListIcon />
-  </button>
+    }}>≡</button>
+  </div>
   <div class="mt-2 border-b border-b-selected w-full relative text-white ">
     {#if menuMode === 1}
       <div class="absolute w-20 min-w-20 flex border-b-selected border-b bg-bgcolor flex-col items-center pt-2 rounded-b-md z-20 pb-2">
@@ -883,16 +912,26 @@
     {/if}
   </div>
   <button
-    class="flex h-8 min-h-8 w-14 min-w-14 cursor-pointer text-white mb-2 mt-2 items-center justify-center rounded-md bg-textcolor2 transition-colors hover:bg-blue-500"
+    class="signal-action mb-2"
+    aria-label={language.menu}
+    title={language.menu}
     onclick={() => {
       menuMode = 1 - menuMode;
-    }}><ListIcon />
-  </button>
+    }}>≡</button>
   {/if}
+  <button class="signal-action signal-settings" aria-label={language.settings} title={language.settings} onclick={() => {
+    if ($settingsOpen) {
+      reseter();
+      settingsOpen.set(false);
+    } else {
+      reseter();
+      settingsOpen.set(true);
+    }
+  }}>⚙</button>
 </div>
 {/if}
 <div
-  class="setting-area h-full flex-col overflow-y-auto overflow-x-hidden bg-darkbg py-6 text-textcolor max-h-full"
+  class="context-deck setting-area h-full flex-col overflow-y-auto overflow-x-hidden border-r border-darkborderc bg-surface-elevated py-6 text-textcolor max-h-full"
   class:risu-sidebar={!$sideBarClosing}
   class:w-96={$sideBarSize === 0}
   class:w-110={$sideBarSize === 1}
@@ -927,12 +966,41 @@
     <!-- <button class="border-none bg-transparent p-0 text-textcolor"><X /></button> -->
   </button>
   {#if sideBarMode === 0}
-    {#if $selectedCharID < 0 || $settingsOpen}
-      <div>
-        <h1 class="text-xl">Welcome to RisuAI!</h1>
-        <span class="text-xs text-textcolor2">Select a bot to start chatting</span>
+    {#if $selectedCharID < 0}
+      <div class="home-conversations">
+        <span class="library-wordmark" aria-hidden="true">ELSE<span>//</span>WHERE</span>
+        <h1>{language.home}</h1>
+        <p>{language.recentlyActive}</p>
+        <div class="recent-chat-list">
+          {#each getRecentChats() as recentChat}
+            <button class="recent-chat" onclick={() => openRecentChat(recentChat.characterIndex, recentChat.chatIndex)}>
+              {#if recentChat.characterImage}
+                {#await getCharImage(recentChat.characterImage, 'plain')}
+                  <span class="recent-chat-avatar" aria-hidden="true">{recentChat.characterName.slice(0, 1)}</span>
+                {:then image}
+                  <img class="recent-chat-avatar" src={image ?? '/none.webp'} alt="" />
+                {/await}
+              {:else}
+                <span class="recent-chat-avatar" aria-hidden="true">{recentChat.characterName.slice(0, 1)}</span>
+              {/if}
+              <span class="min-w-0">
+                <b class="truncate">{recentChat.characterName}</b>
+                <small class="truncate">{recentChat.chatName}</small>
+              </span>
+            </button>
+          {:else}
+            <div class="recent-chat-empty">
+              <p>{language.recentChatsEmpty}</p>
+              <button class="recent-chat-empty-action" type="button" onclick={() => {
+                reseter();
+                openGrid();
+              }}>{language.addCharacter}</button>
+            </div>
+          {/each}
+        </div>
       </div>
-    {:else if DBState.db.characters[$selectedCharID]?.chaId === '§playground'}
+    {:else if !$settingsOpen && DBState.db.characters[$selectedCharID]?.chaId === '§playground'}
+      <div class="library-heading"><span class="library-wordmark" aria-hidden="true">ELSE<span>//</span>WHERE</span><h1>{language.conversations}</h1><p>{language.recentlyActive}</p></div>
       <SideChatList bind:chara={ DBState.db.characters[$selectedCharID]} />
     {:else if $ConnectionOpenStore}
       <div class="flex flex-col">
@@ -940,30 +1008,33 @@
         <span class="text-textcolor2 mb-4">{language.connectionOpenInfo}</span>
         <div class="flex">
           <span>ID: </span>
-          <span class="text-blue-600">{$RoomIdStore}</span>
+          <span class="text-focus">{$RoomIdStore}</span>
         </div>
         <div>
           {#if $ConnectionIsHost}
             <span class="text-emerald-600">{language.connectionHost}</span>
           {:else}
-            <span class="text-gray-500">{language.connectionGuest}</span>
+            <span class="text-textcolor2">{language.connectionGuest}</span>
           {/if}
         </div>
       </div>
     {:else}
-      <div class="w-full h-8 min-h-8 border-l border-b border-r border-selected relative bottom-6 rounded-b-md flex">
+      <div class="correspondent-context">
+        <span class="library-wordmark" aria-hidden="true">ELSE<span>//</span>WHERE</span>
+      </div>
+      <div class="conversation-tabs flex w-full h-10 min-h-10 border border-selected rounded-lg">
         <button onclick={() => {
           devTool = false
           botMakerMode.set(false)
-        }} class="grow border-r border-r-selected rounded-bl-md" class:text-textcolor2={$botMakerMode || devTool}>{language.Chat}</button>
+        }} class="grow border-r border-r-selected rounded-l-lg" class:conversation-tab-active={!$botMakerMode && !devTool} class:text-textcolor2={$botMakerMode || devTool}>{language.Chat}</button>
         <button onclick={() => {
           devTool = false
           botMakerMode.set(true)
-        }} class="grow rounded-br-md" class:text-textcolor2={!$botMakerMode || devTool}>{language.character}</button>
+        }} class="grow rounded-r-lg" class:conversation-tab-active={$botMakerMode && !devTool} class:text-textcolor2={!$botMakerMode || devTool}>{language.character}</button>
         {#if DBState.db.enableDevTools}
           <button onclick={() => {
             devTool = true
-          }} class="border-l border-l-selected rounded-br-md px-1" class:text-textcolor2={!devTool}>
+          }} class="border-l border-l-selected rounded-r-lg px-2" class:conversation-tab-active={devTool} class:text-textcolor2={!devTool}>
             <WrenchIcon size={18} />
           </button>
         {/if}
@@ -975,6 +1046,7 @@
       {:else if $botMakerMode}
         <CharConfig />
       {:else}
+        <div class="library-heading"><h1>{language.conversations}</h1><p>{language.recentlyActive}</p></div>
         <SideChatList bind:chara={ DBState.db.characters[$selectedCharID]} />
       {/if}
     {/if}
@@ -1003,6 +1075,224 @@
 <style>
   .editMode {
     min-width: 6rem;
+  }
+
+  .signal-rail {
+    background-color: var(--risu-theme-surface-subtle);
+    box-shadow: 8px 0 24px rgb(0 0 0 / 0.12);
+  }
+
+  .signal-rail::before {
+    content: "//";
+    margin: 0.75rem 0 0.25rem;
+    color: var(--risu-theme-focus);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+  }
+
+  .context-deck {
+    background-color: var(--risu-theme-surface-elevated);
+    box-shadow: 12px 0 28px rgb(0 0 0 / 0.1);
+  }
+
+  .home-conversations,
+  .library-heading,
+  .correspondent-context {
+    padding: 0.5rem 0.25rem 1rem;
+  }
+
+  .library-wordmark {
+    display: block;
+    margin-bottom: 1.5rem;
+    color: var(--risu-theme-textcolor2);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+  }
+
+  .library-wordmark span { color: var(--risu-theme-focus); }
+
+  .home-conversations h1,
+  .library-heading h1 {
+    margin: 0;
+    color: var(--risu-theme-textcolor);
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  .home-conversations > p,
+  .library-heading > p {
+    margin: 0.2rem 0 0.85rem;
+    color: var(--risu-theme-textcolor2);
+    font-size: 0.75rem;
+  }
+
+  .recent-chat-avatar,
+  :global(.selected-chat-avatar) {
+    display: grid;
+    flex: none;
+    place-items: center;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--risu-theme-ambient), var(--risu-theme-action-primary));
+    color: var(--risu-theme-textcolor);
+    font-weight: 700;
+    object-fit: cover;
+  }
+
+  .recent-chat-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .recent-chat-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.6rem 0.45rem;
+    color: var(--risu-theme-textcolor2);
+    font-size: 0.75rem;
+  }
+
+  .recent-chat-empty p {
+    margin: 0;
+  }
+
+  .recent-chat-empty-action {
+    padding: 0.45rem 0.8rem;
+    border: 1px solid var(--risu-theme-darkborderc);
+    border-radius: 0.45rem;
+    background: var(--risu-theme-surface-subtle);
+    color: var(--risu-theme-textcolor);
+    font-size: 0.75rem;
+    transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+  }
+
+  .recent-chat-empty-action:hover,
+  .recent-chat-empty-action:focus-visible {
+    border-color: var(--risu-theme-focus);
+    background: var(--risu-theme-surface-elevated);
+    color: var(--risu-theme-focus);
+    outline: none;
+  }
+
+  .recent-chat {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.6rem 0.45rem;
+    border-left: 3px solid transparent;
+    border-radius: 0.45rem;
+    color: var(--risu-theme-textcolor2);
+    text-align: left;
+    transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+  }
+
+  .recent-chat:hover,
+  .recent-chat:focus-visible {
+    border-left-color: var(--risu-theme-focus);
+    background: var(--risu-theme-surface-subtle);
+    color: var(--risu-theme-textcolor);
+    outline: none;
+  }
+
+  .recent-chat-avatar {
+    width: 2rem;
+    height: 2rem;
+    flex: none;
+    font-size: 0.75rem;
+  }
+
+  .recent-chat b,
+  .recent-chat small {
+    display: block;
+    max-width: 100%;
+  }
+
+  .recent-chat b {
+    font-size: 0.82rem;
+    font-weight: 600;
+  }
+
+  .recent-chat small {
+    margin-top: 0.08rem;
+    color: var(--risu-theme-textcolor2);
+    font-size: 0.68rem;
+  }
+
+  .conversation-tabs {
+    margin-bottom: 1rem;
+    background: var(--risu-theme-surface-subtle);
+  }
+
+  .conversation-tabs button {
+    transition: background-color 150ms ease, color 150ms ease;
+  }
+
+  .conversation-tabs button:hover {
+    color: var(--risu-theme-textcolor);
+  }
+
+  .conversation-tab-active {
+    background: var(--risu-theme-surface-elevated);
+    color: var(--risu-theme-focus);
+    box-shadow: inset 0 -2px var(--risu-theme-focus);
+  }
+
+  .signal-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    margin-top: 0.5rem;
+  }
+
+  .signal-action {
+    display: grid;
+    width: 2rem;
+    height: 2rem;
+    place-items: center;
+    border-left: 2px solid transparent;
+    border-radius: 0.375rem;
+    color: var(--risu-theme-textcolor2);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 1rem;
+    line-height: 1;
+    transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+  }
+
+  .signal-action:hover,
+  .signal-action:focus-visible {
+    border-left-color: var(--risu-theme-focus);
+    background-color: var(--risu-theme-surface-elevated);
+    color: var(--risu-theme-focus);
+    outline: none;
+  }
+
+  .signal-settings {
+    margin-top: auto;
+  }
+
+  .rail-navigation-item {
+    border-left: 2px solid transparent;
+    color: var(--risu-theme-textcolor2);
+    transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+  }
+
+  .rail-navigation-item:hover {
+    background-color: var(--risu-theme-surface-subtle);
+    color: var(--risu-theme-textcolor);
+  }
+
+  .rail-navigation-item-active {
+    border-left-color: var(--risu-theme-focus);
+    background-color: var(--risu-theme-surface-subtle);
+    color: var(--risu-theme-textcolor);
   }
   @keyframes sidebar-transition {
     from {
@@ -1044,31 +1334,6 @@
       right:3rem;
     }
   }
-  @keyframes sub-sidebar-transition {
-    from {
-      width: 0rem;
-      min-width: 0rem;
-    }
-    to {
-      width: 5rem;
-      min-width: 5rem;
-    }
-  }
-  @keyframes sub-sidebar-transition-close {
-    from {
-      width: 5rem;
-      min-width: 5rem;
-      max-width: 5rem;
-      right:0rem;
-
-    }
-    to {
-      width: 0rem;
-      min-width: 0rem;
-      max-width: 0rem;
-      right: 10rem;
-    }
-  }
   @keyframes sidebar-dark-animation{
     from {
       background-color: rgba(0,0,0,0) !important;
@@ -1106,23 +1371,13 @@
     right: 3rem;
   }
 
-
-  .risu-sub-sidebar {
-    animation-name: sub-sidebar-transition;
-    animation-duration: var(--risu-animation-speed);
-  }
-  .risu-sub-sidebar-close {
-    animation-name: sub-sidebar-transition-close;
-    animation-duration: var(--risu-animation-speed);
-    position: relative;
-  }
   .sidebar-dark-animation{
-    animation-name: sidebar-dark-transition;
+    animation-name: sidebar-dark-animation;
     animation-duration: var(--risu-animation-speed);
     background-color: rgba(0,0,0,0.5)
   }
   .sidebar-dark-close-animation{
-    animation-name: sidebar-dark-closing-transition;
+    animation-name: sidebar-dark-closing-animation;
     animation-duration: var(--risu-animation-speed);
     background-color: rgba(0,0,0,0)
   }

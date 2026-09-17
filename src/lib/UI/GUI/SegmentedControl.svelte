@@ -102,7 +102,7 @@
         width: fit-content;
         align-items: center;
         border-radius: 0.5rem;
-        background-color: var(--risu-theme-darkbg);
+        background-color: var(--risu-theme-surface-elevated);
         border: 1px solid var(--risu-theme-darkborderc);
         padding: 4px;
         gap: 2px;
@@ -120,7 +120,7 @@
         top: 4px;
         bottom: 4px;
         border-radius: 0.375rem;
-        background-color: var(--risu-theme-borderc);
+        background-color: var(--risu-theme-focus);
         transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
                     width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         will-change: transform, width;
@@ -147,11 +147,11 @@
     }
 
     .segmented-btn-active {
-        color: #fff;
+        color: var(--risu-theme-canvas);
     }
 
     .segmented-btn:focus-visible {
-        outline: 2px solid var(--risu-theme-borderc);
+        outline: 2px solid var(--risu-theme-focus);
         outline-offset: -2px;
     }
 </style>

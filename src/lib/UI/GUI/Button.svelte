@@ -2,11 +2,10 @@
     onclick={onclick}
     {disabled}
     class="{
-        styled === 'primary' ? ((selected ? 'bg-bg-selected' : 'bg-darkbutton') + " hover:bg-selected focus:ring-selected border-darkborderc")
-        : styled === 'outlined' ? 'bg-transparent hover:bg-darkbg focus:ring-selected border-darkborderc text-textcolor2'
-        : ((selected ? 'bg-red-800' : 'bg-red-700') + ' hover:bg-red-500 focus:ring-red-600 border-red-600')
-    } border text-textcolor rounded-md shadow-xs focus:outline-hidden focus:ring-2 transition-colors duration-200{className ? (" " + className) : ""}"
-    class:opacity-50={disabled}
+        styled === 'primary' ? (selected ? 'bg-focus border-focus text-canvas hover:bg-focus/85' : 'bg-action-primary border-action-primary hover:bg-focus')
+        : styled === 'outlined' ? 'bg-transparent border-darkborderc text-textcolor2 hover:bg-surface-subtle hover:border-focus hover:text-textcolor'
+        : (selected ? 'bg-ambient/85 border-ambient' : 'bg-ambient border-ambient hover:bg-ambient/85')
+    } border text-textcolor rounded-md shadow-xs transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-focus focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50{className ? (" " + className) : ""}"
     class:cursor-not-allowed={disabled}
     class:px-4 = {size == "md"}
     class:px-2 = {size == "sm"}

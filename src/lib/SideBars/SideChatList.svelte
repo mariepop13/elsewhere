@@ -19,6 +19,7 @@
     import { bookmarkListOpen } from "src/ts/stores.svelte";
     import { language } from "src/lang";
     import Toggles from "./Toggles.svelte";
+    import { getCharImage } from "src/ts/characters";
     import { changeChatTo, createChatCopyName } from "src/ts/globalApi.svelte";
 
     interface Props {
@@ -135,8 +136,8 @@
         })
     })
 </script>
-<div class="flex flex-col w-full h-[calc(100%-2rem)] max-h-[calc(100%-2rem)]">
-    <Button className="relative bottom-2" onclick={() => {
+<div class="sidechat-list flex flex-col w-full h-[calc(100%-2rem)] max-h-[calc(100%-2rem)]">
+    <Button styled="outlined" size="sm" className="sidechat-new-chat relative bottom-2" onclick={() => {
         const cha = chara
         const len = chara.chats.length
         let chats = chara.chats
@@ -164,7 +165,7 @@
             <!-- chat folder -->
             {#each chara.chatFolders as folder, i}
             <div data-risu-chat-folder-idx={i}
-                class="flex flex-col mb-2 border-solid border-1 border-darkborderc cursor-pointer rounded-md">
+                class="flex flex-col mb-2 border-solid border-1 border-darkborderc bg-surface-subtle cursor-pointer rounded-md">
                 <!-- folder header -->
                 <button 
                     onclick={() => {
@@ -173,7 +174,7 @@
                             $ReloadGUIPointer += 1
                         }
                     }}
-                    class="flex items-center text-textcolor border-solid border-0 border-darkborderc p-2 cursor-pointer rounded-md"
+                    class="chat-folder-header flex items-center text-textcolor border-solid border-0 border-darkborderc p-2 cursor-pointer rounded-md"
                     class:bg-red-900={folder.color === 'red'}
                     class:bg-yellow-900={folder.color === 'yellow'}
                     class:bg-green-900={folder.color === 'green'}
@@ -249,9 +250,25 @@
                             changeChatTo(chara.chats.indexOf(chat))
                             $ReloadGUIPointer += 1
                         }
-                    }} class="risu-chats flex items-center text-textcolor border-solid border-0 border-darkborderc p-2 cursor-pointer rounded-md"class:bg-selected={chara.chats.indexOf(chat) === chara.chatPage}>
+                    }} class="chat-list-item risu-chats flex items-center text-textcolor border-solid border-0 border-darkborderc p-2 cursor-pointer rounded-md" class:chat-list-item-active={chara.chats.indexOf(chat) === chara.chatPage} class:bg-selected={chara.chats.indexOf(chat) === chara.chatPage}>
                         {#if editMode}
                             <TextInput bind:value={chat.name} className="grow min-w-0" padding={false}/>
+                        {:else if chara.chats.indexOf(chat) === chara.chatPage}
+                            <span class="selected-chat-summary">
+                                {#if chara.image}
+                                    {#await getCharImage(chara.image, 'plain')}
+                                        <span class="selected-chat-avatar" aria-hidden="true">{chara.name?.slice(0, 1)}</span>
+                                    {:then image}
+                                        <img class="selected-chat-avatar" src={image ?? '/none.webp'} alt="" />
+                                    {/await}
+                                {:else}
+                                    <span class="selected-chat-avatar" aria-hidden="true">{chara.name?.slice(0, 1)}</span>
+                                {/if}
+                                <span class="min-w-0">
+                                    <b class="truncate">{chara.name}</b>
+                                    <small class="truncate">{chat.name ?? language.Chat}</small>
+                                </span>
+                            </span>
                         {:else}
                             <span>{chat.name}</span>
                         {/if}
@@ -359,10 +376,27 @@
                     $ReloadGUIPointer += 1
                 }
             }}
-            class="flex items-center text-textcolor border-solid border-0 border-darkborderc p-2 cursor-pointer rounded-md"
+            class="chat-list-item flex items-center text-textcolor border-solid border-0 border-darkborderc p-2 cursor-pointer rounded-md"
+            class:chat-list-item-active={i === chara.chatPage}
             class:bg-selected={i === chara.chatPage}>
                 {#if editMode}
                     <TextInput bind:value={chara.chats[i].name} className="grow min-w-0" padding={false}/>
+                {:else if i === chara.chatPage}
+                    <span class="selected-chat-summary">
+                        {#if chara.image}
+                            {#await getCharImage(chara.image, 'plain')}
+                                <span class="selected-chat-avatar" aria-hidden="true">{chara.name?.slice(0, 1)}</span>
+                            {:then image}
+                                <img class="selected-chat-avatar" src={image ?? '/none.webp'} alt="" />
+                            {/await}
+                        {:else}
+                            <span class="selected-chat-avatar" aria-hidden="true">{chara.name?.slice(0, 1)}</span>
+                        {/if}
+                        <span class="min-w-0">
+                            <b class="truncate">{chara.name}</b>
+                            <small class="truncate">{chat.name ?? language.Chat}</small>
+                        </span>
+                    </span>
                 {:else}
                     <span>{chat.name}</span>
                 {/if}
@@ -519,3 +553,81 @@
     </div>
     {/if}
 </div>
+
+<style>
+    :global(.sidechat-new-chat) {
+        box-shadow: none;
+    }
+
+    .chat-list-item {
+        min-height: 2.75rem;
+        border-left: 2px solid transparent;
+        transition: background-color 150ms ease, border-color 150ms ease;
+    }
+
+
+    .chat-list-item:hover,
+    .chat-folder-header:hover {
+        background-color: var(--risu-theme-surface-elevated);
+    }
+
+    .chat-list-item-active {
+        gap: 0.7rem;
+        min-height: 3.9rem;
+        padding: 0.7rem 0.55rem;
+        border-left-color: var(--risu-theme-focus);
+        border-radius: 0.5rem;
+        background: var(--risu-theme-surface-subtle);
+        box-shadow: inset 3px 0 0 var(--risu-theme-focus);
+    }
+
+    .selected-chat-summary {
+        display: flex;
+        min-width: 0;
+        align-items: center;
+        gap: 0.7rem;
+        color: var(--risu-theme-textcolor);
+        text-align: left;
+    }
+
+    .selected-chat-avatar {
+        display: grid;
+        width: 2.5rem;
+        height: 2.5rem;
+        flex: none;
+        place-items: center;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--risu-theme-ambient), var(--risu-theme-action-primary));
+        color: var(--risu-theme-textcolor);
+        font-size: 0.9rem;
+        font-weight: 700;
+        object-fit: cover;
+    }
+
+    .selected-chat-summary b,
+    .selected-chat-summary small {
+        display: block;
+        max-width: 100%;
+    }
+
+    .selected-chat-summary b {
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+
+    .selected-chat-summary small {
+        margin-top: 0.1rem;
+        color: var(--risu-theme-textcolor2);
+        font-size: 0.7rem;
+    }
+
+    .sidechat-list [role='button']:hover,
+    .sidechat-list > .border-t button:not(:disabled):hover {
+        color: var(--risu-theme-focus);
+    }
+
+    .sidechat-list .chat-list-item:hover,
+    .sidechat-list .chat-folder-header:hover {
+        color: var(--risu-theme-textcolor);
+    }
+</style>

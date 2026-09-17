@@ -124,9 +124,9 @@
                 await sleep(50)
                 element.scrollIntoView({behavior: "instant", block: "start"})
 
-                element.classList.add('ring-2', 'ring-blue-500')
+                element.classList.add('ring-2', 'ring-focus')
                 setTimeout(() => {
-                    element.classList.remove('ring-2', 'ring-blue-500')
+                    element.classList.remove('ring-2', 'ring-focus')
                 }, 2000)
             }
         } finally {
@@ -515,48 +515,48 @@
     
     {#if showNewMessageButton}
         {#if (DBState.db.newMessageButtonStyle === 'bottom-center' || !DBState.db.newMessageButtonStyle)}
-            <button class="absolute bottom-16 left-1/2 -translate-x-1/2 bg-blue-500 text-white px-4 py-2 rounded-full shadow-lg z-50 flex items-center gap-2 hover:bg-blue-600 transition-colors" onclick={scrollToBottom}>
+            <button class="absolute bottom-16 left-1/2 -translate-x-1/2 bg-action-primary text-textcolor px-4 py-2 rounded-full shadow-lg z-50 flex items-center gap-2 hover:bg-focus transition-colors" onclick={scrollToBottom}>
                 <ArrowDown size={16} />
                 <span>{language.newMessage}</span>
             </button>
         {/if}
 
         {#if DBState.db.newMessageButtonStyle === 'bottom-right'}
-            <button class="absolute bottom-20 right-4 bg-blue-500 text-white px-4 py-2 rounded-full shadow-lg z-50 flex items-center gap-2 hover:bg-blue-600 transition-colors" onclick={scrollToBottom}>
+            <button class="absolute bottom-20 right-4 bg-action-primary text-textcolor px-4 py-2 rounded-full shadow-lg z-50 flex items-center gap-2 hover:bg-focus transition-colors" onclick={scrollToBottom}>
                 <ArrowDown size={16} />
                 <span>{language.newMessage}</span>
             </button>
         {/if}
 
         {#if DBState.db.newMessageButtonStyle === 'bottom-left'}
-            <button class="absolute bottom-20 left-4 bg-blue-500 text-white px-4 py-2 rounded-full shadow-lg z-50 flex items-center gap-2 hover:bg-blue-600 transition-colors" onclick={scrollToBottom}>
+            <button class="absolute bottom-20 left-4 bg-action-primary text-textcolor px-4 py-2 rounded-full shadow-lg z-50 flex items-center gap-2 hover:bg-focus transition-colors" onclick={scrollToBottom}>
                 <ArrowDown size={16} />
                 <span>{language.newMessage}</span>
             </button>
         {/if}
 
         {#if DBState.db.newMessageButtonStyle === 'floating-circle'}
-            <button class="absolute bottom-36 right-4 bg-blue-500 text-white w-12 h-12 rounded-full shadow-lg z-50 flex items-center justify-center hover:bg-blue-600 transition-colors" onclick={scrollToBottom} title="4. 원형 (우하단)">
+            <button class="absolute bottom-36 right-4 bg-action-primary text-textcolor w-12 h-12 rounded-full shadow-lg z-50 flex items-center justify-center hover:bg-focus transition-colors" onclick={scrollToBottom} title="4. 원형 (우하단)">
                 <ArrowDown size={20} />
             </button>
         {/if}
 
         {#if DBState.db.newMessageButtonStyle === 'right-center'}
-            <button class="absolute top-1/2 right-2 -translate-y-1/2 bg-blue-500 text-white px-2 py-3 rounded-l-lg shadow-lg z-50 flex flex-col items-center gap-1 hover:bg-blue-600 transition-colors" onclick={scrollToBottom}>
+            <button class="absolute top-1/2 right-2 -translate-y-1/2 bg-action-primary text-textcolor px-2 py-3 rounded-l-lg shadow-lg z-50 flex flex-col items-center gap-1 hover:bg-focus transition-colors" onclick={scrollToBottom}>
                 <ArrowDown size={14} />
                 <span class="text-xs writing-mode-vertical">{language.newMessage}</span>
             </button>
         {/if}
 
         {#if DBState.db.newMessageButtonStyle === 'top-bar'}
-            <button class="absolute top-2 left-1/2 -translate-x-1/2 bg-blue-500 text-white px-6 py-1.5 rounded-full shadow-lg z-50 flex items-center gap-2 hover:bg-blue-600 transition-colors text-sm" onclick={scrollToBottom}>
+            <button class="absolute top-2 left-1/2 -translate-x-1/2 bg-action-primary text-textcolor px-6 py-1.5 rounded-full shadow-lg z-50 flex items-center gap-2 hover:bg-focus transition-colors text-sm" onclick={scrollToBottom}>
                 <ArrowDown size={14} />
                 <span>{language.newMessage}</span>
             </button>
         {/if}
     {/if}
     {#if isScrollingToMessage}
-        <div class="absolute inset-0 z-50 flex items-center justify-center bg-black/50 text-white text-xl font-bold backdrop-blur-sm">
+        <div class="absolute inset-0 z-50 flex items-center justify-center bg-(--risu-theme-overlay) text-textcolor text-xl font-bold backdrop-blur-sm">
             Loading...
         </div>
     {/if}
@@ -584,17 +584,17 @@
             }
         }}>
             <div
-                    class="{DBState.db.fixedChatTextarea ? 'sticky pt-2 pb-2 right-0 bottom-0 bg-bgcolor' : 'mt-2 mb-2'} flex items-stretch w-full"
+                    class="composer-region {DBState.db.fixedChatTextarea ? 'sticky pt-2 pb-2 right-0 bottom-0' : 'mt-2 mb-2'} flex items-stretch w-full"
                     style="{DBState.db.fixedChatTextarea ? 'z-index:29;' : ''}"
             >
                 {#if DBState.db.useChatSticker && currentCharacter.type !== 'group'}
                     <div onclick={()=>{toggleStickers = !toggleStickers}}
-                         class={"ml-4 bg-textcolor2 flex justify-center items-center  w-12 h-12 rounded-md hover:bg-blue-500 transition-colors "+(toggleStickers ? 'text-green-500':'text-textcolor')}>
+                         class={"ml-4 bg-surface-subtle flex justify-center items-center w-12 h-12 rounded-md hover:bg-action-primary transition-colors "+(toggleStickers ? 'text-focus':'text-textcolor')}>
                         <Laugh/>
                     </div>
                 {/if}
 
-                <textarea class="peer text-input-area focus:border-textcolor transition-colors outline-hidden text-textcolor p-2 min-w-0 border border-r-0 bg-transparent rounded-md rounded-r-none input-text text-xl grow ml-4 border-darkborderc resize-none overflow-y-hidden overflow-x-hidden max-w-full placeholder:text-sm"
+                <textarea class="peer text-input-area focus:border-focus transition-colors outline-hidden text-textcolor p-2 min-w-0 border border-r-0 bg-surface-subtle rounded-md rounded-r-none input-text text-xl grow ml-4 border-darkborderc resize-none overflow-y-hidden overflow-x-hidden max-w-full placeholder:text-sm"
                           bind:value={messageInput}
                           bind:this={inputEle}
                           onkeydown={(e) => {
@@ -659,7 +659,7 @@
                 {#if $doingChat || doingChatInputTranslate}
                     <button
                             aria-labelledby="cancel"
-                            class="peer-focus:border-textcolor  flex justify-center border-y border-darkborderc items-center text-textcolor p-3 hover:bg-blue-500 hover:text-white transition-colors" onclick={abortChat}
+                            class="peer-focus:border-focus flex justify-center border-y border-darkborderc bg-surface-subtle items-center text-textcolor p-3 hover:bg-action-primary transition-colors" onclick={abortChat}
                             style:height={inputHeight}
                     >
                         <div class="loadmove chat-process-stage-{$chatProcessStage}" class:autoload={autoMode}></div>
@@ -667,7 +667,7 @@
                 {:else}
                     <button
                             onclick={send}
-                            class="flex justify-center border-y border-darkborderc items-center text-textcolor p-3 peer-focus:border-textcolor hover:bg-blue-500 hover:text-white transition-colors button-icon-send"
+                            class="flex justify-center border-y border-darkborderc bg-action-primary items-center text-textcolor p-3 peer-focus:border-focus hover:bg-focus transition-colors button-icon-send"
                             style:height={inputHeight}
                     >
                         <Send />
@@ -679,7 +679,7 @@
                             openMenu = !openMenu
                             e.stopPropagation()
                         }}
-                            class="peer-focus:border-textcolor mr-2 flex border-y border-r border-darkborderc justify-center items-center text-textcolor p-3 rounded-r-md hover:bg-blue-500 hover:text-white transition-colors"
+                            class="peer-focus:border-focus mr-2 flex border-y border-r border-darkborderc bg-surface-subtle justify-center items-center text-textcolor p-3 rounded-r-md hover:bg-action-primary transition-colors"
                             style:height={inputHeight}
                     >
                         <MenuIcon />
@@ -692,7 +692,7 @@
                         })
                         DBState.db.characters[$selectedCharID].chats[DBState.db.characters[$selectedCharID].chatPage] = DBState.db.characters[$selectedCharID].chats[DBState.db.characters[$selectedCharID].chatPage]
                     }}
-                         class="peer-focus:border-textcolor mr-2 flex border-y border-r border-darkborderc justify-center items-center text-textcolor p-3 rounded-r-md hover:bg-blue-500 hover:text-white transition-colors"
+                         class="peer-focus:border-focus mr-2 flex border-y border-r border-darkborderc bg-surface-subtle justify-center items-center text-textcolor p-3 rounded-r-md hover:bg-action-primary transition-colors"
                          style:height={inputHeight}
                     >
                         <Plus />
@@ -893,7 +893,7 @@
             {/if}
 
             {#if openMenu}
-                <div class="{DBState.db.fixedChatTextarea ? 'fixed' : 'absolute'} right-2 bottom-16 p-5 bg-darkbg flex flex-col gap-3 text-textcolor rounded-md" onclick={(e) => {
+                <div class="{DBState.db.fixedChatTextarea ? 'fixed' : 'absolute'} right-2 bottom-16 p-5 border border-darkborderc bg-surface-elevated shadow-lg flex flex-col gap-3 text-textcolor rounded-md" onclick={(e) => {
                     e.stopPropagation()
                 }}>
                     {#if DBState.db.characters[$selectedCharID].type === 'group'}
@@ -1052,7 +1052,7 @@
 {#if additionalFloatingActionButtons.length > 0}
     <div class="fixed top-4 right-4 flex flex-col gap-3 z-50">
         {#each additionalFloatingActionButtons as button}
-            <button class="bg-blue-500 text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2 hover:bg-blue-600 transition-colors" onclick={() => {
+            <button class="bg-action-primary text-textcolor px-4 py-2 rounded-full shadow-lg flex items-center gap-2 hover:bg-focus transition-colors" onclick={() => {
                 button.callback()
             }}>
                 <PluginDefinedIcon ico={button} />
@@ -1062,29 +1062,53 @@
 {/if}
 <style>
 
-    .chat-process-stage-1{
-        border-top: 0.4rem solid #60a5fa;
-        border-left: 0.4rem solid #60a5fa;
+    .default-chat-screen {
+        padding-block: 0.5rem;
     }
 
-    .chat-process-stage-2{
-        border-top: 0.4rem solid #db2777;
-        border-left: 0.4rem solid #db2777;
+    .default-chat-screen > :global(*) {
+        width: min(100%, 64rem);
+        margin-inline: auto;
     }
 
-    .chat-process-stage-3{
-        border-top: 0.4rem solid #34d399;
-        border-left: 0.4rem solid #34d399;
+    .composer-region {
+        width: min(calc(100% - 2rem), 64rem);
+        flex-shrink: 0;
+        margin-inline: auto;
+        border: 1px solid var(--risu-theme-darkborderc);
+        border-radius: 0.75rem;
+        background-color: var(--risu-theme-surface-elevated);
+        box-shadow: 0 -8px 24px rgb(0 0 0 / 0.12);
+        z-index: 1;
     }
 
-    .chat-process-stage-4{
-        border-top: 0.4rem solid #8b5cf6;
-        border-left: 0.4rem solid #8b5cf6;
+    .default-chat-screen :global(.risu-chat) {
+        margin-block: 0.75rem;
     }
 
-    .autoload{
-        border-top: 0.4rem solid #10b981;
-        border-left: 0.4rem solid #10b981;
+    @media (max-width: 640px) {
+        .composer-region {
+            width: 100%;
+            border-inline: 0;
+            border-radius: 0;
+        }
+    }
+
+    .chat-process-stage-1,
+    .chat-process-stage-4 {
+        border-top: 0.4rem solid var(--risu-theme-action-primary);
+        border-left: 0.4rem solid var(--risu-theme-action-primary);
+    }
+
+    .chat-process-stage-2 {
+        border-top: 0.4rem solid var(--risu-theme-ambient);
+        border-left: 0.4rem solid var(--risu-theme-ambient);
+    }
+
+    .chat-process-stage-3,
+    .autoload {
+        border-top: 0.4rem solid var(--risu-theme-focus);
+        border-left: 0.4rem solid var(--risu-theme-focus);
     }
 
     @keyframes spin {

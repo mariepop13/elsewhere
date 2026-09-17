@@ -272,13 +272,21 @@ export async function loadData() {
  * Registers the service worker and initializes it.
  */
 async function registerSw() {
-    await navigator.serviceWorker.register("/sw.js", {
-        scope: "/"
-    });
-    await sleep(100);
-    const da = await fetch('/sw/init');
-    if (!(da.status >= 200 && da.status < 300)) {
-        location.reload();
+    try {
+        await Promise.race([
+            navigator.serviceWorker.register("/sw.js", {
+                scope: "/"
+            }),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Service worker registration timed out')), 3000))
+        ]);
+        await sleep(100);
+        const da = await fetch('/sw/init');
+        if (!(da.status >= 200 && da.status < 300)) {
+            location.reload();
+        }
+    } catch (error) {
+        console.info('Service worker unavailable; continuing without it.', error);
+        setUsingSw(false);
     }
 }
 

@@ -1159,6 +1159,7 @@ export const languageEnglish = {
     activeTabChange: "Current tab is inactivated since other tab is active. To activate this tab, click OK",
     maxSupaChunkSize: "Max SupaMemory Chunk Size",
     addCharacter: "Add Character",
+    conversations: "Conversations",
     importFromRealm: "Choose from RisuRealm",
     importFromRealmDesc: "Choose over 1000 characters in RisuRealm",
     random: "Random",
@@ -1343,6 +1344,8 @@ export const languageEnglish = {
     noWebGPU: "Your Browser or OS doesn't support WebGPU. This will slow down the performance significantly.",
     menuSideBar: "Menu Side Bar",
     home: "Home",
+    recentlyActive: "Recently active",
+    recentChatsEmpty: "No characters or conversations yet.",
     showSavingIcon: "Show Saving Icon",
     pluginVersionWarn:
         "This is {{plugin_version}} version of the plugin. Which is not compatible with this version of Risuai. Please update the plugin to {{required_version}} version.",

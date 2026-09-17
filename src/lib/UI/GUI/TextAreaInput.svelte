@@ -1,5 +1,5 @@
 <div 
-    class={"border border-darkborderc relative n-scroll focus-within:border-borderc rounded-md shadow-xs text-textcolor bg-transparent focus-within:ring-borderc focus-within:ring-2 focus-within:outline-hidden transition-colors duration-200 z-20 focus-within:z-40" + ((className) ? (' ' + className) : '')} 
+    class={"border border-darkborderc relative n-scroll focus-within:border-focus rounded-md shadow-xs text-textcolor bg-surface-subtle focus-within:ring-focus focus-within:ring-2 transition-colors duration-200 z-20 focus-within:z-40" + ((className) ? (' ' + className) : '')}
     class:text-sm={size === 'sm' || (size === 'default' && $textAreaTextSize === 1)}
     class:text-md={size === 'md' || (size === 'default' && $textAreaTextSize === 2)}
     class:text-lg={size === 'lg' || (size === 'default' && $textAreaTextSize === 3)}
@@ -128,9 +128,9 @@
         translate="no"
     >{value ?? ''}</div>
 {/if}
-    <div class="hidden absolute z-100 bg-bgcolor border border-darkborderc p-2 flex-col" bind:this={autoCompleteDom}>
+    <div class="hidden absolute z-100 bg-surface-elevated border border-darkborderc rounded-md p-2 flex-col shadow-lg" bind:this={autoCompleteDom}>
         {#each autocompleteContents as content, i}
-            <button class="w-full text-left py-1 px-2 bg-bgcolor" class:text-blue-500={selectingAutoComplete === i} onclick={() => {
+            <button class="w-full text-left py-1 px-2 rounded-sm hover:bg-surface-subtle focus-visible:outline-2 focus-visible:outline-focus focus-visible:outline-offset-1" class:bg-focus={selectingAutoComplete === i} class:text-canvas={selectingAutoComplete === i} onclick={() => {
                 insertContent(content)
             }}>{content}</button>
         {/each}

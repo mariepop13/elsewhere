@@ -5,6 +5,7 @@
     import { addCharacter, changeChar, getCharImage } from "src/ts/characters";
     import { MobileSearch } from "src/ts/stores.svelte";
     import { MessageSquareIcon, PlusIcon } from "@lucide/svelte";
+    import { language } from "src/lang";
 
     interface Props {
         endGrid?: () => void;
@@ -70,10 +71,10 @@
         });
     }
 </script>
-<div class="flex flex-col items-center w-full overflow-y-auto h-full">
+<div class="mobile-character-list flex flex-col items-center w-full min-w-0 overflow-y-auto h-full">
     {#each sortChar(DBState.db.characters) as char, i}
         {#if normalizeSearch(char.name).includes(normalizedSearch)}
-            <button class="flex p-2 border-t-darkborderc gap-2 w-full" class:border-t={i !== 0} onclick={() => {
+            <button class="mobile-character-card flex p-2 border-t-darkborderc gap-2 w-full" class:border-t={i !== 0} onclick={() => {
                 changeChar(char.i)
                 endGrid()
             }}>
@@ -92,8 +93,40 @@
     {/each}
 </div>
 
-<button class="p-4 rounded-full absolute bottom-2 right-2 bg-borderc" onclick={() => {
+<button class="mobile-add-character p-4 rounded-full absolute bottom-4 right-4 bg-borderc" aria-label={language.addCharacter} onclick={() => {
     addCharacter()
 }}>
     <PlusIcon size={24} />
 </button>
+
+<style>
+    .mobile-character-list {
+        padding-bottom: 5rem;
+        background-color: var(--risu-theme-canvas);
+    }
+
+    .mobile-character-card {
+        min-width: 0;
+        min-height: 4.5rem;
+        border-left: 3px solid transparent;
+        color: var(--risu-theme-textcolor);
+        text-align: left;
+    }
+
+    .mobile-character-card:hover {
+        border-left-color: var(--risu-theme-focus);
+        background-color: var(--risu-theme-surface-subtle);
+    }
+
+    .mobile-add-character {
+        min-width: 3.5rem;
+        min-height: 3.5rem;
+        background-color: var(--risu-theme-action-primary);
+        color: var(--risu-theme-textcolor);
+        box-shadow: 0 0 1.25rem var(--risu-theme-action-primary);
+    }
+
+    .mobile-add-character:hover {
+        background-color: var(--risu-theme-focus);
+    }
+</style>

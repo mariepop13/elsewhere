@@ -23,7 +23,7 @@
     };
 </script>
 
-<div class="cl rounded-full bg-white">
+<div class="cl rounded-full bg-surface-subtle">
     <ColorPicker
         label=""
         bind:hex={value}
@@ -37,7 +37,7 @@
         --cp-bg-color: var(--risu-theme-bgcolor);
         --cp-border-color: var(--risu-theme-darkborderc);
         --cp-text-color: var(--risu-theme-textcolor);
-        --cp-input-color: #555;
-        --cp-button-hover-color: #777;
+        --cp-input-color: var(--risu-theme-surface-subtle);
+        --cp-button-hover-color: var(--risu-theme-focus);
     }
 </style>
