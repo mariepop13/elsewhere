@@ -259,3 +259,4 @@ Language files are located in `/src/lang/`.
 2. Run `pnpm check` before submitting a pull request
 3. Ensure your code is well-tested
 4. Format code with Prettier before committing
+5. Create pull requests and push branches only to the `origin` fork (`mariepop13/elsewhere`). Treat `upstream` (`kwaroran/Risuai`) as a read-only reference remote unless the user explicitly authorizes an upstream contribution.
