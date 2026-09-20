@@ -18,7 +18,6 @@
   } from "../../ts/stores.svelte";
     import { setDatabase, type folder } from "../../ts/storage/database.svelte";
     import { DBState } from 'src/ts/stores.svelte';
-    import BarIcon from "./BarIcon.svelte";
     import SidebarIndicator from "./SidebarIndicator.svelte";
     import {
     ShellIcon,
@@ -53,7 +52,6 @@
     import { RISU_SIDEBAR_DRAG_TYPE } from "src/ts/dragTypes";
   let sideBarMode = $state(0);
   let editMode = $state(false);
-  let menuMode = $state(0);
   let devTool = $state(false)
 
   function getRecentChats() {
@@ -78,7 +76,6 @@
   }
 
   function reseter() {
-    menuMode = 0;
     sideBarMode = 0;
     editMode = false;
     settingsOpen.set(false);
@@ -418,6 +415,7 @@
 {#if DBState.db.menuSideBar}
 <div
   class="signal-rail h-full w-14.5 min-w-14.5 flex-col items-center border-r border-darkborderc bg-surface-elevated text-textcolor shadow-lg relative rs-sidebar"
+  class:dynamic-rail={$DynamicGUI}
   class:editMode
   class:hidden={hidden}
   class:flex={!hidden}
@@ -492,6 +490,7 @@
 {:else}
 <div
   class="signal-rail h-full w-14.5 min-w-14.5 flex-col items-center border-r border-darkborderc bg-surface-elevated text-textcolor shadow-lg relative rs-sidebar"
+  class:dynamic-rail={$DynamicGUI}
   class:editMode
   class:hidden={hidden}
   class:flex={!hidden}
@@ -503,69 +502,26 @@
       selectedCharID.set(-1)
       PlaygroundStore.set(0)
       OpenRealmStore.set(false)
-    }}>◎</button>
+    }}><HomeIcon /></button>
     <button class="signal-action" aria-label={language.character} title={language.character} onclick={() => {
       reseter();
       openGrid();
-    }}>⌕</button>
-    <button class="signal-action" aria-label={language.menu} title={language.menu} onclick={() => {
-      menuMode = 1 - menuMode;
-    }}>≡</button>
-  </div>
-  <div class="mt-2 border-b border-b-selected w-full relative text-white ">
-    {#if menuMode === 1}
-      <div class="absolute w-20 min-w-20 flex border-b-selected border-b bg-bgcolor flex-col items-center pt-2 rounded-b-md z-20 pb-2">
-        <BarIcon
-        onClick={() => {
-          if ($settingsOpen) {
-            reseter();
-            settingsOpen.set(false);
-          } else {
-            reseter();
-            settingsOpen.set(true);
-          }
-        }}><Settings /></BarIcon
-      >
-      <div class="mt-2"></div>
-      <BarIcon
-        onClick={() => {
-          reseter();
-          selectedCharID.set(-1)
-          PlaygroundStore.set(0)
-          OpenRealmStore.set(false)
-        }}><HomeIcon /></BarIcon>
-      <div class="mt-2"></div>
-      <BarIcon
-        onClick={() => {
-          reseter()
-          if($selectedCharID === -1 && $PlaygroundStore !== 0){
-            PlaygroundStore.set(0)
-            return
-          }
-          selectedCharID.set(-1)
-          PlaygroundStore.set(1)
-        }}
-      ><ShellIcon /></BarIcon>
-      {#each additionalHamburgerMenu as menu}
-        <div class="mt-2"></div>
-        <BarIcon
-          onClick={() => {
-            reseter();
-            menu.callback();
-          }}>
-            <PluginDefinedIcon ico={menu} />
-          </BarIcon
-        >
-      {/each}
-      <div class="mt-2"></div>
-      <BarIcon
-        onClick={() => {
-          reseter();
-          openGrid();
-        }}><LayoutGridIcon /></BarIcon
-      >
-    </div>
-    {/if}
+    }}><LayoutGridIcon /></button>
+    <button class="signal-action" aria-label={language.playground.playground} title={language.playground.playground} onclick={() => {
+      reseter()
+      if($selectedCharID === -1 && $PlaygroundStore !== 0){
+        PlaygroundStore.set(0)
+        return
+      }
+      selectedCharID.set(-1)
+      PlaygroundStore.set(1)
+    }}><ShellIcon /></button>
+    {#each additionalHamburgerMenu as menu}
+      <button class="signal-action" onclick={() => {
+        reseter();
+        menu.callback();
+      }}><PluginDefinedIcon ico={menu} /></button>
+    {/each}
   </div>
   {/if}
   <div class="flex grow w-full flex-col items-center overflow-x-hidden overflow-y-auto pr-0">
@@ -856,68 +812,33 @@
     </div>
   </div>
   {#if DBState.db.hamburgerButtonBottom}
-  <div class="border-t border-t-selected w-full relative text-white ">
-    {#if menuMode === 1}
-      <div class="absolute bottom-full w-20 min-w-20 flex border-t-selected border-t bg-bgcolor flex-col items-center pt-2 rounded-t-md z-20 pb-2">
-        <BarIcon
-        onClick={() => {
-          if ($settingsOpen) {
-            reseter();
-            settingsOpen.set(false);
-          } else {
-            reseter();
-            settingsOpen.set(true);
-          }
-        }}><Settings /></BarIcon
-      >
-      <div class="mt-2"></div>
-      <BarIcon
-        onClick={() => {
-          reseter();
-          selectedCharID.set(-1)
-          PlaygroundStore.set(0)
-          OpenRealmStore.set(false)
-        }}><HomeIcon /></BarIcon>
-      <div class="mt-2"></div>
-      <BarIcon
-        onClick={() => {
-          reseter()
-          if($selectedCharID === -1 && $PlaygroundStore !== 0){
-            PlaygroundStore.set(0)
-            return
-          }
-          selectedCharID.set(-1)
-          PlaygroundStore.set(1)
-        }}
-      ><ShellIcon /></BarIcon>
-      {#each additionalHamburgerMenu as menu}
-        <div class="mt-2"></div>
-        <BarIcon
-          onClick={() => {
-            reseter();
-            menu.callback();
-          }}>
-            <PluginDefinedIcon ico={menu} />
-          </BarIcon
-        >
-      {/each}
-      <div class="mt-2"></div>
-      <BarIcon
-        onClick={() => {
-          reseter();
-          openGrid();
-        }}><LayoutGridIcon /></BarIcon
-      >
-    </div>
-    {/if}
+  <div class="signal-actions mt-auto mb-2">
+    <button class="signal-action" aria-label={language.home} title={language.home} onclick={() => {
+      reseter();
+      selectedCharID.set(-1)
+      PlaygroundStore.set(0)
+      OpenRealmStore.set(false)
+    }}><HomeIcon /></button>
+    <button class="signal-action" aria-label={language.character} title={language.character} onclick={() => {
+      reseter();
+      openGrid();
+    }}><LayoutGridIcon /></button>
+    <button class="signal-action" aria-label={language.playground.playground} title={language.playground.playground} onclick={() => {
+      reseter()
+      if($selectedCharID === -1 && $PlaygroundStore !== 0){
+        PlaygroundStore.set(0)
+        return
+      }
+      selectedCharID.set(-1)
+      PlaygroundStore.set(1)
+    }}><ShellIcon /></button>
+    {#each additionalHamburgerMenu as menu}
+      <button class="signal-action" onclick={() => {
+        reseter();
+        menu.callback();
+      }}><PluginDefinedIcon ico={menu} /></button>
+    {/each}
   </div>
-  <button
-    class="signal-action mb-2"
-    aria-label={language.menu}
-    title={language.menu}
-    onclick={() => {
-      menuMode = 1 - menuMode;
-    }}>≡</button>
   {/if}
   <button class="signal-action signal-settings" aria-label={language.settings} title={language.settings} onclick={() => {
     if ($settingsOpen) {
@@ -927,7 +848,7 @@
       reseter();
       settingsOpen.set(true);
     }
-  }}>⚙</button>
+  }}><Settings /></button>
 </div>
 {/if}
 <div
@@ -1293,6 +1214,46 @@
     border-left-color: var(--risu-theme-focus);
     background-color: var(--risu-theme-surface-subtle);
     color: var(--risu-theme-textcolor);
+  }
+
+  .signal-rail:not(.dynamic-rail)::before {
+    font-size: 0.875rem;
+  }
+
+  .signal-rail:not(.dynamic-rail) .signal-action {
+    width: 2.5rem;
+    height: 2.5rem;
+    font-size: 1.25rem;
+  }
+
+  .signal-rail:not(.dynamic-rail) .rail-navigation-item {
+    gap: 0.375rem;
+    padding-block: 0.625rem;
+  }
+
+  .signal-rail:not(.dynamic-rail) .rail-navigation-item :global(svg) {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  .signal-rail:not(.dynamic-rail) .rail-navigation-item span {
+    font-size: 0.8125rem;
+  }
+
+  .context-deck:not(.dynamic-sidebar) .library-wordmark {
+    font-size: 0.875rem;
+  }
+
+  .context-deck:not(.dynamic-sidebar) .home-conversations h1,
+  .context-deck:not(.dynamic-sidebar) .library-heading h1 {
+    font-size: 1.25rem;
+  }
+
+  .context-deck:not(.dynamic-sidebar) .home-conversations > p,
+  .context-deck:not(.dynamic-sidebar) .library-heading > p,
+  .context-deck:not(.dynamic-sidebar) .recent-chat-empty,
+  .context-deck:not(.dynamic-sidebar) .recent-chat-empty-action {
+    font-size: 0.875rem;
   }
   @keyframes sidebar-transition {
     from {
