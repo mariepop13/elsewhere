@@ -53,6 +53,11 @@ You can get detailed information on https://github.com/kwaroran/Risuai/wiki (Wor
 - Node.js 20.19+ or 22.12+
 - pnpm
 
+### Docker development server
+
+Run `docker compose -f docker-compose.dev.yml up` and open `http://localhost:5173`.
+The dev server proxies hub requests to the selected main or nightly hub. To use a custom hostname, set `RISU_DEV_ALLOWED_HOSTS` to a comma-separated list before starting Compose. The Compose port remains bound to localhost; configure your own tunnel if remote access is needed.
+
 ### Docker Installation
 
 You can also run Risuai using Docker. This method is particularly useful for web hosting.

@@ -7,7 +7,7 @@ import { decodeRisuSave, encodeRisuSaveLegacy } from "../storage/risuSave";
 import { getDatabase, setDatabaseLite } from "../storage/database.svelte";
 import { relaunch } from "@tauri-apps/plugin-process";
 import { decryptBuffer, encryptBuffer, sleep } from "../util";
-import { hubURL } from "../characterCards";
+import { mainHubFetchURL } from "../characterCards";
 import { language } from "src/lang";
 import { collectColdStorageBackupPayloads, confirmIncompleteColdStorageOperation, getColdStorageBackupKey, getColdStorageItem, isColdStorageBackupData, listColdDataKeys, setColdStorageItem } from "../process/coldstorage.svelte";
 import { DBState } from "../stores.svelte";
@@ -163,7 +163,7 @@ export async function SaveLocalBackup(){
 
     if(forageStorage.isAccount && location.origin.endsWith('risuai.xyz')){
         const time = Date.now()
-        const key = (await (await fetch(`https://sv.risuai.xyz/cryptokey?key=${time}`)).json()).key
+        const key = (await (await fetch(`${mainHubFetchURL}/cryptokey?key=${time}`)).json()).key
         const encrypted = await encryptBuffer(dbData, key)
         await writer.writeBackup('encryption.risudat', new TextEncoder().encode(JSON.stringify({ time, type: 'account' })))
         dbData = new Uint8Array(encrypted)
@@ -532,7 +532,7 @@ export function LoadLocalBackup(){
             let db = pendingDatabase;
             if(encryptionMeta.type === 'account' && encryptionMeta.time){
                 try {
-                    const key = (await (await fetch(`https://sv.risuai.xyz/cryptokey?key=${encryptionMeta.time}`)).json()).key
+                    const key = (await (await fetch(`${mainHubFetchURL}/cryptokey?key=${encryptionMeta.time}`)).json()).key
                     const decrypted = await decryptBuffer(db, key)
                     db = new Uint8Array(decrypted)
                 }

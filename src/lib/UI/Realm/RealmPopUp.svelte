@@ -2,7 +2,7 @@
     import { BookIcon, FlagIcon, ImageIcon, PaperclipIcon, SmileIcon, TrashIcon } from "@lucide/svelte";
     import { language } from "src/lang";
     import { alertConfirm, alertInput, alertNormal } from "src/ts/alert";
-    import { hubURL, type hubType, downloadRisuHub, getRealmInfo } from "src/ts/characterCards";
+    import { hubURL, hubFetchURL, type hubType, downloadRisuHub, getRealmInfo } from "src/ts/characterCards";
     
     import { DBState } from 'src/ts/stores.svelte';
     import RealmLicense from "./RealmLicense.svelte";
@@ -83,7 +83,7 @@
                 const conf = await alertConfirm('Report this character?')
                 if(conf){
                     const report = await alertInput('Write a report text that would be sent to the admin (for copywrite issues, use email)')
-                    const da = await fetch(hubURL + '/hub/report', {
+                    const da = await fetch(hubFetchURL + '/hub/report', {
                         method: "POST",
                         body: JSON.stringify({
                             id: openedData.id,
@@ -100,7 +100,7 @@
                     e.stopPropagation()
                     const conf = await alertConfirm('Do you want to remove this character from Realm?')
                     if(conf){
-                        const da = await fetch(hubURL + '/hub/remove', {
+                        const da = await fetch(hubFetchURL + '/hub/remove', {
                             method: "POST",
                             body: JSON.stringify({
                                 id: openedData.id,

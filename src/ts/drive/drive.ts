@@ -6,7 +6,7 @@ import { BaseDirectory, exists, readFile, readDir, writeFile } from "@tauri-apps
 import { language } from "../../lang";
 import { relaunch } from '@tauri-apps/plugin-process';
 import { sleep } from "../util";
-import { hubURL } from "../characterCards";
+import { hubFetchURL } from "../characterCards";
 import { decodeRisuSave, encodeRisuSaveLegacy } from "../storage/risuSave";
 import { collectColdStorageBackupPayloads, confirmIncompleteColdStorageOperation, getColdStorageBackupName, isColdStorageBackupData, listColdDataKeys, setColdStorageItem } from "../process/coldstorage.svelte";
 
@@ -59,7 +59,7 @@ export async function checkDriverInit() {
         const code = loc.get('code')
     
         if(code){
-            const res = await fetch(hubURL + `/drive/token?code=${encodeURIComponent(code)}`)
+            const res = await fetch(hubFetchURL + `/drive/token?code=${encodeURIComponent(code)}`)
             if(res.status >= 200 && res.status < 300){
                 const json:{
                     access_token:string,

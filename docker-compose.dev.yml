@@ -6,6 +6,9 @@ services:
     working_dir: /app
     environment:
       PNPM_HOME: /pnpm
+      RISU_DEV_ALLOWED_HOSTS: ${RISU_DEV_ALLOWED_HOSTS:-}
+      VITE_RISU_LEGAL_CONFIGURED: ${VITE_RISU_LEGAL_CONFIGURED:-}
+      npm_config_store_dir: /pnpm/store
     command: >-
       sh -c "corepack enable && corepack install --global pnpm@12.4.2 &&
       corepack pnpm install --frozen-lockfile &&
