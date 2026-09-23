@@ -1,8 +1,22 @@
-import { defineConfig } from "vite";
+import { defineConfig, type ProxyOptions } from "vite";
 import { svelte, vitePreprocess } from "@sveltejs/vite-plugin-svelte";
 import wasm from "vite-plugin-wasm";
 import strip from '@rollup/plugin-strip';
 import tailwindcss from '@tailwindcss/vite'
+
+function createHubProxy(prefix: string, target: string): ProxyOptions {
+  return {
+    target,
+    changeOrigin: true,
+    rewrite: (path) => path.slice(prefix.length),
+    configure: (proxy) => {
+      proxy.on('proxyReq', (request) => {
+        request.setHeader('Origin', target);
+      });
+    },
+  };
+}
+
 // https://vitejs.dev/config/
 export default defineConfig(({command, mode}) => {
   return {
@@ -30,7 +44,11 @@ export default defineConfig(({command, mode}) => {
       host: '0.0.0.0', // listen on all addresses
       port: 5174,
       strictPort: true,
-      allowedHosts: ['bella-felix.taila3974e.ts.net'],
+      allowedHosts: process.env.RISU_DEV_ALLOWED_HOSTS?.split(',').map((host) => host.trim()).filter(Boolean) ?? [],
+      proxy: {
+        '/hub-proxy': createHubProxy('/hub-proxy', 'https://sv.risuai.xyz'),
+        '/nightly-hub-proxy': createHubProxy('/nightly-hub-proxy', 'https://nightly.sv.risuai.xyz'),
+      },
       // hmr: false,
     },
     // to make use of `TAURI_ENV_DEBUG` and other env variables

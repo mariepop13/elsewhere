@@ -22,7 +22,7 @@ import { loadPlugins } from "./plugins/plugins.svelte";
 import { alertConfirm, alertError, alertMd, alertNormal, alertNormalWait, alertSelect, alertTOS, waitAlert } from "./alert";
 import { checkDriverInit, syncDrive } from "./drive/drive";
 import { hasher } from "./parser/parser.svelte";
-import { characterURLImport, hubURL } from "./characterCards";
+import { characterURLImport, hubURL, hubFetchURL } from "./characterCards";
 import { defaultJailbreak, defaultMainPrompt, oldJailbreak, oldMainPrompt } from "./storage/defaultPrompts";
 import { loadRisuAccountData } from "./drive/accounter";
 import { decodeRisuSave, encodeRisuSaveLegacy, RisuSaveEncoder, type toSaveType } from "./storage/risuSave";
@@ -138,7 +138,7 @@ export async function getFileSrc(loc: string) {
         return convertFileSrc(loc)
     }
     if (forageStorage.isAccount && loc.startsWith('assets')) {
-        return hubURL + `/rs/` + loc
+        return hubFetchURL + `/rs/` + loc
     }
     try {
         if (usingSw) {
@@ -561,7 +561,7 @@ const webLocalNetworkBlockedMessage = "웹에서는 사설망 직접 호출 불�
 const defaultProxyJobHeartbeatSec = 15;
 
 function getProxy2Url() {
-    return !isTauri && !isNodeServer ? `${hubURL}/proxy2` : `/proxy2`;
+    return !isTauri && !isNodeServer ? `${hubFetchURL}/proxy2` : `/proxy2`;
 }
 
 function getProxyStreamJobBaseUrl() {

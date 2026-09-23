@@ -1,6 +1,7 @@
 <script lang="ts">
     import { language } from "src/lang";
     import { openURL } from "src/ts/globalApi.svelte";
+    import { mainHubFetchURL } from "src/ts/characterCards";
 
 
     interface supporters{
@@ -18,7 +19,7 @@
 
     async function loadSupporters() {
 
-        const supp = await fetch("https://sv.risuai.xyz/patreon/list")
+        const supp = await fetch(`${mainHubFetchURL}/patreon/list`)
 
         const list = await supp.json() as supporterL[]
         const thanks:supporters = {

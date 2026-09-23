@@ -28,6 +28,11 @@ export const hubURL = isNodeServer
     : (import.meta.env.VITE_RISU_NIGHTLY_BUILD === 'TRUE' || localStorage.getItem('hub') === 'nightly')
     ? NIGHTLY_HUB_URL 
     : EXTERNAL_HUB_URL;
+const isDevWeb = import.meta.env.DEV && !isTauri && !isNodeServer
+export const hubFetchURL = isDevWeb
+    ? (hubURL === NIGHTLY_HUB_URL ? '/nightly-hub-proxy' : '/hub-proxy')
+    : hubURL
+export const mainHubFetchURL = isDevWeb ? '/hub-proxy' : EXTERNAL_HUB_URL
 
 export async function importCharacter() {
     try {
@@ -260,7 +265,7 @@ export async function importCharacterProcess<T extends boolean = false>(f:{
                 const xid = 'assets/' + id + '.png'
                 queueFetchKey.push(assetIndex)
                 queueFetchData.push(assetData)
-                queueFetch.push(fetch('https://sv.risuai.xyz/rs/' + xid))
+                queueFetch.push(fetch(mainHubFetchURL + '/rs/' + xid))
                 assets[assetIndex] =  'xid:' + xid
                 if(queueFetch.length > 10){
                     const res = await Promise.all(queueFetch)
@@ -393,7 +398,7 @@ export const getRealmInfo = async (realmPath:string) => {
     url.searchParams.delete('realm');
     window.history.pushState(null, '', url.toString());
 
-    const res = await fetch(`${hubURL}/hub/info/${realmPath}`)
+    const res = await fetch(`${hubFetchURL}/hub/info/${realmPath}`)
     if(res.status !== 200){
         alertError(await res.text())
         return
@@ -1714,7 +1719,7 @@ export async function shareRisuHub2(char:character, arg:{
             return
         }
     
-        const fetchPromise = fetch(hubURL + '/hub/realm/upload', {
+        const fetchPromise = fetch(hubFetchURL + '/hub/realm/upload', {
             method: "POST",
             body: writer.buf.buffer as any,
             headers: {
@@ -1782,7 +1787,7 @@ export async function getRisuHub(arg:{
         arg.search += ' __shared'
         const stringArg = `search==${arg.search}&&page==${arg.page}&&nsfw==${arg.nsfw}&&sort==${arg.sort}&&web==${(!isNodeServer && !isTauri) ? 'web' : 'other'}`
 
-        const da = await fetch(hubURL + '/realm/' + encodeURIComponent(stringArg) + "?cache=30", {
+        const da = await fetch(hubFetchURL + '/realm/' + encodeURIComponent(stringArg) + "?cache=30", {
             headers: {
                 "x-risuai-info": appVer + ';' + (isNodeServer ? 'node' : (isTauri ? 'tauri' : 'web'))
             }
@@ -1874,7 +1879,7 @@ export async function downloadRisuHub(id:string, arg:{
 }
 
 export async function getHubResources(id:string) {
-    const res = await fetch(`${hubURL}/resource/${id}`)
+    const res = await fetch(`${hubFetchURL}/resource/${id}`)
     if(res.status !== 200){
         throw (await res.text())
     }

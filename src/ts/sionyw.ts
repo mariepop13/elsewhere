@@ -1,4 +1,4 @@
-import { hubURL } from "./characterCards";
+import { hubFetchURL } from "./characterCards";
 import { fetchNative } from "./globalApi.svelte";
 import { DBState } from "./stores.svelte";
 import { readFile, BaseDirectory, writeFile } from "@tauri-apps/plugin-fs";
@@ -23,7 +23,7 @@ interface ProtectedResourceArg {
 }
 
 function getHub(){
-    return hubURL
+    return hubFetchURL
 }
 
 //These might look unsecure in first glance,
