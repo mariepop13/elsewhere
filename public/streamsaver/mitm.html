@@ -1,0 +1,82 @@
+<!--
+  StreamSaver transport page, kept on the application's own origin so browser
+  previews that block third-party frames can still create streamed downloads.
+-->
+<script>
+let keepAlive = () => {
+  keepAlive = () => {}
+  const ping = location.href.slice(0, location.href.lastIndexOf('/')) + '/ping'
+  const interval = setInterval(() => {
+    if (sw) {
+      sw.postMessage('ping')
+    } else {
+      fetch(ping).then(response => response.text(!response.ok && clearInterval(interval)))
+    }
+  }, 10000)
+}
+
+const messages = []
+window.onmessage = event => messages.push(event)
+
+let sw = null
+let scope = ''
+
+function registerWorker() {
+  return navigator.serviceWorker.getRegistration('./').then(registration => {
+    return registration || navigator.serviceWorker.register('sw.js', { scope: './' })
+  }).then(registration => {
+    const pendingWorker = registration.installing || registration.waiting
+    scope = registration.scope
+
+    return (sw = registration.active) || new Promise(resolve => {
+      pendingWorker.addEventListener('statechange', function onStateChange() {
+        if (pendingWorker.state === 'activated') {
+          pendingWorker.removeEventListener('statechange', onStateChange)
+          sw = registration.active
+          resolve()
+        }
+      })
+    })
+  })
+}
+
+function onMessage(event) {
+  const { data, ports, origin } = event
+  if (!ports || !ports.length) {
+    throw new TypeError('[StreamSaver] A message channel is required')
+  }
+  if (typeof data !== 'object') {
+    throw new TypeError('[StreamSaver] Download metadata is required')
+  }
+
+  data.origin = origin
+  data.referrer = data.referrer || document.referrer || origin
+  data.streamSaverVersion = new URLSearchParams(location.search).get('version')
+  data.pathname = (data.pathname || Math.random().toString().slice(-6) + '/' + data.filename).replace(/^\/+/, '')
+
+  const host = origin.replace(/(^\w+:|^)\/\//, '')
+  data.url = new URL(`${scope + host}/${data.pathname}`).toString()
+  if (!data.url.startsWith(`${scope + host}/`)) {
+    throw new TypeError('[StreamSaver] Invalid download path')
+  }
+
+  const transferable = data.readableStream ? [ports[0], data.readableStream] : [ports[0]]
+  if (!(data.readableStream || data.transferringReadable)) {
+    keepAlive()
+  }
+  sw.postMessage(data, transferable)
+}
+
+if (window.opener) {
+  window.opener.postMessage('StreamSaver::loadedPopup', '*')
+}
+
+if (navigator.serviceWorker) {
+  registerWorker().then(() => {
+    window.onmessage = onMessage
+    messages.forEach(window.onmessage)
+  })
+} else {
+  keepAlive()
+}
+</script>

@@ -48,6 +48,13 @@ import { getNodeServerProxyAuth } from "./storage/nodeStorage";
 
 export const forageStorage = new AutoStorage()
 
+// StreamSaver defaults to an externally hosted iframe. Keep that helper on the
+// app's origin so exports also work in embedded browsers that block third-party
+// frames, including Codex's local preview.
+if (!isTauri) {
+    streamSaver.mitm = new URL('/streamsaver/mitm.html', location.origin).href
+}
+
 const appWindow = isTauri ? getCurrentWebviewWindow() : null
 
 interface fetchLog {
@@ -1230,12 +1237,25 @@ export class TauriWriter {
     }
 }
 
+class BrowserBlobWriter {
+    private readonly buffer = new AppendableBuffer()
+
+    constructor(private readonly filename: string) {}
+
+    async write(data: Uint8Array): Promise<void> {
+        this.buffer.append(data)
+    }
+
+    async close(): Promise<void> {
+        await downloadFile(this.filename, this.buffer.buffer)
+    }
+}
 
 /**
  * Class representing a local writer.
  */
 export class LocalWriter {
-    writer: WritableStreamDefaultWriter | TauriWriter
+    writer: WritableStreamDefaultWriter | TauriWriter | BrowserBlobWriter
 
     /**
      * Initializes the writer.
@@ -1258,6 +1278,15 @@ export class LocalWriter {
             this.writer = new TauriWriter(filePath)
             return true
         }
+
+        // Codex's embedded development browser blocks StreamSaver's service
+        // worker transport. Its native Blob download path is reliable for the
+        // modest local backups created while developing.
+        if (import.meta.env.DEV) {
+            this.writer = new BrowserBlobWriter(name + '.' + ext[0])
+            return true
+        }
+
         const writableStream = streamSaver.createWriteStream(name + '.' + ext[0])
         this.writer = writableStream.getWriter()
         return true
