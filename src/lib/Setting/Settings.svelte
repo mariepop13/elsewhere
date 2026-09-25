@@ -1,10 +1,11 @@
 <script lang="ts">
-    import { AccessibilityIcon, ActivityIcon, PackageIcon, BotIcon, BoxIcon, CodeIcon, ContactIcon, LanguagesIcon, MonitorIcon, Sailboat, UserIcon, CircleXIcon, KeyboardIcon, SparkleIcon } from "@lucide/svelte";
+    import { AccessibilityIcon, ActivityIcon, PackageIcon, BotIcon, BoxIcon, CodeIcon, ContactIcon, ImageIcon, LanguagesIcon, MonitorIcon, Sailboat, UserIcon, CircleXIcon, KeyboardIcon, SparkleIcon } from "@lucide/svelte";
     import { language } from "src/lang";
     import DisplaySettings from "./Pages/DisplaySettings.svelte";
     import UserSettings from "./Pages/UserSettings.svelte";
     import BotSettings from "./Pages/BotSettings.svelte";
     import OtherBotSettings from "./Pages/OtherBotSettings.svelte";
+    import ImageGenerationSettings from "./Pages/ImageGenerationSettings.svelte";
     import PluginSettings from "./Pages/PluginSettings.svelte";
     import FilesSettings from "./Pages/FilesSettings.svelte";
     import AdvancedSettings from "./Pages/AdvancedSettings.svelte";
@@ -31,6 +32,7 @@
             case 1:
             case 13: return language.chatBot;
             case 2: return language.otherBots;
+            case 17: return language.imageGeneration;
             case 3: return language.display;
             case 4: return language.plugin;
             case 6: return language.advancedSettings;
@@ -101,6 +103,15 @@
                         <span>{language.display}</span>
                     </button>
                 {/if}
+                <button class="settings-nav-item flex gap-2 items-center"
+                    class:settings-nav-item-active={$SettingsMenuIndex === 17}
+                    aria-current={$SettingsMenuIndex === 17 ? 'page' : undefined}
+                    onclick={() => {
+                        $SettingsMenuIndex = 17
+                    }}>
+                    <ImageIcon />
+                    <span>{language.imageGeneration}</span>
+                </button>
                 <button class="settings-nav-item flex gap-2 items-center"
                     class:settings-nav-item-active={$SettingsMenuIndex === 10}
                     aria-current={$SettingsMenuIndex === 10 ? 'page' : undefined}
@@ -230,6 +241,8 @@
                         }} />
                     {:else if $SettingsMenuIndex === 2}
                         <OtherBotSettings />
+                    {:else if $SettingsMenuIndex === 17}
+                        <ImageGenerationSettings />
                     {:else if $SettingsMenuIndex === 3}
                         <DisplaySettings />
                     {:else if $SettingsMenuIndex === 4}

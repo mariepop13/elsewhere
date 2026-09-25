@@ -8,6 +8,7 @@ import type { OpenAIChat } from "./index.svelte"
 import { processZip } from "./processzip"
 import { keiServerURL } from "../kei/kei"
 import random from "lodash/random"
+import { generateOpenRouterImage } from "src/ts/plugins/apiV3/imageGeneration"
 
 export async function stableDiff(currentChar:character,prompt:string){
     let db = getDatabase()
@@ -61,9 +62,27 @@ export async function stableDiff(currentChar:character,prompt:string){
     return await generateAIImage(genPrompt, currentChar, neg, '')
 }
 
-export async function generateAIImage(genPrompt:string, currentChar:character, neg:string, returnSdData:string):Promise<string|false>{
+export async function generateAIImage(genPrompt:string, currentChar:character, neg:string, returnSdData:string, referenceImageDataUrl?:string):Promise<string|false>{
     const db = getDatabase()
     console.log(db.sdProvider)
+    if(db.sdProvider === 'openrouter'){
+        try {
+            const img = await generateOpenRouterImage({ prompt: genPrompt, referenceImageDataUrl }, {
+                apiKey: db.openrouterKey,
+                modelId: db.openrouterImageModel,
+                imageOptions: db.openrouterImageOptions,
+            })
+            if(returnSdData === 'inlay') return img
+
+            const charemotions = get(CharEmotion)
+            charemotions[currentChar.chaId] = [[img, img, Date.now()]]
+            CharEmotion.set(charemotions)
+            return returnSdData
+        } catch (error) {
+            alertError(error instanceof Error ? error.message : 'OpenRouter image generation failed.')
+            return false
+        }
+    }
     if(db.sdProvider === 'webui'){
 
 
