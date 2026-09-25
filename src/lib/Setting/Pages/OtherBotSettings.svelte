@@ -21,11 +21,14 @@
     import { PlusIcon, PencilIcon, TrashIcon, DownloadIcon, HardDriveUploadIcon } from "@lucide/svelte";
     import { alertError, alertInput, alertConfirm, alertNormal } from "src/ts/alert";
     import { createHypaV3Preset } from "src/ts/process/memory/hypav3";
+    import OpenrouterImageSettings from './OpenrouterImageSettings.svelte';
 
+    let { imageOnly = false }: { imageOnly?: boolean } = $props();
     let submenu = $state(DBState.db.useLegacyGUI ? -1 : 0);
 
     // HypaV3
     $effect(() => {
+        if (imageOnly) return;
         const settings = DBState.db.hypaV3Presets?.[DBState.db.hypaV3PresetId]?.settings;
         const currentValue = settings?.similarMemoryRatio;
 
@@ -43,6 +46,7 @@
     });
 
     $effect(() => {
+        if (imageOnly) return;
         const settings = DBState.db.hypaV3Presets?.[DBState.db.hypaV3PresetId]?.settings;
         const currentValue = settings?.recentMemoryRatio;
 
@@ -93,11 +97,13 @@
     let wavespeedModels = $state<WavespeedModel[]>([]);
     let isWavespeedLoading = $state(false);
     let wavespeedSearchQuery = $state("");
-    let wavespeedLoras = $state<LoraItem[]>([
-        { path: "", scale: 1.0 },
-        { path: "", scale: 1.0 },
-        { path: "", scale: 1.0 }
-    ]);
+    const savedWavespeedLoras = DBState.db.wavespeedImage?.loras ?? [];
+    let wavespeedLoras = $state<LoraItem[]>(Array.from(
+        { length: Math.max(3, savedWavespeedLoras.length) },
+        (_, index) => savedWavespeedLoras[index]
+            ? { ...savedWavespeedLoras[index] }
+            : { path: "", scale: 1.0 }
+    ));
 
     /**
      * Fetch models from WaveSpeed API dynamically
@@ -211,7 +217,7 @@
 
     $effect(() => {
         // Sync loras to DB, filtering out empty URLs
-        if (DBState.db.wavespeedImage) {
+        if (imageOnly && DBState.db.wavespeedImage) {
             DBState.db.wavespeedImage.loras = wavespeedLoras
               .filter(item => item.path && item.path.trim() !== "")
               .map(item => ({
@@ -222,10 +228,12 @@
     });
     // End wavespeed
 </script>
+{#if !imageOnly}
 <h2 class="mb-2 text-2xl font-bold mt-2">{language.otherBots}</h2>
+{/if}
 
 
-{#if submenu !== -1}
+{#if !imageOnly && submenu !== -1}
     <div class="flex w-full rounded-md border border-darkborderc mb-4">
         <button onclick={() => {
             submenu = 0
@@ -239,22 +247,18 @@
         </button>
         <button onclick={() => {
             submenu = 2
-        }} class="p-2 flex-1 border-r border-darkborderc" class:bg-darkbutton={submenu === 2}>
+        }} class="p-2 flex-1" class:bg-darkbutton={submenu === 2}>
             <span>{language.emotionImage}</span>
-        </button>
-        <button onclick={() => {
-            submenu = 3
-        }} class="p-2 flex-1" class:bg-darkbutton={submenu === 3}>
-            <span>{language.imageGeneration}</span>
         </button>
     </div>
 {/if}
 
-{#if submenu === 3 || submenu === -1}
-    <Accordion name={language.imageGeneration} styled disabled={submenu !== -1}>
-        <span class="text-textcolor mt-2">{language.imageGeneration} {language.provider} <Help key="sdProvider"/></span>
+{#if imageOnly}
+    <Accordion name={`${language.imageGeneration} ${language.provider}`} styled disabled>
+        <span class="text-textcolor mt-2">{language.provider} <Help key="sdProvider"/></span>
         <SelectInput className="mt-2 mb-4" bind:value={DBState.db.sdProvider}>
             <OptionInput value="" >None</OptionInput>
+            <OptionInput value="openrouter" >OpenRouter</OptionInput>
             <OptionInput value="webui" >Stable Diffusion WebUI</OptionInput>
             <OptionInput value="novelai" >Novel AI</OptionInput>
             <OptionInput value="dalle" >Dall-E</OptionInput>
@@ -270,6 +274,10 @@
                 <OptionInput value="comfy" >ComfyUI (Legacy)</OptionInput>
             {/if}
         </SelectInput>
+
+        {#if DBState.db.sdProvider === 'openrouter'}
+            <OpenrouterImageSettings />
+        {/if}
 
         {#if DBState.db.sdProvider === 'webui'}
         <span class="text-draculared text-xs mb-2">You must use WebUI with --api flag</span>
@@ -941,7 +949,7 @@
     </Accordion>
 {/if}
 
-{#if submenu === 1 || submenu === -1}
+{#if !imageOnly && (submenu === 1 || submenu === -1)}
 <Accordion name="TTS" styled disabled={submenu !== -1}>
     <CheckInput bind:check={DBState.db.ttsAutoSpeech} name="Auto Speech" className="mt-2"/>
 
@@ -966,7 +974,7 @@
 </Accordion>
 {/if}
 
-{#if submenu === 2 || submenu === -1}
+{#if !imageOnly && (submenu === 2 || submenu === -1)}
 <Accordion name={language.emotionImage} styled disabled={submenu !== -1}>
     <span class="text-textcolor mt-2">{language.emotionMethod}</span>
 
@@ -977,7 +985,7 @@
 </Accordion>
 {/if}
 
-{#if submenu === 0 || submenu === -1}
+{#if !imageOnly && (submenu === 0 || submenu === -1)}
     <Accordion name={language.longTermMemory} styled disabled={submenu !== -1}>
         <span class="text-textcolor mt-4">{language.type}</span>
 

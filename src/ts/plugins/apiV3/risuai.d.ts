@@ -1213,6 +1213,19 @@ interface ProviderOptions {
  * Always use `await` or `.then()` when calling API methods.
  */
 interface RisuaiPluginAPI {
+    /**
+     * Generates one image with the separately configured OpenRouter image model.
+     * Prompts for image-generation consent on each call. Does not save or modify any chat or character.
+     * OpenRouter does not support a separate negative prompt.
+     * A reference image is sent only when the model advertises reference support.
+     * @returns A PNG, JPEG, or WebP base64 data URL.
+     * @throws On invalid input, denied consent, missing configuration, unsupported references, or provider failure.
+     */
+    generateImage(options: {
+        prompt: string;
+        referenceImageDataUrl?: string;
+    }): Promise<string>;
+
     // ========== Version Information ==========
 
     /** API version string */

@@ -565,8 +565,10 @@
             
             <span class="text-textcolor mt-2">{language.imgGenPrompt}</span>
             <TextAreaInput highlight bind:value={(DBState.db.characters[$selectedCharID] as character).newGenData.prompt} />
-            <span class="text-textcolor mt-2">{language.imgGenNegatives}</span>
-            <TextAreaInput highlight bind:value={(DBState.db.characters[$selectedCharID] as character).newGenData.negative} />
+            {#if DBState.db.sdProvider !== 'openrouter'}
+                <span class="text-textcolor mt-2">{language.imgGenNegatives}</span>
+                <TextAreaInput highlight bind:value={(DBState.db.characters[$selectedCharID] as character).newGenData.negative} />
+            {/if}
             <span class="text-textcolor mt-2">{language.imgGenInstructions}</span>
             <TextAreaInput highlight bind:value={(DBState.db.characters[$selectedCharID] as character).newGenData.instructions} />
 
