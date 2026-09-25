@@ -921,7 +921,7 @@
         </div>
       </div>
     {:else if !$settingsOpen && DBState.db.characters[$selectedCharID]?.chaId === '§playground'}
-      <div class="library-heading"><span class="library-wordmark" aria-hidden="true">ELSE<span>//</span>WHERE</span><h1>{language.conversations}</h1><p>{language.recentlyActive}</p></div>
+      <div class="library-heading"><span class="library-wordmark" aria-hidden="true">ELSE<span>//</span>WHERE</span><h1>{language.conversations}</h1><p class="truncate" title={DBState.db.characters[$selectedCharID].name || 'Unnamed'}>{DBState.db.characters[$selectedCharID].name || 'Unnamed'}</p></div>
       <SideChatList bind:chara={ DBState.db.characters[$selectedCharID]} />
     {:else if $ConnectionOpenStore}
       <div class="flex flex-col">
@@ -967,7 +967,7 @@
       {:else if $botMakerMode}
         <CharConfig />
       {:else}
-        <div class="library-heading"><h1>{language.conversations}</h1><p>{language.recentlyActive}</p></div>
+        <div class="library-heading"><h1>{language.conversations}</h1><p class="truncate" title={DBState.db.characters[$selectedCharID].name || 'Unnamed'}>{DBState.db.characters[$selectedCharID].name || 'Unnamed'}</p></div>
         <SideChatList bind:chara={ DBState.db.characters[$selectedCharID]} />
       {/if}
     {/if}
@@ -1051,8 +1051,7 @@
     font-size: 0.75rem;
   }
 
-  .recent-chat-avatar,
-  :global(.selected-chat-avatar) {
+  .recent-chat-avatar {
     display: grid;
     flex: none;
     place-items: center;
