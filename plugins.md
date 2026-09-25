@@ -1155,6 +1155,21 @@ await Risuai.loadPlugins();
 
 ### Permissions
 
+#### Image generation
+
+Configure an OpenRouter API key and a separate **OpenRouter image model** in the image-generation settings. Selecting **OpenRouter** as Image Generation Provider also uses this model for Playground, inlay, and chat image generation. When the selected model supports them, you can choose aspect ratio, resolution, quality, raster output format, and seed. Leaving a parameter at **Provider default** omits it from the request. Changing models clears these parameters so an old model's values are not reused. The chat text model is never used for image generation. Each plugin call asks for image-generation consent and can incur an OpenRouter charge. The plugin does not receive the API key and does not need full-database permission.
+
+```javascript
+const dataUrl = await Risuai.generateImage({
+  prompt: 'A watercolor portrait of a fox',
+  // referenceImageDataUrl: explicitlySelectedDataUrl,
+});
+```
+
+`generateImage(options: { prompt: string; referenceImageDataUrl?: string }): Promise<string>` returns a PNG, JPEG, or WebP data URL. OpenRouter's Image API does not support a separate negative prompt, so this option is unavailable and calls that supply it are rejected before requesting consent or contacting OpenRouter. A reference must be an explicitly supplied PNG, JPEG, or WebP data URL; unsupported models produce an error. The method sends no chat, persona, character, or portrait data implicitly and saves no output. Plugins can use the result for preview or PNG-card export.
+
+The image-model list, supported parameters, and generated image come from [OpenRouter's Image API](https://openrouter.ai/docs/guides/overview/multimodal/image-generation). Saved settings that a model no longer supports reject before generation. Errors reject the promise; handle them in the plugin UI.
+
 Some APIs require explicit user consent. Use `requestPluginPermission` to prompt the user:
 
 ```javascript

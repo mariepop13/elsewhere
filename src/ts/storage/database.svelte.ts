@@ -34,6 +34,27 @@ export type OpenRouterReasoningConfig = {
     maxTokens?: number
 }
 
+export type OpenRouterImageConfig = {
+    aspectRatio?: string
+    resolution?: string
+    quality?: string
+    outputFormat?: string
+    seed?: number
+}
+
+function normalizeOpenRouterImageConfig(value: unknown): OpenRouterImageConfig {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return {}
+    const source = value as Record<string, unknown>
+    const config: OpenRouterImageConfig = {}
+    for (const key of ['aspectRatio', 'resolution', 'quality', 'outputFormat'] as const) {
+        if (typeof source[key] === 'string' && source[key].length <= 100) config[key] = source[key]
+    }
+    if (typeof source.seed === 'number' && Number.isSafeInteger(source.seed)) {
+        config.seed = source.seed
+    }
+    return config
+}
+
 function normalizeOpenRouterReasoningConfig(value: unknown): OpenRouterReasoningConfig | undefined {
     if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined
 
@@ -396,6 +417,8 @@ export function setDatabase(data:Database){
     data.ainconfig ??= safeStructuredClone(defaultAIN)
     data.openrouterKey ??= ''
     data.openrouterRequestModel ??= 'openai/gpt-3.5-turbo'
+    data.openrouterImageModel ??= ''
+    data.openrouterImageOptions = normalizeOpenRouterImageConfig(data.openrouterImageOptions)
     data.nanogptKey ??= ''
     data.nanogptRequestModel ??= ''
     data.nanogptRequestModelName ??= ''
@@ -965,6 +988,8 @@ export interface Database{
     ainconfig: AINsettings
     personaPrompt:string
     openrouterRequestModel:string
+    openrouterImageModel:string
+    openrouterImageOptions:OpenRouterImageConfig
     openrouterReasoning?: OpenRouterReasoningConfig
     openrouterKey:string
     openrouterMiddleOut:boolean

@@ -869,8 +869,10 @@ export class SandboxHost {
                     for (const id of usedAbortIds) this.abortControllers.delete(id);
                 }
 
-                console.log("Original request:", data);
-                console.log('Original response:', response, transferables);
+                if (data.method !== 'generateImage') {
+                    console.log("Original request:", data);
+                    console.log('Original response:', response, transferables);
+                }
                 try {
                     this.iframe.contentWindow?.postMessage(response, '*', transferables);
                 } catch (error) {

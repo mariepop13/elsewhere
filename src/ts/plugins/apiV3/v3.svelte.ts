@@ -18,6 +18,7 @@ import { getInlayAsset } from "src/ts/process/files/inlays";
 import { getLLMCache, searchLLMCache } from "src/ts/translator/translator";
 import { hasher, risuChatParser, type CbsConditions } from "src/ts/parser/parser.svelte";
 import localforage from "localforage";
+import { generatePluginImage, type GenerateImageOptions } from "./imageGeneration";
 import { LLMFlags, LLMFormat, LLMProvider, LLMTokenizer, type LLMModel } from "src/ts/model/types";
 import { sendChat as processSendChat, doingChat } from "src/ts/process/index.svelte";
 import { processScriptFull } from "src/ts/process/scripts";
@@ -566,11 +567,12 @@ type PluginV3ProviderOptions = PluginV2ProviderOptions & {
 
 export const customV3ProviderMetaStore:LLMModel[] = []
 
-const getPluginPermission = async (pluginName: string, permissionDesc: 'fetchLogs'|'db'|'mainDom'|'replacer'|'provider'|'sendChat'|'inlay', reconfirm: boolean|'periodically' = false) => {
-    if(permissionGivenPlugins.has(pluginName)){
+const getPluginPermission = async (pluginName: string, permissionDesc: 'fetchLogs'|'db'|'mainDom'|'replacer'|'provider'|'sendChat'|'inlay'|'generateImage', reconfirm: boolean|'periodically' = false) => {
+    const permissionKey = `${pluginName}_${permissionDesc}`;
+    if(reconfirm === false && permissionGivenPlugins.has(permissionKey)){
         return true;
     }
-    if(permissionDeniedPlugins.has(pluginName)){
+    if(reconfirm === false && permissionDeniedPlugins.has(permissionKey)){
         return false;
     }
 
@@ -596,7 +598,7 @@ const getPluginPermission = async (pluginName: string, permissionDesc: 'fetchLog
     ) + `_${permissionDesc}`;
 
     if(!requiresReconfirm &&await permissionForage.getItem(pluginHash)){
-        permissionGivenPlugins.add(pluginName);
+        permissionGivenPlugins.add(permissionKey);
         return true;
     }   
     
@@ -609,20 +611,21 @@ const getPluginPermission = async (pluginName: string, permissionDesc: 'fetchLog
         : permissionDesc === 'provider' ? language.providerPermissionConsent.replace("{}", pluginName)
         : permissionDesc === 'sendChat' ? language.sendChatConsent.replace("{}", pluginName)
         : permissionDesc === 'inlay' ? language.inlayPermissionConsent.replace("{}", pluginName)
+        : permissionDesc === 'generateImage' ? language.generateImageConsent.replace("{}", pluginName)
         : `Error`
     if(alertTitle === 'Error'){
         return false;
     }
     const conf = await alertConfirm(alertTitle)
     if(conf && pluginHash){
-        permissionGivenPlugins.add(pluginName);
+        permissionGivenPlugins.add(permissionKey);
         await permissionForage.setItem(pluginHash, true);
         if(reconfirm === 'periodically'){
             await permissionForage.setItem(pluginName + '_' + permissionDesc + '_lastGrantTime', Date.now());
         }
         return true;
     }
-    permissionDeniedPlugins.add(pluginName);
+    permissionDeniedPlugins.add(permissionKey);
     return false;
 }
 
@@ -1252,6 +1255,15 @@ const makeRisuaiAPIV3 = (iframe:HTMLIFrameElement,plugin:RisuPlugin) => {
         checkCharOrder: checkCharOrder,
         requestPluginPermission: (permission:string) => {
             return getPluginPermission(plugin.name, permission as any);
+        },
+        generateImage: (options: GenerateImageOptions) => {
+            const db = getDatabase();
+            return generatePluginImage(options, {
+                apiKey: db.openrouterKey,
+                modelId: db.openrouterImageModel,
+                imageOptions: db.openrouterImageOptions,
+                requestPermission: () => getPluginPermission(plugin.name, 'generateImage', true),
+            });
         },
         //Internal use APIs
         _getOldKeys: () => {
