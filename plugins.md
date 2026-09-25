@@ -567,7 +567,7 @@ When shown in fullscreen mode, your iframe:
 - Is moved to `document.body`
 - Positioned fixed at (0, 0)
 - Sized to 100% width and height
-- Has z-index of 1000
+- Has z-index of 40, below Risuai confirmation dialogs at z-index 50
 - Border removed
 
 ### Registering UI Elements in Risuai
