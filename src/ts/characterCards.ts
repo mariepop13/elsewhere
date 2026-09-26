@@ -722,7 +722,7 @@ export async function exportChar(charaID:number):Promise<string> {
 }
 
 
-async function importCharacterCardSpec<T extends boolean = false>(card:CharacterCardV2Risu|CharacterCardV3, img?:Uint8Array, mode:'hub'|'normal' = 'normal', assetDict:{[key:string]:string} = {}, overrideLorebook: loreBook[] = null, returnValue:T = false as T):Promise<T extends true ? character|false : boolean>{
+async function importCharacterCardSpec<T extends boolean = false>(card:CharacterCardV2Risu|CharacterCardV3, img?:Uint8Array, mode:'hub'|'normal' = 'normal', assetDict:{[key:string]:string} = {}, overrideLorebook: loreBook[] = null, returnValue:T = false as T, confirmLowLevelAccess: (message: string) => Promise<boolean> = alertConfirm):Promise<T extends true ? character|false : boolean>{
     if(!card ||(card.spec !== 'chara_card_v2' && card.spec !== 'chara_card_v3' )){
         return false
     }
@@ -918,7 +918,7 @@ async function importCharacterCardSpec<T extends boolean = false>(card:Character
     }
 
     if(risuext && risuext?.lowLevelAccess){
-        const conf = await alertConfirm(language.lowLevelAccessConfirm)
+        const conf = await confirmLowLevelAccess(language.lowLevelAccessConfirm)
         if(!conf){
             return false
         }
@@ -1038,6 +1038,10 @@ async function importCharacterCardSpec<T extends boolean = false>(card:Character
     alertNormal(language.importedCharacter)
     return true as any
 
+}
+
+export function prepareCharacterFromCard(card: CharacterCardV2Risu | CharacterCardV3, confirmLowLevelAccess: (message: string) => Promise<boolean>): Promise<character | false> {
+    return importCharacterCardSpec(card, undefined, 'normal', {}, null, true, confirmLowLevelAccess)
 }
 
 function convertCharbook(arg:{
@@ -1907,7 +1911,7 @@ export function isCharacterHasAssets(char:character|groupChat){
 }
 
 
-type CharacterCardV2Risu = {
+export type CharacterCardV2Risu = {
     spec: 'chara_card_v2'
     spec_version: '2.0' // May 8th addition
     data: {

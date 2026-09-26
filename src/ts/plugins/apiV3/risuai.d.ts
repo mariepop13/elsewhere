@@ -1212,7 +1212,76 @@ interface ProviderOptions {
  * @important All methods are asynchronous unless otherwise noted.
  * Always use `await` or `.then()` when calling API methods.
  */
+/** RisuAI V2 card, including its optional RisuAI extension fields. */
+interface CharacterCardLorebookEntry {
+    keys: string[];
+    content: string;
+    extensions: Record<string, any>;
+    enabled: boolean;
+    insertion_order: number;
+    name?: string;
+    comment?: string;
+    secondary_keys?: string[];
+    constant?: boolean;
+    selective?: boolean;
+    case_sensitive?: boolean;
+    use_regex?: boolean;
+    mode?: string;
+    folder?: string;
+}
+
+interface CharacterCardV2Risu {
+    spec: 'chara_card_v2';
+    spec_version: '2.0';
+    data: {
+        name: string;
+        description: string;
+        personality: string;
+        scenario: string;
+        first_mes: string;
+        mes_example: string;
+        creator_notes: string;
+        system_prompt: string;
+        post_history_instructions: string;
+        alternate_greetings: string[];
+        character_book?: {
+            extensions: Record<string, any>;
+            entries: CharacterCardLorebookEntry[];
+            name?: string;
+            description?: string;
+            scan_depth?: number;
+            token_budget?: number;
+            recursive_scanning?: boolean;
+        };
+        tags: string[];
+        creator: string;
+        character_version: string;
+        extensions: Record<string, any>;
+    };
+}
+
+interface CharacterCardV3 {
+    spec: 'chara_card_v3';
+    spec_version: '3.0';
+    data: Omit<CharacterCardV2Risu['data'], 'character_book'> & {
+        character_book?: Omit<NonNullable<CharacterCardV2Risu['data']['character_book']>, 'entries'> & {
+            entries: Array<CharacterCardLorebookEntry & { use_regex: boolean }>;
+        };
+        assets?: Array<{ type: string; uri: string; name: string; ext: string }>;
+        nickname?: string;
+        source?: string[];
+        group_only_greetings: string[];
+        creation_date?: number;
+        modification_date?: number;
+    };
+}
+
 interface RisuaiPluginAPI {
+    /** Creates a new character from a V2 or V3 card. Prompts for host consent on every call. */
+    createCharacterFromCard(options: {
+        card: CharacterCardV2Risu | CharacterCardV3;
+        portraitDataUrl?: string;
+    }): Promise<{ chaId: string; name: string }>;
     /**
      * Generates one image with the separately configured OpenRouter image model.
      * Prompts for image-generation consent on each call. Does not save or modify any chat or character.

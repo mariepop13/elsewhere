@@ -1170,6 +1170,19 @@ const dataUrl = await Risuai.generateImage({
 
 The image-model list, supported parameters, and generated image come from [OpenRouter's Image API](https://openrouter.ai/docs/guides/overview/multimodal/image-generation). Saved settings that a model no longer supports reject before generation. Errors reject the promise; handle them in the plugin UI.
 
+#### Character creation from a card
+
+`Risuai.createCharacterFromCard(options)` creates a new character from a valid RisuAI V2 or V3 character card. Pass the parsed card object, and optionally a PNG portrait as a `data:image/png;base64,...` URL:
+
+```javascript
+const { chaId, name } = await Risuai.createCharacterFromCard({
+  card: reviewedCard,
+  portraitDataUrl: selectedPngDataUrl,
+});
+```
+
+The host asks for consent on every call and shows the plugin and character names. Cards that request low-level access trigger an additional host warning. A denied or interrupted prompt rejects the promise without adding a character. The card and portrait must each be at most 10 MiB; the portrait must be a decodable PNG no larger than 8192 pixels on either side or 16 megapixels total. Successful calls append a new character and return its ID and name. They do not replace the selected character or any group. Handle validation and import errors in the plugin UI.
+
 Some APIs require explicit user consent. Use `requestPluginPermission` to prompt the user:
 
 ```javascript
