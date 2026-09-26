@@ -869,7 +869,7 @@ export class SandboxHost {
                     for (const id of usedAbortIds) this.abortControllers.delete(id);
                 }
 
-                if (data.method !== 'generateImage') {
+                if (data.method !== 'generateImage' && data.method !== 'createCharacterFromCard') {
                     console.log("Original request:", data);
                     console.log('Original response:', response, transferables);
                 }

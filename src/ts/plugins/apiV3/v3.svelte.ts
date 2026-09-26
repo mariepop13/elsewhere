@@ -3,12 +3,12 @@ import { SandboxHost } from "./factory";
 import { getDatabase } from "src/ts/storage/database.svelte";
 import { SafeLocalPluginStorage, tagWhitelist } from "../pluginSafeClass";
 import DOMPurify from 'dompurify';
-import { additionalChatMenu, additionalFloatingActionButtons, additionalHamburgerMenu, additionalSettingsMenu, bodyIntercepterStore, chatPanelStore, DBState, selectedCharID, type MenuDef } from "src/ts/stores.svelte";
+import { additionalChatMenu, additionalFloatingActionButtons, additionalHamburgerMenu, additionalSettingsMenu, alertStore, bodyIntercepterStore, chatPanelStore, DBState, selectedCharID, type MenuDef } from "src/ts/stores.svelte";
 import { v4 } from "uuid";
 import { sleep } from "src/ts/util";
 import { alertConfirm, alertError, alertNormal } from "src/ts/alert";
 import { language } from "src/lang";
-import { checkCharOrder, forageStorage, getFetchLogs } from "src/ts/globalApi.svelte";
+import { checkCharOrder, forageStorage, getFetchLogs, saveAsset } from "src/ts/globalApi.svelte";
 import { changeColorScheme, updateColorScheme, updateTextThemeAndCSS, type ColorScheme } from "src/ts/gui/colorscheme";
 import { isNodeServer, isTauri } from "src/ts/platform";
 import { get } from "svelte/store";
@@ -19,6 +19,8 @@ import { getLLMCache, searchLLMCache } from "src/ts/translator/translator";
 import { hasher, risuChatParser, type CbsConditions } from "src/ts/parser/parser.svelte";
 import localforage from "localforage";
 import { generatePluginImage, type GenerateImageOptions } from "./imageGeneration";
+import { confirmUninterrupted, createCharacterFromCard, type CreateCharacterFromCardOptions } from "./characterCreation";
+import { prepareCharacterFromCard } from "src/ts/characterCards";
 import { LLMFlags, LLMFormat, LLMProvider, LLMTokenizer, type LLMModel } from "src/ts/model/types";
 import { sendChat as processSendChat, doingChat } from "src/ts/process/index.svelte";
 import { processScriptFull } from "src/ts/process/scripts";
@@ -1263,6 +1265,21 @@ const makeRisuaiAPIV3 = (iframe:HTMLIFrameElement,plugin:RisuPlugin) => {
                 modelId: db.openrouterImageModel,
                 imageOptions: db.openrouterImageOptions,
                 requestPermission: () => getPluginPermission(plugin.name, 'generateImage', true),
+            });
+        },
+        createCharacterFromCard: (options: CreateCharacterFromCardOptions) => {
+            return createCharacterFromCard(options, {
+                pluginName: plugin.name,
+                confirm: message => confirmUninterrupted(message, alertConfirm, alertStore),
+                importCard: card => prepareCharacterFromCard(card, message =>
+                    confirmUninterrupted(message, alertConfirm, alertStore)),
+                savePortrait: bytes => saveAsset(bytes),
+                decodeImage: async bytes => {
+                    const image = await createImageBitmap(new Blob([bytes.slice().buffer], { type: 'image/png' }));
+                    image.close();
+                },
+                getCharacters: () => DBState.db.characters,
+                updateCharacterOrder: checkCharOrder,
             });
         },
         //Internal use APIs
