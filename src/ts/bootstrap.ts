@@ -15,22 +15,18 @@ import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { checkElsewhereUpdate } from "./update";
 import { MobileGUI, botMakerMode, selectedCharID, loadedStore, DBState, LoadingStatusState } from "./stores.svelte";
 import { loadPlugins } from "./plugins/plugins.svelte";
-import { alertError, alertMd, alertTOS, waitAlert, alertConfirm, alertInput } from "./alert";
-import { checkDriverInit } from "./drive/drive";
+import { alertError, alertMd, alertTOS, waitAlert, alertConfirm } from "./alert";
 import { characterURLImport } from "./characterCards";
 import { defaultJailbreak, defaultMainPrompt, oldJailbreak, oldMainPrompt } from "./storage/defaultPrompts";
-import { loadRisuAccountData } from "./drive/accounter";
 import { decodeRisuSave, encodeRisuSaveLegacy } from "./storage/risuSave";
 import { updateAnimationSpeed } from "./gui/animation";
 import { updateColorScheme, updateTextThemeAndCSS } from "./gui/colorscheme";
-import { autoServerBackup } from "./kei/backup";
 import { language } from "src/lang";
 import { startObserveDom } from "./observer.svelte";
 import { updateGuisize } from "./gui/guisize";
 import { updateLorebooks } from "./characters";
 import { initMobileGesture } from "./hotkey";
 import { moduleUpdate } from "./process/modules";
-import type { AccountStorage } from "./storage/accountStorage";
 import { makeColdData } from "./process/coldstorage.svelte";
 import { getRemoteSaveCleanupAction, getRemoteSavePayloadName } from "./storage/remoteSaveCleanup";
 import {
@@ -152,46 +148,6 @@ export async function loadData() {
                     }
                 }
 
-                if (await forageStorage.checkAccountSync()) {
-                    LoadingStatusState.text = "Checking Account Sync..."
-                    let gotStorage: Uint8Array = await (forageStorage.realStorage as AccountStorage).getItem('database/database.bin', (v) => {
-                        LoadingStatusState.text = `Loading Remote Save File ${(v * 100).toFixed(2)}%`
-                    })
-                    if (checkNullish(gotStorage)) {
-                        gotStorage = encodeRisuSaveLegacy({})
-                        await forageStorage.setItem('database/database.bin', gotStorage)
-                    }
-                    try {
-                        setDatabase(
-                            await decodeRisuSave(gotStorage)
-                        )
-                    } catch (error) {
-                        const backups = await getDbBackups()
-                        let backupLoaded = false
-                        for (const backup of backups) {
-                            try {
-                                LoadingStatusState.text = `Reading Backup File ${backup}...`
-                                const backupData: Uint8Array = await forageStorage.getItem(`database/dbbackup-${backup}.bin`) as unknown as Uint8Array
-                                setDatabase(
-                                    await decodeRisuSave(backupData)
-                                )
-                                backupLoaded = true
-                            } catch (error) { }
-                        }
-                        if (!backupLoaded) {
-                            // throw "Your save file is corrupted"
-                            await autoServerBackup()
-                            await sleep(10000)
-                        }
-                    }
-                }
-                LoadingStatusState.text = "Rechecking Account Sync..."
-                await forageStorage.checkAccountSync()
-                LoadingStatusState.text = "Checking Drive Sync..."
-                const isDriverMode = await checkDriverInit()
-                if (isDriverMode) {
-                    return
-                }
                 LoadingStatusState.text = "Checking Service Worker..."
                 if (navigator.serviceWorker) {
                     setUsingSw(true)
@@ -208,12 +164,6 @@ export async function loadData() {
             try {
                 await loadPlugins()
             } catch (error) { }
-            if (getDatabase().account) {
-                LoadingStatusState.text = "Checking Account Data..."
-                try {
-                    await loadRisuAccountData()
-                } catch (error) { }
-            }
             try {
                 //@ts-expect-error navigator.standalone is iOS Safari non-standard property, not in Navigator interface
                 const isInStandaloneMode = (window.matchMedia('(display-mode: standalone)').matches) || (window.navigator.standalone) || document.referrer.includes('android-app://');
@@ -258,6 +208,8 @@ export async function loadData() {
             alertTOS().then((a) => {
                 if (a === false) {
                     location.reload()
+                } else if (!isTauri && localStorage.getItem('accountst') === 'able') {
+                    alertMd('This installation previously used RisuAI account storage. Elsewhere has loaded only local data and has not contacted RisuAI. To bring account data here, save a local backup in the original RisuAI web app with Skip Saving Assets on Web Sync turned off. Import it in Settings → Account & Files. Keep the original account and backup until you have checked your chats and assets.')
                 }
             })
             

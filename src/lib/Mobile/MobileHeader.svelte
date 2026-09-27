@@ -61,7 +61,7 @@
             <span class="mobile-header-kicker">{language.settings}</span>
             <span class="mobile-header-title font-bold text-lg truncate">{settingsPageTitle}</span>
         </div>
-    {:else if $MobileGUIStack === 1}
+    {:else if $MobileGUIStack === 0 || $MobileGUIStack === 1}
         <div class="flex min-w-0 flex-1 items-stretch">
             <input placeholder={language.search + '...'} bind:value={$MobileSearch} class="mobile-search peer transition-colors outline-hidden text-textcolor p-2 min-w-0 border bg-surface-subtle rounded-md input-text text-xl grow mx-1 border-darkborderc resize-none overflow-y-hidden overflow-x-hidden max-w-full">
         </div>

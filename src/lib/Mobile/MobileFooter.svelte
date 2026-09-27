@@ -1,6 +1,6 @@
 <script lang="ts">
 
-  import { SettingsIcon, GlobeIcon, HouseIcon, Volume2Icon, Braces, ActivityIcon, BookIcon, SmileIcon, UserIcon } from "@lucide/svelte";
+  import { SettingsIcon, HouseIcon, Volume2Icon, Braces, ActivityIcon, BookIcon, SmileIcon, UserIcon } from "@lucide/svelte";
   import { language } from "src/lang";
   import { CharConfigSubMenu, MobileGUIStack, MobileSideBar, selectedCharID } from "src/ts/stores.svelte";
 
@@ -8,12 +8,6 @@
 {#if $selectedCharID === -1}
 
     <div class="mobile-footer-nav w-full gap-1 px-2 py-2 text-lg border-t border-t-darkborderc bg-darkbg flex items-center justify-center text-textcolor2">
-        <button class="mobile-footer-item flex-1 min-w-0 max-w-20 justify-center items-center flex-col gap-1" class:mobile-footer-item-active={$MobileGUIStack === 0} aria-current={$MobileGUIStack === 0 ? 'page' : undefined} onclick={() => {
-            MobileGUIStack.set(0)
-        }}>
-            <GlobeIcon size={24} />
-            <span class="text-xs">RisuRealm</span>
-        </button>
         <button class="mobile-footer-item flex-1 min-w-0 max-w-20 justify-center items-center flex-col gap-1" class:mobile-footer-item-active={$MobileGUIStack === 1} aria-current={$MobileGUIStack === 1 ? 'page' : undefined} onclick={() => {
             MobileGUIStack.set(1)
         }}>

@@ -19,16 +19,14 @@ import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { MobileGUI, botMakerMode, selectedCharID, loadedStore, DBState, LoadingStatusState, selIdState, ReloadGUIPointer, bodyIntercepterStore } from "./stores.svelte";
 import { loadPlugins } from "./plugins/plugins.svelte";
 import { alertConfirm, alertError, alertMd, alertNormal, alertNormalWait, alertSelect, alertTOS, waitAlert } from "./alert";
-import { checkDriverInit, syncDrive } from "./drive/drive";
+import { syncDrive } from "./drive/drive";
 import { hasher } from "./parser/parser.svelte";
 import { characterURLImport, hubURL, hubFetchURL } from "./characterCards";
 import { defaultJailbreak, defaultMainPrompt, oldJailbreak, oldMainPrompt } from "./storage/defaultPrompts";
-import { loadRisuAccountData } from "./drive/accounter";
 import { decodeRisuSave, encodeRisuSaveLegacy, RisuSaveEncoder, type toSaveType } from "./storage/risuSave";
 import { AutoStorage } from "./storage/autoStorage";
 import { updateAnimationSpeed } from "./gui/animation";
 import { updateColorScheme, updateTextThemeAndCSS } from "./gui/colorscheme";
-import { autoServerBackup, saveDbKei } from "./kei/backup";
 import { save } from "@tauri-apps/plugin-dialog";
 import { listen } from '@tauri-apps/api/event'
 import { language } from "src/lang";
@@ -475,7 +473,6 @@ export async function saveDb() {
                 await getDbBackups()
             }
             savetrys = 0
-            await saveDbKei()
             await sleep(500)
         } catch (error) {
             savetrys += 1
@@ -497,8 +494,7 @@ export async function saveDb() {
  * @returns {Promise<number[]>} - A promise that resolves to an array of backup timestamps.
  */
 export async function getDbBackups() {
-    let db = getDatabase()
-    if (db?.account?.useSync && !isTauri && !isNodeServer) {
+    if (forageStorage.isAccount && !isTauri && !isNodeServer) {
         return []
     }
     if (isTauri) {
