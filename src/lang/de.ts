@@ -181,12 +181,12 @@ export const languageGerman = {
         "themeDescClassic": "Geeignet für alle Geräte",
         "texttheme": "Wählen Sie Ihre Textfarbe",
         "inputName": "Geben Sie abschließend Ihren Spitznamen ein",
-        "welcome": "Willkommen bei Risuai! Ich bin Airisu und werde Sie durch die Einrichtung von Risuai führen. Zuerst, wie darf ich Sie nennen?",
+        "welcome": "Willkommen bei Elsewhere! Ich bin Ihr Elsewhere Guide und begleite Sie durch die Einrichtung. Zuerst, wie darf ich Sie nennen?",
         "welcome2": "Hallo {username}! Bevor wir beginnen, werde ich Ihnen einige Fragen stellen. Sie können diese Einstellungen später in den Einstellungen ändern.\n\nWählen Sie zunächst den KI-Anbieter aus.",
         "openRouterProvider": "OpenRouter hat viele Modelle, einige davon ungefiltert und einige davon kostenlos, aber es ist nicht so gut wie OpenAI.",
         "hordeProvider": "Horde ist ein kostenloser Anbieter, aber die Antwortzeit ist lang und die Qualität ist gering.",
         "setProviderLater": "Es gibt andere Anbieter, aber Sie können dies später in den Einstellungen festlegen. Wählen Sie dies, wenn Sie es später einstellen möchten.",
-        "setupOpenAI": "Um OpenAI nutzen zu können, benötigen Sie einen API-Schlüssel. \n1. Gehen Sie zu https://beta.openai.com/ \n2. Melden Sie sich mit Ihrem Konto an \n3. Gehen Sie zu https://beta.openai.com/account/api-keys \n4. Klicken Sie auf 'Create New API Key' und benennen Sie Ihren Schlüssel nach Belieben. \n5. Kopieren Sie den Schlüssel auf der Website.\n6. Gehen Sie zurück zu Risuai\n7. Fügen Sie ihn ein und klicken Sie auf die Senden-Schaltfläche.",
+        "setupOpenAI": "Um OpenAI nutzen zu können, benötigen Sie einen API-Schlüssel. \n1. Gehen Sie zu https://beta.openai.com/ \n2. Melden Sie sich mit Ihrem Konto an \n3. Gehen Sie zu https://beta.openai.com/account/api-keys \n4. Klicken Sie auf 'Create New API Key' und benennen Sie Ihren Schlüssel nach Belieben. \n5. Kopieren Sie den Schlüssel auf der Website.\n6. Gehen Sie zurück zu Elsewhere\n7. Fügen Sie ihn ein und klicken Sie auf die Senden-Schaltfläche.",
         "setupClaude": "Um Claude nutzen zu können, benötigen Sie einen API-Schlüssel.",
         "setupClaudeSteps": [
             "Gehen Sie zu dieser URL und melden Sie sich als Google an",
@@ -202,7 +202,7 @@ export const languageGerman = {
             "Geben Sie es genau wie im Bild oben ein und drücken Sie 'Add'",
             "Kopieren Sie den Schlüssel, fügen Sie ihn hier ein und senden Sie ihn."
         ],
-        "setupOpenRouter": "Um OpenRouter nutzen zu können, benötigen Sie einen API-Schlüssel. \n1. Gehen Sie zu https://openrouter.ai/keys\n2. Klicken Sie auf 'Create Key'\n3. Legen Sie einen beliebigen Schlüsselnamen fest.\n4. Kopieren Sie den Schlüssel auf der Website\n5. Gehen Sie zurück zu Risuai\n6. Fügen Sie ihn ein und klicken Sie auf die Senden-Schaltfläche.",
+        "setupOpenRouter": "Um OpenRouter nutzen zu können, benötigen Sie einen API-Schlüssel. \n1. Gehen Sie zu https://openrouter.ai/keys\n2. Klicken Sie auf 'Create Key'\n3. Legen Sie einen beliebigen Schlüsselnamen fest.\n4. Kopieren Sie den Schlüssel auf der Website\n5. Gehen Sie zurück zu Elsewhere\n6. Fügen Sie ihn ein und klicken Sie auf die Senden-Schaltfläche.",
         "allDone": "Alles erledigt! Bitte warten Sie einen Moment.",
         "setupLaterMessage": "Willkommen {username}! Möchten Sie, dass ich Sie durch die Einrichtung führe oder möchten Sie es selbst tun?",
         "setupMessageOption1": "Führe mich durch die Einrichtung",

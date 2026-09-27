@@ -8,6 +8,9 @@ import { v4 } from "uuid"
 import { language } from "src/lang"
 import { sleep } from "../util"
 import { fetchProtectedResource } from "../sionyw"
+import { isNodeServer } from "../platform"
+import { NodeStorage } from "./nodeStorage"
+import { OpfsStorage } from "./opfsStorage"
 
 export const AccountWarning = writable('')
 let risuSession = ''
@@ -191,22 +194,76 @@ export class AccountStorage{
 }
 
 export async function unMigrationAccount() {
-    const keys = await forageStorage.keys()
-    let db = getDatabase()
+    const db = getDatabase()
     let i = 0;
-    const MigrationStorage = localforage.createInstance({name: "risuai"})
+    const useOpfs = !isNodeServer
+        && !!window.navigator?.storage?.getDirectory
+        && typeof FileSystemFileHandle !== 'undefined'
+        && !!FileSystemFileHandle.prototype?.createWritable
+        && localStorage.getItem('opfs_flag!') === 'able'
+    const MigrationStorage = isNodeServer
+        ? new NodeStorage()
+        : useOpfs
+            ? new OpfsStorage()
+            : localforage.createInstance({name: "risuai"})
+    if (useOpfs) {
+        const legacyForage = localforage.createInstance({name: 'risuai'})
+        if (await legacyForage.getItem('database/database.bin') && !await legacyForage.getItem('migrated')) {
+            throw new Error('An older local profile would overwrite the migrated account data on restart. Export both profiles before continuing.')
+        }
+    }
+    if ((await MigrationStorage.keys()).length > 0) {
+        throw new Error('Local data already exists in the destination. Export both profiles before replacing either one; account data remains connected.')
+    }
+    const { collectColdStorageBackupPayloads, getColdStorageItem, setColdStorageItem } = await import('../process/coldstorage.svelte')
+    const coldStoragePayloads = await collectColdStorageBackupPayloads(db)
+    if (coldStoragePayloads.missingKeys.length || coldStoragePayloads.invalidKeys.length) {
+        throw new Error('Some account cold storage data is unavailable. The account remains connected; no migration was completed.')
+    }
+    const referencedAssets = (await getUncleanables(db, 'pure')).filter(key => key.startsWith('assets/'))
+    const keys = Array.from(new Set([...await forageStorage.keys(), ...referencedAssets]))
     
     for(const key of keys){
         alertStore.set({
             type: "wait",
             msg: `Migrating your data...(${i}/${keys.length})`
         })
-        await MigrationStorage.setItem(key,await forageStorage.getItem(key))
+        const value = await forageStorage.getItem(key)
+        if (!value) {
+            throw new Error(`Account file ${key} is unavailable. The account remains connected.`)
+        }
+        await MigrationStorage.setItem(key, value)
+        const copied = await MigrationStorage.getItem<Uint8Array>(key)
+        if (!copied || !Buffer.from(copied).equals(Buffer.from(value))) {
+            throw new Error(`Local copy of ${key} could not be verified. The account remains connected.`)
+        }
         i += 1
     }
 
-    db.account = null
-    await MigrationStorage.setItem('database/database.bin', encodeRisuSaveLegacy(db))
+    const previousStorage = forageStorage.realStorage
+    forageStorage.realStorage = MigrationStorage
+    forageStorage.isAccount = false
+    try {
+        for (const payload of coldStoragePayloads.payloads) {
+            if (!await setColdStorageItem(payload.key, payload.value)) {
+                throw new Error(`Local copy of cold storage ${payload.key} failed. The account remains connected.`)
+            }
+            const copied = await getColdStorageItem(payload.key)
+            if (JSON.stringify(copied) !== JSON.stringify(payload.value)) {
+                throw new Error(`Local copy of cold storage ${payload.key} could not be verified. The account remains connected.`)
+            }
+        }
+        const localDatabase = encodeRisuSaveLegacy({ ...db, account: null })
+        await MigrationStorage.setItem('database/database.bin', localDatabase)
+        const copiedDatabase = await MigrationStorage.getItem<Uint8Array>('database/database.bin')
+        if (!copiedDatabase || !Buffer.from(copiedDatabase).equals(Buffer.from(localDatabase))) {
+            throw new Error('Local database copy could not be verified. The account remains connected.')
+        }
+    } catch (error) {
+        forageStorage.realStorage = previousStorage
+        forageStorage.isAccount = true
+        throw error
+    }
 
     alertStore.set({
         type: "none",

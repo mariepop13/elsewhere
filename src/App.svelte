@@ -9,7 +9,7 @@
     import WelcomeRisu from './lib/Others/WelcomeRisu.svelte';
     import BookmarkList from './lib/Others/BookmarkList.svelte';
     import Settings from './lib/Setting/Settings.svelte';
-    import { showRealmInfoStore, importCharacterProcess } from './ts/characterCards';
+    import { showRealmInfoStore, importCharacterProcess, upstreamRealmEnabled } from './ts/characterCards';
     import { importPreset, getDatabase, setDatabase } from './ts/storage/database.svelte';
     import { readModule } from './ts/process/modules';
     import { alertNormal } from './ts/alert';
@@ -238,10 +238,10 @@
     {#if $alertStore.type !== 'none'}
         <AlertComp />
     {/if}
-    {#if $showRealmInfoStore}
+    {#if upstreamRealmEnabled && $showRealmInfoStore}
         <RealmPopUp bind:openedData={$showRealmInfoStore} />
     {/if}
-    {#if $ShowRealmFrameStore}
+    {#if upstreamRealmEnabled && $ShowRealmFrameStore}
         <RealmFrame />
     {/if}
     {#if $openPresetList}

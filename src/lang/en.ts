@@ -334,13 +334,13 @@ export const languageEnglish = {
         themeDescClassic: "Suitable for All devices",
         texttheme: "Select your text color",
         inputName: "Lastly, input your Nickname.",
-        welcome: "Welcome to Risuai! I am Airisu, I am here to guide you through the Risuai setup. First, what may I call you?",
+        welcome: "Welcome to Elsewhere! I am your Elsewhere Guide, here to help you set things up. First, what may I call you?",
         welcome2: "Hello {username}! Before we start, I will ask you some questions. You can change these settings later in settings.\n\nFirst select the AI provider.",
         openRouterProvider: "OpenRouter has a lot of models, some of them unfiltered and some of them free, but it is not as good as OpenAI.",
         hordeProvider: "Horde is a free provider, but the response time is long and the quality is low.",
         setProviderLater: "There are other providers, but you can set it later in settings. Select this if you want to set it later.",
         setupOpenAI:
-            "To use OpenAI, you need to get an API key. \n1. Go to https://beta.openai.com/ \n2. Login with your account \n3. Go to https://beta.openai.com/account/api-keys \n4. Click 'Create New API Key' and name your key whatever you want. \n5. Copy the key in the website.\n6. Go back to Risuai\n7. Paste it, and click send button.",
+            "To use OpenAI, you need to get an API key. \n1. Go to https://beta.openai.com/ \n2. Login with your account \n3. Go to https://beta.openai.com/account/api-keys \n4. Click 'Create New API Key' and name your key whatever you want. \n5. Copy the key in the website.\n6. Go back to Elsewhere\n7. Paste it, and click send button.",
         setupClaude: "To use Claude, you need to get an API key.",
         setupClaudeSteps: [
             "Go to this URL and Login as Google",
@@ -357,7 +357,7 @@ export const languageEnglish = {
             "Copy the key, and paste it in here and send it.",
         ],
         setupOpenRouter:
-            "To use OpenRouter, you need to get an API key. \n1. Go to https://openrouter.ai/keys\n2. Click 'Create Key'\n3. Set key name whatever you want.\n4. Copy the key in the website\n5. Go back to Risuai\n6. Paste it, and click send button.",
+            "To use OpenRouter, you need to get an API key. \n1. Go to https://openrouter.ai/keys\n2. Click 'Create Key'\n3. Set key name whatever you want.\n4. Copy the key in the website\n5. Go back to Elsewhere\n6. Paste it, and click send button.",
         allDone: "All Done! Please wait a moment.",
         setupLaterMessage: "Welcome {username}! Do you want me to guide you to setup or do it yourself?",
         setupMessageOption1: "Guide me to setup",

@@ -333,13 +333,13 @@ export const languageChineseTraditional = {
         "themeDescClassic": "適合所有裝置",
         "texttheme": "選擇文字顏色",
         "inputName": "最後，請輸入您的暱稱",
-        "welcome": "歡迎使用 Risuai！我是 Airisu，會帶您完成 Risuai 的初始設定。首先，我該怎麼稱呼您？",
+        "welcome": "歡迎使用 Elsewhere！我是 Elsewhere 導覽員，會帶您完成初始設定。首先，我該怎麼稱呼您？",
         "welcome2": "您好，{username}！開始之前，我會先問幾個問題。之後仍可在設定中修改這些選項。\n\n首先請選擇 AI 供應商",
         "openRouterProvider": "OpenRouter 提供大量模型，其中部分未過濾、部分可免費使用，但整體品質未必如 OpenAI",
         "hordeProvider": "Horde 是免費供應商，但回應時間較長、品質也較低",
         "setProviderLater": "還有其他供應商，您可以稍後再到設定中設定。若想之後再處理，請選擇此項",
         "setupOpenAI":
-            "若要使用 OpenAI，您需要取得 API 金鑰。\n1. 前往 https://beta.openai.com/ \n2. 登入帳號\n3. 前往 https://beta.openai.com/account/api-keys \n4. 按下「Create New API Key」並自行命名\n5. 複製網站上的金鑰\n6. 回到 Risuai\n7. 貼上金鑰並按下送出按鈕",
+            "若要使用 OpenAI，您需要取得 API 金鑰。\n1. 前往 https://beta.openai.com/ \n2. 登入帳號\n3. 前往 https://beta.openai.com/account/api-keys \n4. 按下「Create New API Key」並自行命名\n5. 複製網站上的金鑰\n6. 回到 Elsewhere\n7. 貼上金鑰並按下送出按鈕",
         "setupClaude": "若要使用 Claude，您需要先取得 API 金鑰",
         "setupClaudeSteps": [
             "前往此 URL，並使用 Google 帳號登入",
@@ -356,7 +356,7 @@ export const languageChineseTraditional = {
             "複製金鑰，貼到這裡後送出",
         ],
         "setupOpenRouter":
-            "若要使用 OpenRouter，您需要取得 API 金鑰。\n1. 前往 https://openrouter.ai/keys\n2. 按下「Create Key」\n3. 自行設定金鑰名稱\n4. 複製網站上的金鑰\n5. 回到 Risuai\n6. 貼上金鑰並按下送出按鈕",
+            "若要使用 OpenRouter，您需要取得 API 金鑰。\n1. 前往 https://openrouter.ai/keys\n2. 按下「Create Key」\n3. 自行設定金鑰名稱\n4. 複製網站上的金鑰\n5. 回到 Elsewhere\n6. 貼上金鑰並按下送出按鈕",
         "allDone": "全部完成！請稍候片刻",
         "setupLaterMessage": "歡迎，{username}！您想由我帶您完成設定，還是自行設定？",
         "setupMessageOption1": "帶我完成設定",

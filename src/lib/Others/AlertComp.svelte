@@ -61,7 +61,7 @@
 
     let btn
     let input = $state('')
-    let cardExportType = $state('realm')
+    let cardExportType = $state('')
     let cardExportType2 = $state('')
     let cardLicense = $state('')
     let generationInfoMenuIndex = $state(0)
@@ -132,7 +132,7 @@
             branchHover = null
         }
         if($alertStore.type !== 'cardexport'){
-            cardExportType = 'realm'
+            cardExportType = ''
             cardExportType2 = ''
             cardLicense = ''
         }
@@ -586,22 +586,6 @@
             {:else if $alertStore.type === 'addchar'}
                 <div class="w-2xl flex flex-col max-w-full">
 
-                    <button class="border-darkborderc border py-12 px-8 flex rounded-md hover:ring-2 justify-center items-center" onclick={(e) => {
-                        e.stopPropagation()
-                        e.preventDefault()
-                        alertStore.set({
-                            type: 'none',
-                            msg: 'importFromRealm'
-                        })
-                    }}>
-                        <div class="flex flex-col justify-start items-start">
-                            <span class="text-2xl font-bold">{language.importFromRealm}</span>
-                            <span class="text-textcolor2">{language.importFromRealmDesc}</span>
-                        </div>
-                        <div class="ml-9 float-right flex-1 flex justify-end">
-                            <ChevronRightIcon />
-                        </div>
-                    </button>
                     <button class="border-darkborderc border py-2 px-8 flex rounded-md hover:ring-2 items-center mt-2" onclick={((e) => {
                         e.stopPropagation()
                         e.preventDefault()
@@ -750,7 +734,7 @@
                 {:else if $alertStore.submsg === 'preset'}
                     <span class="text-textcolor2 text-sm">{language.risupresetDesc}</span>
                     {#if cardExportType2 === 'preset' && (DBState.db.botPresets[DBState.db.botPresetsId].image || DBState.db.botPresets[DBState.db.botPresetsId].regex?.length > 0)}
-                        <span class="text-ambient text-sm">Use RisuRealm to share the preset. Preset with image or regexes cannot be exported for now.</span>
+                        <span class="text-ambient text-sm">Preset images and regexes cannot be exported in this format.</span>
                     {/if}
                 {:else}
                     <span class="text-textcolor2 text-sm">{language.ccv3Desc}</span>
@@ -763,18 +747,13 @@
             {:else if cardExportType === 'ccv2'}
                 <span class="text-textcolor2 text-sm">{language.ccv2Desc}</span>
                 <span class="text-ambient text-sm">{language.v2Warning}</span>
-            {:else}
-                <span class="text-textcolor2 text-sm">{language.realmDesc}</span>
             {/if}
             <div class="flex items-center flex-wrap mt-2">
                 {#if $alertStore.submsg === 'preset'}
-                    <button class="bg-bgcolor px-2 py-4 rounded-lg flex-1" class:ring-1={cardExportType === 'realm'} onclick={() => {cardExportType = 'realm'}}>RisuRealm</button>
                     <button class="bg-bgcolor px-2 py-4 rounded-lg ml-2 flex-1" class:ring-1={cardExportType === ''} onclick={() => {cardExportType = ''}}>Risupreset</button>
                 {:else if $alertStore.submsg === 'module'}
-                    <button class="bg-bgcolor px-2 py-4 rounded-lg ml-2 flex-1" class:ring-1={cardExportType === 'realm'} onclick={() => {cardExportType = 'realm'}}>RisuRealm</button>
                     <button class="bg-bgcolor px-2 py-4 rounded-lg flex-1" class:ring-1={cardExportType === ''} onclick={() => {cardExportType = ''}}>RisuM</button>
                 {:else}
-                    <button class="bg-bgcolor px-2 py-4 rounded-lg flex-1" class:ring-1={cardExportType === 'realm'} onclick={() => {cardExportType = 'realm'}}>RisuRealm</button>
                     <button class="bg-bgcolor px-2 py-4 rounded-lg ml-2 flex-1" class:ring-1={cardExportType === ''} onclick={() => {
                         cardExportType = ''
                         cardExportType2 = 'charxJpeg'
@@ -799,7 +778,7 @@
                         type2: cardExportType2
                     })
                 })
-            }}>{cardExportType === 'realm' ? language.shareCloud : language.export}</Button>
+            }}>{language.export}</Button>
         </div>
     </div>
 
