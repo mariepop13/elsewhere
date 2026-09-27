@@ -1,8 +1,8 @@
 name: 'publish'
 on:
   push:
-    branches:
-      - production
+    tags:
+      - 'v*'
   workflow_dispatch: {}
 
 jobs:
@@ -33,7 +33,7 @@ jobs:
       - name: install pnpm
         uses: pnpm/action-setup@v5
         with:
-          version: 10.34.1
+          version: 12.4.2
       - name: setup node
         uses: actions/setup-node@v6
         with:
@@ -44,6 +44,21 @@ jobs:
         if: matrix.settings.platform == 'windows-latest'
         run: |
           choco install jq -y
+      - name: Verify release version
+        shell: bash
+        run: |
+          app_version=$(jq -r .version src-tauri/tauri.conf.json)
+          manifest_version=$(jq -r .version version.json)
+          package_version=$(jq -r .version package.json)
+          cargo_version=$(sed -n 's/^version = "\(.*\)"/\1/p' src-tauri/Cargo.toml | head -n 1)
+          if [[ "$app_version" != "$manifest_version" || "$app_version" != "$package_version" || "$app_version" != "$cargo_version" ]]; then
+            echo "Release version files disagree" >&2
+            exit 1
+          fi
+          if [[ "$GITHUB_REF" == refs/tags/* && "$GITHUB_REF_NAME" != "v$app_version" ]]; then
+            echo "Tag $GITHUB_REF_NAME does not match v$app_version" >&2
+            exit 1
+          fi
       - id: set_var
         shell: bash
         run: |

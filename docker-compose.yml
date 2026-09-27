@@ -1,14 +1,14 @@
-name: risuai
+name: elsewhere
 
 services:
-  risuai:
-    container_name: risuai
-    image: ghcr.io/kwaroran/risuai:latest
+  elsewhere:
+    container_name: elsewhere
+    image: ghcr.io/mariepop13/elsewhere:latest
     restart: always
     ports:
       - 6001:6001
     volumes:
-      - risuai-save:/app/save
+      - elsewhere-save:/app/save
 
 volumes:
-  risuai-save:
+  elsewhere-save:

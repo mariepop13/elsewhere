@@ -169,7 +169,6 @@
                 start = true
             }}>
                 <span class="welcome-brand" aria-hidden="true">ELSE<span>//</span>WHERE</span>
-                <img src="/logo_typo_trans.png" alt="logo" class="w-full max-w-(--breakpoint-sm) mb-0">
             </div>
         {:else}
             <div class="relative w-full onboarding-panel flex-col grow mt-5 max-w-full p-5 overflow-x-hidden flex chat-animation overflow-y-auto">
@@ -419,7 +418,7 @@
     .welcome-brand {
         color: #f5f7ff;
         font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-        font-size: 0.78rem;
+        font-size: clamp(1.5rem, 5vw, 2.5rem);
         font-weight: 700;
         letter-spacing: 0.16em;
         text-shadow: 0 0 22px rgb(109 93 251 / 0.8);
@@ -427,11 +426,6 @@
 
     .welcome-brand span {
         color: #28d7c5;
-    }
-
-    .welcome-wordmark img {
-        filter: drop-shadow(0 0 22px rgb(109 93 251 / 0.42));
-        max-width: 14rem;
     }
 
     .onboarding-panel {
@@ -578,9 +572,6 @@
             padding: 1rem;
         }
 
-        .welcome-wordmark img {
-            max-width: 11rem;
-        }
     }
 
     @media (prefers-reduced-motion: reduce) {

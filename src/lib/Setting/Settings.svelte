@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { AccessibilityIcon, ActivityIcon, PackageIcon, BotIcon, BoxIcon, CodeIcon, ContactIcon, ImageIcon, LanguagesIcon, MonitorIcon, Sailboat, UserIcon, CircleXIcon, KeyboardIcon, SparkleIcon } from "@lucide/svelte";
+    import { AccessibilityIcon, ActivityIcon, PackageIcon, BotIcon, CodeIcon, ContactIcon, ImageIcon, LanguagesIcon, MonitorIcon, Sailboat, UserIcon, CircleXIcon, KeyboardIcon, SparkleIcon } from "@lucide/svelte";
     import { language } from "src/lang";
     import DisplaySettings from "./Pages/DisplaySettings.svelte";
     import UserSettings from "./Pages/UserSettings.svelte";
@@ -19,7 +19,6 @@
     import AccessibilitySettings from "./Pages/AccessibilitySettings.svelte";
     import PersonaSettings from "./Pages/PersonaSettings.svelte";
     import PromptSettings from "./Pages/PromptSettings.svelte";
-    import ThanksPage from "./Pages/ThanksPage.svelte";
     import ModuleSettings from "./Pages/Module/ModuleSettings.svelte";
   import { isLite } from "src/ts/lite";
     import HotkeySettings from "./Pages/HotkeySettings.svelte";
@@ -42,7 +41,6 @@
             case 14: return language.modules;
             case 15: return language.hotkey;
             case 16: return language.easyPanel;
-            case 77: return language.supporterThanks;
             default: return language.settings;
         }
     });
@@ -178,15 +176,6 @@
                         <ActivityIcon />
                         <span>{language.advancedSettings}</span>
                     </button>
-                    <button class="settings-nav-item flex gap-2 items-center"
-                        class:settings-nav-item-active={$SettingsMenuIndex === 77}
-                        aria-current={$SettingsMenuIndex === 77 ? 'page' : undefined}
-                        onclick={() => {
-                        $SettingsMenuIndex = 77
-                    }}>
-                        <BoxIcon />
-                        <span>{language.supporterThanks}</span>
-                    </button>
                     {#each additionalSettingsMenu as menu}
                         <button class="settings-nav-item flex gap-2 items-center"
                             onclick={() => {
@@ -271,8 +260,6 @@
                         }}/>
                     {:else if $SettingsMenuIndex === 15 && window.innerWidth >= 768}
                         <HotkeySettings/>
-                    {:else if $SettingsMenuIndex === 77}
-                        <ThanksPage/>
                     {/if}
                     </div>
             </div>

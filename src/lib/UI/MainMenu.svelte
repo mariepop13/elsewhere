@@ -20,28 +20,16 @@
 
     const relatedLinks: RelatedLink[] = [
       {
-        title: "Discord",
-        description: "Join our Discord server to chat with other users and the developer.",
-        href: "https://discord.gg/Exy3NrqkGm",
-        logoIcon: "paper-airplane"
-      },
-      {
-        title: "Website",
-        description: "See the official website for the project.",
-        href: "https://risuai.net",
-        logoIcon: "globe"
-      },
-      {
-        title: "GitHub",
-        description: "View the source code and contribute to the project.",
-        href: "https://github.com/kwaroran/RisuAI",
+        title: "Elsewhere on GitHub",
+        description: "View the source code and contribute to Elsewhere.",
+        href: "https://github.com/mariepop13/elsewhere",
         logoIcon: "source"
       },
       {
-        title: "Email",
-        description: "Contact the developer directly.",
-        href: "mailto:support@risuai.net",
-        logoIcon: "mail"
+        title: "Upstream RisuAI",
+        description: "View the original project and its contributors.",
+        href: "https://github.com/kwaroran/RisuAI",
+        logoIcon: "source"
       }
     ];
 </script>
