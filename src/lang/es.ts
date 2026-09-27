@@ -181,12 +181,12 @@ export const languageSpanish = {
         "themeDescClassic": "Apto para todos los dispositivos",
         "texttheme": "Selecciona el color del texto",
         "inputName": "Por último, ingresa tu apodo.",
-        "welcome": "¡Bienvenido a Risuai! Aquí te guiaré para configurarlo. Primero, ¿cómo puedo llamarte?",
+        "welcome": "¡Bienvenido a Elsewhere! Soy tu guía de Elsewhere y te ayudaré a configurarlo. Primero, ¿cómo puedo llamarte?",
         "welcome2": "Hola {username}! Antes de empezar, te haré algunas preguntas. Puedes cambiar estas configuraciones más tarde en la configuración.\n\nPrimero selecciona el proveedor de IA.",
         "openRouterProvider": "OpenRouter tiene muchos modelos, algunos de ellos sin filtro y algunos gratuitos, pero no es tan bueno como OpenAI.",
         "hordeProvider": "Horde es un proveedor gratuito, pero el tiempo de respuesta es largo y la calidad es baja.",
         "setProviderLater": "Hay otros proveedores, pero puedes configurarlo más tarde en la configuración. selecciona esto si deseas configurarlo más tarde.",
-        "setupOpenAI": "Para usar OpenAI, necesitas obtener una clave API. \n1. ve a https://beta.openai.com/ \n2. inicia sesión con tu cuenta \n3. ve a https://beta.openai.com/account/api-keys \n4. haz clic en 'Crear Nueva Clave API' y nombra tu clave como quieras. \n5. copia la clave en el sitio web.\n6. regresa a Risuai\n7. pégala y haz clic en el botón enviar.",
+        "setupOpenAI": "Para usar OpenAI, necesitas obtener una clave API. \n1. ve a https://beta.openai.com/ \n2. inicia sesión con tu cuenta \n3. ve a https://beta.openai.com/account/api-keys \n4. haz clic en 'Crear Nueva Clave API' y nombra tu clave como quieras. \n5. copia la clave en el sitio web.\n6. regresa a Elsewhere\n7. pégala y haz clic en el botón enviar.",
         "setupClaude": "Para usar Claude, necesitas obtener una clave API.",
         "setupClaudeSteps": [
             "Ve a esta URL e inicia sesión como Google",
@@ -202,7 +202,7 @@ export const languageSpanish = {
             "Ingresa tal como en la imagen de arriba y presiona 'Agregar'",
             "Copia la clave, pégala aquí y envíala."
         ],
-        "setupOpenRouter": "Para usar OpenRouter, necesitas obtener una clave API. \n1. ve a https://openrouter.ai/keys\n2. haz clic en 'Crear Clave'\n3. establece el nombre de la clave como quieras.\n4. copia la clave en el sitio web\n5. regresa a Risuai\n6. pégala y haz clic en el botón enviar.",
+        "setupOpenRouter": "Para usar OpenRouter, necesitas obtener una clave API. \n1. ve a https://openrouter.ai/keys\n2. haz clic en 'Crear Clave'\n3. establece el nombre de la clave como quieras.\n4. copia la clave en el sitio web\n5. regresa a Elsewhere\n6. pégala y haz clic en el botón enviar.",
         "allDone": "¡Todo listo! por favor, espera un momento.",
         "setupLaterMessage": "¡Bienvenido {username}! ¿Quieres que te guíe para configurar o lo harás tú mismo?",
         "setupMessageOption1": "Guíame para configurar",

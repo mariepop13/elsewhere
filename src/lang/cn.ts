@@ -181,12 +181,12 @@ export const languageChinese = {
         "themeDescClassic": "适用于所有设备",
         "texttheme": "设置文字颜色",
         "inputName": "最后，请输入你的昵称。",
-        "welcome": "欢迎使用 Risu（叡苏）！我将引导你进行设置。请问我该如何称呼你？",
+        "welcome": "欢迎使用 Elsewhere！我是 Elsewhere 向导，将引导你完成设置。请问我该如何称呼你？",
         "welcome2": "你好，{username}！在开始之前，我会问你一些问题，稍后可在设置中进行修改。\n\n首先，请选择 AI 提供者。",
         "openRouterProvider": "OpenRouter 提供许多模型，部分免费且未经内容过滤，但质量不如 OpenAI。",
         "hordeProvider": "Horde 提供免费服务，但回应时间较长且质量较低。",
         "setProviderLater": "还有其他提供者，你可以稍后在设置中配置。如想稍后设置，请选择此选项。",
-        "setupOpenAI": "使用 OpenAI 需要获取 API 密钥（Key）。\n1. 前往 https://beta.openai.com/ \n2. 使用账号登录 \n3. 前往 https://beta.openai.com/account/api-keys \n4. 点击“Create New API Key”，并命名密钥。 \n5. 复制该密钥。 \n6. 返回叡苏\n7. 粘贴密钥并点击“发送”。",
+        "setupOpenAI": "使用 OpenAI 需要获取 API 密钥（Key）。\n1. 前往 https://beta.openai.com/ \n2. 使用账号登录 \n3. 前往 https://beta.openai.com/account/api-keys \n4. 点击“Create New API Key”，并命名密钥。 \n5. 复制该密钥。 \n6. 返回 Elsewhere\n7. 粘贴密钥并点击“发送”。",
         "setupClaude": "使用 Claude，你需要获取一个 API 密钥。",
         "setupClaudeSteps": [
             "访问此链接并使用 Google 帐户登录",
@@ -202,7 +202,7 @@ export const languageChinese = {
             "按照上图输入信息，然后点击“添加”（Add）",
             "複製密钥，将其粘贴在此并发送。"
         ],
-        "setupOpenRouter": "使用 OpenRouter 需要获取 API 密钥（Key）。 \n1. 前往 https://openrouter.ai/keys\n2. 点击“Create Key”\n3. 任意命名密钥名称。\n4. 复制该密钥。\n5. 返回叡苏\n6. 粘贴密钥并点击“发送”。",
+        "setupOpenRouter": "使用 OpenRouter 需要获取 API 密钥（Key）。 \n1. 前往 https://openrouter.ai/keys\n2. 点击“Create Key”\n3. 任意命名密钥名称。\n4. 复制该密钥。\n5. 返回 Elsewhere\n6. 粘贴密钥并点击“发送”。",
         "allDone": "完成所有设置！请稍待片刻。",
         "setupLaterMessage": "欢迎，{username}！你希望我引导你完成设置还是自行设置？",
         "setupMessageOption1": "引导我完成设置",

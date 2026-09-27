@@ -181,12 +181,12 @@ export const languageVietnamese = {
         "themeDescClassic": "Thích hợp cho mọi thiết bị",
         "texttheme": "Chọn màu văn bản của bạn",
         "inputName": "Cuối cùng, nhập Biệt hiệu của bạn.",
-        "welcome": "Chào mừng đến với Risuai! Tôi là Airisu, tôi ở đây để hướng dẫn bạn cài đặt Risuai. Trước tiên, tôi có thể gọi bạn là gì?",
+        "welcome": "Chào mừng đến với Elsewhere! Tôi là hướng dẫn viên Elsewhere và sẽ giúp bạn thiết lập ứng dụng. Trước tiên, tôi có thể gọi bạn là gì?",
         "welcome2": "Xin chào {username}! Trước khi bắt đầu, tôi sẽ hỏi bạn một số câu hỏi. Bạn có thể thay đổi các cài đặt này sau trong phần cài đặt.\n\nĐầu tiên hãy chọn nhà cung cấp AI.",
         "openRouterProvider": "OpenRouter có rất nhiều mô hình, một số không được lọc và một số miễn phí, nhưng nó không tốt bằng OpenAI.",
         "hordeProvider": "Horde là nhà cung cấp miễn phí, nhưng thời gian phản hồi lâu và chất lượng thấp.",
         "setProviderLater": "Có các nhà cung cấp khác, nhưng bạn có thể cài đặt sau trong phần cài đặt. Chọn mục này nếu bạn muốn cài đặt sau.",
-        "setupOpenAI": "Để sử dụng OpenAI, bạn cần lấy khóa API. \n1. đi tới https://beta.openai.com/ \n2. đăng nhập bằng tài khoản của bạn \n3. đi tới https://beta.openai.com/account/api-keys \n4. nhấp vào 'Create New API Key' và đặt tên cho khóa của bạn bất cứ điều gì bạn muốn. \n5. sao chép khóa trên trang web.\n6. quay lại Risuai\n7. dán nó và nhấp vào nút gửi.",
+        "setupOpenAI": "Để sử dụng OpenAI, bạn cần lấy khóa API. \n1. đi tới https://beta.openai.com/ \n2. đăng nhập bằng tài khoản của bạn \n3. đi tới https://beta.openai.com/account/api-keys \n4. nhấp vào 'Create New API Key' và đặt tên cho khóa của bạn bất cứ điều gì bạn muốn. \n5. sao chép khóa trên trang web.\n6. quay lại Elsewhere\n7. dán nó và nhấp vào nút gửi.",
         "setupClaude": "Để sử dụng Claude, bạn cần lấy khóa API.",
         "setupClaudeSteps": [
             "Truy cập URL này và Đăng nhập bằng Google",
@@ -202,7 +202,7 @@ export const languageVietnamese = {
             "Nhập giống như hình trên và nhấn 'Add'",
             "Sao chép khóa và dán vào đây và gửi đi."
         ],
-        "setupOpenRouter": "Để sử dụng OpenRouter, bạn cần lấy khóa API. \n1. đi tới https://openrouter.ai/keys\n2. nhấp vào 'Create Key'\n3. đặt tên khóa bất cứ điều gì bạn muốn.\n4. sao chép khóa trên trang web\n5. quay lại Risuai\n6. dán nó và nhấp vào nút gửi.",
+        "setupOpenRouter": "Để sử dụng OpenRouter, bạn cần lấy khóa API. \n1. đi tới https://openrouter.ai/keys\n2. nhấp vào 'Create Key'\n3. đặt tên khóa bất cứ điều gì bạn muốn.\n4. sao chép khóa trên trang web\n5. quay lại Elsewhere\n6. dán nó và nhấp vào nút gửi.",
         "allDone": "Xong tất cả! vui lòng đợi một chút.",
         "setupLaterMessage": "Chào mừng {username}! bạn muốn tôi hướng dẫn cài đặt hay tự làm?",
         "setupMessageOption1": "Hướng dẫn tôi cài đặt",
