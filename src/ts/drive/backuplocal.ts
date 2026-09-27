@@ -1,7 +1,7 @@
-import { BaseDirectory, readFile, readDir, writeFile } from "@tauri-apps/plugin-fs";
+import { BaseDirectory, exists, readFile, readDir, writeFile } from "@tauri-apps/plugin-fs";
 import localforage from "localforage";
 import { alertError, alertNormal, alertStore, alertWait, alertMd, alertConfirm } from "../alert";
-import { LocalWriter, forageStorage, requiresFullEncoderReload } from "../globalApi.svelte";
+import { LocalWriter, forageStorage, getUncleanables, requiresFullEncoderReload } from "../globalApi.svelte";
 import { isTauri } from "src/ts/platform"
 import { decodeRisuSave, encodeRisuSaveLegacy } from "../storage/risuSave";
 import { getDatabase, setDatabaseLite } from "../storage/database.svelte";
@@ -93,19 +93,24 @@ export async function SaveLocalBackup(){
             alertWait(message)
 
             const key = asset.name
-            if(!key || !key.endsWith('.png')){
+            if(!key || !asset.isFile){
                 continue
             }
-            const data = await readFile('assets/' + asset.name, {baseDir: BaseDirectory.AppData})
-            if (data) {
+            try {
+                const data = await readFile('assets/' + asset.name, {baseDir: BaseDirectory.AppData})
                 await writer.writeBackup(key, data)
-            } else {
+            } catch (error) {
+                console.error(`Failed to include asset ${key} in local backup:`, error)
                 missingAssets.push(key)
             }
         }
     }
     else{
-        const keys = await forageStorage.keys()
+        const storedKeys = await forageStorage.keys()
+        const referencedAssets = forageStorage.isAccount
+            ? (await getUncleanables(db, 'pure')).filter(key => key.startsWith('assets/'))
+            : []
+        const keys = Array.from(new Set([...storedKeys, ...referencedAssets]))
 
         for(let i=0;i<keys.length;i++){
             const key = keys[i]
@@ -119,16 +124,12 @@ export async function SaveLocalBackup(){
             }
             alertWait(message)
 
-            if(!key || !key.endsWith('.png')){
+            if(!key || !key.startsWith('assets/')){
                 continue
             }
             let data: Uint8Array | undefined;
             let isCached = false;
             if(forageStorage.isAccount && key.startsWith('assets/')){
-                if(DBState.db.skipSavingAssetsOnWebSync){
-                    continue
-                }
-
                 const cached = await localforage.getItem(key) as ArrayBuffer;
                 if(cached) {
                     isCached = true;
@@ -414,6 +415,7 @@ export function LoadLocalBackup(){
         input.type = 'file';
         input.accept = '.bin';
         input.onchange = async () => {
+            try {
             if (!input.files || input.files.length === 0) {
                 input.remove();
                 return;
@@ -427,6 +429,8 @@ export function LoadLocalBackup(){
             let remainingBuffer = new Uint8Array();
             let pendingDatabase: Uint8Array | null = null;
             const restoredColdStorageKeys = new Set<string>();
+            const pendingColdStorage = new Map<string, unknown>();
+            const pendingAssets: { name: string; start: number; length: number }[] = [];
 
             while (true) {
                 const { done, value } = await reader.read();
@@ -442,6 +446,7 @@ export function LoadLocalBackup(){
                 newBuffer.set(remainingBuffer);
                 newBuffer.set(value, remainingBuffer.length);
                 remainingBuffer = newBuffer;
+                const bufferStart = bytesRead - remainingBuffer.length;
 
                 let offset = 0;
                 while (offset + 4 <= remainingBuffer.length) {
@@ -493,11 +498,8 @@ export function LoadLocalBackup(){
                                 const jsonData = JSON.parse(text)
 
                                 if (isColdStorageBackupData(jsonData)) {
-                                    if(await setColdStorageItem(coldStorageKey, jsonData)){
-                                        restoredColdStorageKeys.add(coldStorageKey)
-                                    } else {
-                                        console.error(`Failed to restore cold storage item ${coldStorageKey}`)
-                                    }
+                                    pendingColdStorage.set(coldStorageKey, jsonData)
+                                    restoredColdStorageKeys.add(coldStorageKey)
                                 } else {
                                     console.warn(`Skipping invalid cold storage backup item ${name}`)
                                 }
@@ -507,16 +509,15 @@ export function LoadLocalBackup(){
                         }
 
                         if (!handledAsColdStorage) {
-                            if (isTauri) {
-                                await writeFile(`assets/` + name, data, { baseDir: BaseDirectory.AppData });
-                            } else {
-                                await forageStorage.setItem('assets/' + name, data);
+                            if (name !== getBasename(name) || name === '.' || name === '..') {
+                                throw new Error(`Invalid backup asset name: ${name}`)
                             }
+                            pendingAssets.push({
+                                name,
+                                start: bufferStart + offset + 4 + nameLength + 4,
+                                length: dataLength
+                            })
                         }
-                    }
-                    await sleep(10);
-                    if (forageStorage.isAccount) {
-                        await sleep(1000);
                     }
 
                     offset += 4 + nameLength + 4 + dataLength;
@@ -524,21 +525,33 @@ export function LoadLocalBackup(){
                 remainingBuffer = remainingBuffer.slice(offset);
             }
 
-            if(!pendingDatabase){
+            if(!pendingDatabase || remainingBuffer.length > 0){
                 alertError('Failed, Is file corrupted?')
                 return
             }
 
             let db = pendingDatabase;
             if(encryptionMeta.type === 'account' && encryptionMeta.time){
+                if (!await alertConfirm('This older encrypted backup needs a decryption key from RisuAI. Contact RisuAI to restore it?')) {
+                    alertError('Restore stopped. Your current database was not replaced.');
+                    return;
+                }
                 try {
-                    const key = (await (await fetch(`${mainHubFetchURL}/cryptokey?key=${encryptionMeta.time}`)).json()).key
+                    const response = await fetch(`${mainHubFetchURL}/cryptokey?key=${encryptionMeta.time}`)
+                    if (!response.ok) {
+                        throw new Error(`RisuAI key lookup failed: ${response.status}`)
+                    }
+                    const key = (await response.json()).key
+                    if (typeof key !== 'string' || !key) {
+                        throw new Error('RisuAI did not return a decryption key')
+                    }
                     const decrypted = await decryptBuffer(db, key)
                     db = new Uint8Array(decrypted)
                 }
                 catch (e) {
                     console.error('Failed to decrypt database backup:', e)
-                    alertError('Failed to decrypt database backup, will attempt to load it without decryption.')
+                    alertError('Restore stopped because this encrypted backup could not be decrypted. Your current database was not replaced.')
+                    return
                 }
             }
             const dbData = await decodeRisuSave(db);
@@ -556,17 +569,103 @@ export function LoadLocalBackup(){
                 return
             }
 
+            const previousColdStorage = new Map<string, unknown>()
+            const currentColdStorageKeys = new Set(await listColdDataKeys(getDatabase()))
+            for (const key of pendingColdStorage.keys()) {
+                const previous = await getColdStorageItem(key)
+                if (previous === null && currentColdStorageKeys.has(key)) {
+                    throw new Error(`Cannot safely replace unreadable cold storage item ${key}`)
+                }
+                previousColdStorage.set(key, previous)
+            }
+            const previousAssets = new Map<string, Uint8Array | null>()
+            for (const asset of pendingAssets) {
+                if (previousAssets.has(asset.name)) continue
+                const key = `assets/${asset.name}`
+                if (isTauri) {
+                    const present = await exists(key, { baseDir: BaseDirectory.AppData })
+                    previousAssets.set(asset.name, present ? await readFile(key, { baseDir: BaseDirectory.AppData }) : null)
+                } else {
+                    previousAssets.set(asset.name, await forageStorage.getItem(key) ?? null)
+                }
+            }
+            const previousDatabase = isTauri
+                ? await readFile('database/database.bin', { baseDir: BaseDirectory.AppData })
+                : await forageStorage.getItem('database/database.bin')
+            if (!previousDatabase) {
+                throw new Error('Cannot safely replace the local database without a recovery copy')
+            }
+
+            let databaseWriteStarted = false
+            const touchedColdStorage: string[] = []
+            const touchedAssets: string[] = []
+            try {
+                for (const [key, value] of pendingColdStorage) {
+                    touchedColdStorage.push(key)
+                    if (!await setColdStorageItem(key, value)) {
+                        throw new Error(`Failed to restore cold storage item ${key}`)
+                    }
+                }
+                for (const asset of pendingAssets) {
+                    const data = new Uint8Array(await file.slice(asset.start, asset.start + asset.length).arrayBuffer())
+                    if (data.length !== asset.length) {
+                        throw new Error(`Failed to read backup asset ${asset.name}`)
+                    }
+                    touchedAssets.push(asset.name)
+                    if (isTauri) {
+                        await writeFile(`assets/${asset.name}`, data, { baseDir: BaseDirectory.AppData })
+                    } else {
+                        await forageStorage.setItem(`assets/${asset.name}`, data)
+                    }
+                }
+                databaseWriteStarted = true
+                if (isTauri) {
+                    await writeFile('database/database.bin', db, { baseDir: BaseDirectory.AppData })
+                } else {
+                    await forageStorage.setItem('database/database.bin', db)
+                }
+            } catch (error) {
+                const rollbackErrors: unknown[] = []
+                if (databaseWriteStarted) {
+                    try {
+                        if (isTauri) {
+                            await writeFile('database/database.bin', previousDatabase, { baseDir: BaseDirectory.AppData })
+                        } else {
+                            await forageStorage.setItem('database/database.bin', previousDatabase)
+                        }
+                    } catch (rollbackError) { rollbackErrors.push(rollbackError) }
+                }
+                for (const name of [...new Set(touchedAssets)].reverse()) {
+                    const previous = previousAssets.get(name)
+                    if (previous == null) continue
+                    try {
+                        if (isTauri) {
+                            await writeFile(`assets/${name}`, previous, { baseDir: BaseDirectory.AppData })
+                        } else {
+                            await forageStorage.setItem(`assets/${name}`, previous)
+                        }
+                    } catch (rollbackError) { rollbackErrors.push(rollbackError) }
+                }
+                for (const key of [...new Set(touchedColdStorage)].reverse()) {
+                    const previous = previousColdStorage.get(key)
+                    if (previous == null) continue
+                    if (!await setColdStorageItem(key, previous)) rollbackErrors.push(key)
+                }
+                if (rollbackErrors.length > 0) {
+                    throw new Error('Backup restore failed and some original files could not be restored. Stop using this profile and recover from your saved backup.')
+                }
+                throw error
+            }
+
             setDatabaseLite(dbData);
             requiresFullEncoderReload.state = true;
             if (isTauri) {
-                await writeFile('database/database.bin', db, { baseDir: BaseDirectory.AppData });
                 await relaunch();
                 alertStore.set({
                     type: "wait",
                     msg: "Success, Refreshing your app."
                 });
             } else {
-                await forageStorage.setItem('database/database.bin', db);
                 location.search = '';
                 alertStore.set({
                     type: "wait",
@@ -575,6 +674,10 @@ export function LoadLocalBackup(){
             }
 
             alertNormal('Success');
+            } catch (error) {
+                console.error('Failed to restore local backup:', error)
+                alertError(error)
+            }
         };
 
         input.click();
