@@ -27,15 +27,15 @@
       }
     ]
   },
-  "productName": "RisuAI",
-  "mainBinaryName": "RisuAI",
-  "version": "2026.8.250",
-  "identifier": "co.aiclient.risu",
+  "productName": "Elsewhere",
+  "mainBinaryName": "Elsewhere",
+  "version": "1.0.0",
+  "identifier": "io.github.mariepop13.elsewhere",
   "plugins": {
     "updater": {
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDU2ODMzOTIxMDMxOTY1MUYKUldRZlpSa0RJVG1EVmx5Vm1WYlhFM29HMEJrUTRrYmg5dDQ0RFpvdUphNDdxQmVlWXJHVmV5TEYK",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEQxRjhDMjRBNDMwMTI1OTEKUldTUkpRRkRTc0w0MFJIOEFwU3paelFGUExsQzdrMmk4TFJ2V0hCc1NJd3RGdzllQVVORkd2VlIK",
       "endpoints": [
-        "https://github.com/kwaroran/RisuAI/releases/latest/download/latest.json"
+        "https://github.com/mariepop13/elsewhere/releases/latest/download/latest.json"
       ],
       "windows": {
         "installMode": "passive"
@@ -43,7 +43,7 @@
     },
     "deep-link": {
       "desktop": {
-        "schemes": ["risuailocal"]
+        "schemes": ["elsewherechat"]
       }
     }
   },
@@ -53,7 +53,7 @@
       {
         "fullscreen": false,
         "resizable": true,
-        "title": "Risuai",
+        "title": "Elsewhere",
         "width": 1024,
         "height": 768,
         "minWidth": 300,

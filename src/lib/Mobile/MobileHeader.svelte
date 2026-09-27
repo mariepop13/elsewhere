@@ -19,7 +19,6 @@
             case 12: return language.persona;
             case 14: return language.modules;
             case 15: return language.hotkey;
-            case 77: return language.supporterThanks;
             default: return language.settings;
         }
     });
@@ -68,13 +67,13 @@
         </div>
     {:else if $MobileGUIStack === 2}
         <div class="mobile-header-context min-w-0">
-            <span class="mobile-header-kicker">Risuai</span>
+            <span class="mobile-header-kicker">Elsewhere</span>
             <span class="mobile-header-title font-bold text-lg truncate">{language.settings}</span>
         </div>
     {:else}
         <div class="mobile-header-context min-w-0">
-            <span class="mobile-header-kicker">Risuai</span>
-            <span class="mobile-header-title font-bold text-lg truncate">Risuai</span>
+            <span class="mobile-header-kicker">Elsewhere</span>
+            <span class="mobile-header-title font-bold text-lg truncate">Elsewhere</span>
         </div>
 
     {/if}

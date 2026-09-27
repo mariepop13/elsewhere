@@ -12,7 +12,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { get } from "svelte/store";
 import { setDatabase, defaultSdDataFunc, getDatabase } from "./storage/database.svelte";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
-import { checkRisuUpdate } from "./update";
+import { checkElsewhereUpdate } from "./update";
 import { MobileGUI, botMakerMode, selectedCharID, loadedStore, DBState, LoadingStatusState } from "./stores.svelte";
 import { loadPlugins } from "./plugins/plugins.svelte";
 import { alertError, alertMd, alertTOS, waitAlert, alertConfirm, alertInput } from "./alert";
@@ -115,7 +115,7 @@ export async function loadData() {
                     }
                 }
                 LoadingStatusState.text = "Checking Update..."
-                await checkRisuUpdate()
+                await checkElsewhereUpdate()
                 await changeFullscreen()
 
             }

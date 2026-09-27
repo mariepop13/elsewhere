@@ -5,7 +5,7 @@ import {
 } from '@tauri-apps/plugin-updater'
 import { relaunch } from '@tauri-apps/plugin-process'
 
-const UPDATE_REMINDER_KEY = 'risu_update_reminder'
+const UPDATE_REMINDER_KEY = 'elsewhere_update_reminder'
 
 interface UpdateReminder {
     until: number
@@ -43,7 +43,7 @@ function isUpdateReminderActive(): boolean {
     return false
 }
 
-export async function checkRisuUpdate(){
+export async function checkElsewhereUpdate(){
     try {
         const checked = await check()     
         if(checked){
@@ -113,4 +113,3 @@ if (typeof window !== 'undefined') {
         }
     }
 }
-
