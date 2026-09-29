@@ -10,14 +10,14 @@
     import { sayTTS } from "src/ts/process/tts"
     import { DBState, ReloadChatPointer, CurrentTriggerIdStore, popupStore } from 'src/ts/stores.svelte'
     import { ConnectionOpenStore } from "src/ts/sync/multiuser"
-    import { capitalize, getUserIcon, getUserName, sleep } from "src/ts/util"
+    import { capitalize, findCharacterbyId, getUserIcon, getUserName, sleep } from "src/ts/util"
     import { onDestroy, onMount } from "svelte"
     import { type Unsubscriber } from "svelte/store"
     import { v4 as uuidv4, v4 } from 'uuid'
     import { language } from "../../lang"
     import { alertClear, alertConfirm, alertInput, alertNormal, alertRequestData, alertWait } from "../../ts/alert"
     import { ParseMarkdown, type CbsConditions, type simpleCharacterArgument } from "../../ts/parser/parser.svelte"
-    import { getCurrentCharacter, getCurrentChat, setCurrentChat, type MessageGenerationInfo, type StreamingDisplayOptimizationMode } from "../../ts/storage/database.svelte"
+    import { getCurrentCharacter, getCurrentChat, setCurrentChat, type groupChat, type MessageGenerationInfo, type StreamingDisplayOptimizationMode } from "../../ts/storage/database.svelte"
     import { selectedCharID } from "../../ts/stores.svelte"
     import { HideIconStore, ReloadGUIPointer, selIdState } from "../../ts/stores.svelte"
     import AutoresizeArea from "../UI/GUI/TextAreaResizable.svelte"
@@ -101,6 +101,26 @@
         isOptimizedStreamingMessage = state.isOptimizedStreamingMessage
         streamingOptimizationMode = state.streamingOptimizationMode
         rawStreamingText = state.rawStreamingText
+    }
+
+    function setGroupSpeaker(speakerId: string) {
+        const group = DBState.db.characters[selIdState.selId]
+        if (group?.type !== 'group' || idx < 0) return
+
+        const currentMessage = group.chats[group.chatPage]?.message[idx]
+        if (!currentMessage || currentMessage.role !== 'char') return
+
+        if (speakerId) {
+            currentMessage.saying = speakerId
+        } else {
+            delete currentMessage.saying
+        }
+        popupStore.children = null
+        popupStore.openId = 0
+        ReloadChatPointer.update((value) => {
+            value[idx] = (value[idx] ?? 0) + 1
+            return value
+        })
     }
 
     async function rm(e:MouseEvent, rec?:boolean){
@@ -892,6 +912,18 @@
 {/snippet}
 
 {#snippet minorIconButtonsBody(showNames:boolean)}
+    {#if role === 'char' && idx >= 0 && DBState.db.characters[selIdState.selId]?.type === 'group'}
+        {@const group = DBState.db.characters[selIdState.selId] as groupChat}
+        <span class="text-xs text-textcolor2">{language.character}</span>
+        <button type="button" class="text-textcolor hover:text-focus" onclick={() => setGroupSpeaker('')}>
+            Unknown Character
+        </button>
+        {#each group.characters as characterId}
+            <button type="button" class="text-textcolor hover:text-focus" onclick={() => setGroupSpeaker(characterId)}>
+                {findCharacterbyId(characterId).name}
+            </button>
+        {/each}
+    {/if}
     
     {#if DBState.db.enableBookmark}
         <button class="flex items-center hover:text-focus transition-colors button-icon-bookmark {isBookmarked ? 'text-ambient' : ''}" onclick={async () => {
@@ -981,7 +1013,10 @@
                 <div class="shadow-lg bg-textcolor2" style={options?.styleFix ??`height:${DBState.db.iconsize * 3.5 / 100}rem;width:${DBState.db.iconsize * 3.5 / 100}rem;min-width:${DBState.db.iconsize * 3.5 / 100}rem`}
                 class:rounded-md={!options?.rounded} class:rounded-full={options?.rounded}></div>
             {:then m}
-                {#if largePortrait && (!options?.rounded)}
+                {#if !m}
+                    <div class="shadow-lg bg-textcolor2 flex items-center justify-center text-textcolor" style={options?.styleFix ?? `height:${DBState.db.iconsize * 3.5 / 100}rem;width:${DBState.db.iconsize * 3.5 / 100}rem;min-width:${DBState.db.iconsize * 3.5 / 100}rem`}
+                    class:rounded-md={!options?.rounded} class:rounded-full={options?.rounded} aria-hidden="true"><UserIcon /></div>
+                {:else if largePortrait && (!options?.rounded)}
                     <div class="shadow-lg bg-textcolor2" style={m + (options?.styleFix ?? `height:${DBState.db.iconsize * 3.5 / 100 / 0.75}rem;width:${DBState.db.iconsize * 3.5 / 100}rem;min-width:${DBState.db.iconsize * 3.5 / 100}rem`)}
                     class:rounded-md={!options?.rounded} class:rounded-full={options?.rounded}></div>
                 {:else}
