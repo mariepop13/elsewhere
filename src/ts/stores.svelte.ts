@@ -128,6 +128,7 @@ export type MenuDef = {
     iconType:'html'|'img'|'none',
     callback: any,
     id: string,
+    isContainerVisible?: () => boolean,
 }
 
 export type ChatPanelDef = {

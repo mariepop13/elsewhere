@@ -93,11 +93,21 @@
         for(let i=loadStart ; i >= loadEnd; i--){
             if(i < 0) break; // Prevent out of bounds
             const message = messages[i];
-            const messageLargePortrait = message.role === 'user' ? (userIconPortrait ?? false) : ((currentCharacter as character).largePortrait ?? false);
+            const groupSpeaker = currentCharacter.type === 'group' && message.role === 'char'
+                ? DBState.db.characters.find((char): char is character => char.type === 'character' && char.chaId === message.saying)
+                : undefined;
+            const speakerName = groupSpeaker?.name?.trim() || (message.saying === '' ? '' : message.name?.trim()) || 'Unknown Character';
+            const speakerImage = groupSpeaker
+                ? getCharImage(groupSpeaker.image, 'css')
+                : currentCharacter.type === 'group' ? getCharImage('', 'css') : charImage;
+            const messageLargePortrait = message.role === 'user'
+                ? (userIconPortrait ?? false)
+                : (groupSpeaker?.largePortrait ?? (currentCharacter.type === 'character' ? currentCharacter.largePortrait ?? false : false));
             const reloadPointer = reloadPointerMap[i] ?? 0;
             const activeStreamingMessage = i === activeStreamingIndex && message.role === 'char';
             const hashMessageData = activeStreamingMessage ? '' : message.data;
-            let hashd = hashMessageData + (message.chatId ?? '') + i.toString() + messageLargePortrait.toString() + message.disabled?.toString() + reloadPointer.toString();
+            let hashd = hashMessageData + (message.chatId ?? '') + i.toString() + messageLargePortrait.toString() + message.disabled?.toString() + reloadPointer.toString()
+                + (message.saying ?? '') + (message.name ?? '') + (groupSpeaker?.name ?? '') + (groupSpeaker?.image ?? '');
             const currentHash = hashCode(hashd);
             currentHashes.add(currentHash);
             if(!hashes.has(currentHash)){
@@ -111,7 +121,7 @@
                         isLastMemory: false,
                         idx: i,
                         totalLength: messages.length,
-                        img: message.role === 'user' ? userImage : charImage,
+                        img: message.role === 'user' ? userImage : speakerImage,
                         onReroll: onReroll,
                         unReroll: unReroll,
                         rerollIcon: 'dynamic',
@@ -119,7 +129,7 @@
                         largePortrait: messageLargePortrait,
                         messageGenerationInfo: message.generationInfo,
                         role: message.role,
-                        name: message.role === 'user' ? currentUsername : currentCharacter.name,
+                        name: message.role === 'user' ? currentUsername : currentCharacter.type === 'group' ? speakerName : currentCharacter.name,
                         isComment: message.isComment ?? false,
                         disabled: message.disabled ?? false,
                         isOptimizedStreamingMessage: activeStreamingMessage,

@@ -897,24 +897,24 @@
                     e.stopPropagation()
                 }}>
                     {#if DBState.db.characters[$selectedCharID].type === 'group'}
-                        <div class="flex items-center cursor-pointer hover:text-green-500 transition-colors" onclick={runAutoMode}>
+                        <button type="button" class="flex items-center cursor-pointer hover:text-green-500 transition-colors" onclick={runAutoMode}>
                             <DicesIcon />
                             <span class="ml-2">{language.autoMode}</span>
-                        </div>
+                        </button>
                     {/if}
 
                     
                     <!-- svelte-ignore block_empty -->
                     {#if DBState.db.characters[$selectedCharID].ttsMode === 'webspeech' || DBState.db.characters[$selectedCharID].ttsMode === 'elevenlab'}
-                        <div class="flex items-center cursor-pointer hover:text-green-500 transition-colors" onclick={() => {
+                        <button type="button" class="flex items-center cursor-pointer hover:text-green-500 transition-colors" onclick={() => {
                             stopTTS()
                         }}>
                             <MicOffIcon />
                             <span class="ml-2">{language.ttsStop}</span>
-                        </div>
+                        </button>
                     {/if}
 
-                    <div class="flex items-center cursor-pointer hover:text-green-500 transition-colors"
+                    <button type="button" class="flex items-center cursor-pointer hover:text-green-500 transition-colors"
                         class:text-textcolor2={(DBState.db.characters[$selectedCharID].chats[DBState.db.characters[$selectedCharID].chatPage].message.length < 2) || (DBState.db.characters[$selectedCharID].chats[DBState.db.characters[$selectedCharID].chatPage].message[DBState.db.characters[$selectedCharID].chats[DBState.db.characters[$selectedCharID].chatPage].message.length - 1].role !== 'char')}
                         onclick={() => {
                             if((DBState.db.characters[$selectedCharID].chats[DBState.db.characters[$selectedCharID].chatPage].message.length < 2) || (DBState.db.characters[$selectedCharID].chats[DBState.db.characters[$selectedCharID].chatPage].message[DBState.db.characters[$selectedCharID].chats[DBState.db.characters[$selectedCharID].chatPage].message.length - 1].role !== 'char')){
@@ -925,42 +925,45 @@
                     >
                         <StepForwardIcon />
                         <span class="ml-2">{language.continueResponse}</span>
-                    </div>
+                    </button>
 
 
                     {#if DBState.db.showMenuChatList}
-                        <div class="flex items-center cursor-pointer hover:text-green-500 transition-colors" onclick={() => {
+                        <button type="button" class="flex items-center cursor-pointer hover:text-green-500 transition-colors" onclick={() => {
                             openChatList = true
                             openMenu = false
                         }}>
                             <DatabaseIcon />
                             <span class="ml-2">{language.chatList}</span>
-                        </div>
+                        </button>
                     {/if}
 
                     
                     {#if DBState.db.enableRisuaiProTools}
-                        <div class="flex items-center cursor-pointer hover:text-green-500 transition-colors" onclick={() => {
+                        <button type="button" class="flex items-center cursor-pointer hover:text-green-500 transition-colors" onclick={() => {
                             easyPanelStore.open = !easyPanelStore.open
                         }}>
                             <SparkleIcon />
                             <span class="ml-2">{language.easyPanel}</span>
-                        </div>
+                        </button>
                     {/if}
 
                     {#each additionalChatMenu as menu}
-                        <div class="flex items-center cursor-pointer hover:text-green-500 transition-colors" onclick={() => {
-                            menu.callback()
-                            openMenu = false
+                        <button type="button" class="flex items-center cursor-pointer hover:text-green-500 transition-colors" onclick={async () => {
+                            try {
+                                await menu.callback()
+                            } finally {
+                                if (!menu.isContainerVisible?.()) openMenu = false
+                            }
                         }}>
                             <PluginDefinedIcon ico={menu} />
                             <span class="ml-2">{menu.name}</span>
-                        </div>
+                        </button>
                     {/each}
 
                     {#if DBState.db.showMenuHypaMemoryModal}
                         {#if (DBState.db.supaModelType !== 'none' && DBState.db.hypav2) || DBState.db.hypaV3}
-                            <div class="flex items-center cursor-pointer hover:text-green-500 transition-colors" onclick={() => {
+                            <button type="button" class="flex items-center cursor-pointer hover:text-green-500 transition-colors" onclick={() => {
                                 if (DBState.db.hypav2) {
                                     DBState.db.characters[$selectedCharID].chats[DBState.db.characters[$selectedCharID].chatPage].hypaV2Data ??= {
                                         lastMainChunkID: 0,
@@ -978,28 +981,28 @@
                                 <span class="ml-2">
                                     {DBState.db.hypav2 ? language.hypaMemoryV2Modal : language.hypaMemoryV3Modal}
                                 </span>
-                            </div>
+                            </button>
                         {/if}
                     {/if}
                     
                     {#if DBState.db.translator !== ''}
-                        <div class={"flex items-center cursor-pointer "+ (DBState.db.useAutoTranslateInput ? 'text-green-500':'lg:hover:text-green-500')} onclick={() => {
+                        <button type="button" class={"flex items-center cursor-pointer "+ (DBState.db.useAutoTranslateInput ? 'text-green-500':'lg:hover:text-green-500')} onclick={() => {
                             DBState.db.useAutoTranslateInput = !DBState.db.useAutoTranslateInput
                         }}>
                             <GlobeIcon />
                             <span class="ml-2">{language.autoTranslateInput}</span>
-                        </div>
+                        </button>
                         
                     {/if}
             
-                    <div class="flex items-center cursor-pointer hover:text-green-500 transition-colors" onclick={() => {
+                    <button type="button" class="flex items-center cursor-pointer hover:text-green-500 transition-colors" onclick={() => {
                         screenShot()
                     }}>
                         <CameraIcon />
                         <span class="ml-2">{language.screenshot}</span>
-                    </div>
+                    </button>
 
-                    <div class="flex items-center cursor-pointer hover:text-green-500 transition-colors" onclick={async () => {
+                    <button type="button" class="flex items-center cursor-pointer hover:text-green-500 transition-colors" onclick={async () => {
                         const results = await postChatFile(messageInput)
                         if(!results) return
                         for(const res of results){
@@ -1015,31 +1018,31 @@
 
                         <ImagePlusIcon />
                         <span class="ml-2">{language.postFile}</span>
-                    </div>
+                    </button>
 
 
-                    <div class={"flex items-center cursor-pointer "+ (DBState.db.useAutoSuggestions ? 'text-green-500':'lg:hover:text-green-500')} onclick={async () => {
+                    <button type="button" class={"flex items-center cursor-pointer "+ (DBState.db.useAutoSuggestions ? 'text-green-500':'lg:hover:text-green-500')} onclick={async () => {
                         DBState.db.useAutoSuggestions = !DBState.db.useAutoSuggestions
                     }}>
                         <ReplyIcon />
                         <span class="ml-2">{language.autoSuggest}</span>
-                    </div>
+                    </button>
 
 
-                    <div class="flex items-center cursor-pointer hover:text-green-500 transition-colors" onclick={() => {
+                    <button type="button" class="flex items-center cursor-pointer hover:text-green-500 transition-colors" onclick={() => {
                         DBState.db.characters[$selectedCharID].chats[DBState.db.characters[$selectedCharID].chatPage].modules ??= []
                         openModuleList = true
                         openMenu = false
                     }}>
                         <PackageIcon />
                         <span class="ml-2">{language.modules}</span>
-                    </div>
+                    </button>
 
                     {#if DBState.db.sideMenuRerollButton}
-                        <div class="flex items-center cursor-pointer hover:text-green-500 transition-colors" onclick={reroll}>
+                        <button type="button" class="flex items-center cursor-pointer hover:text-green-500 transition-colors" onclick={reroll}>
                             <RefreshCcwIcon />
                             <span class="ml-2">{language.reroll}</span>
-                        </div>
+                        </button>
                     {/if}
                 </div>
 

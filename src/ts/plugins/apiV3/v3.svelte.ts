@@ -646,6 +646,7 @@ const authorizationHeaders = [
 const makeRisuaiAPIV3 = (iframe:HTMLIFrameElement,plugin:RisuPlugin) => {
 
     const oldApis = getV2PluginAPIs();
+    let containerOpener: HTMLElement | null = null;
     return {
 
         //Old APIs from v2.1
@@ -973,6 +974,10 @@ const makeRisuaiAPIV3 = (iframe:HTMLIFrameElement,plugin:RisuPlugin) => {
             //more types may be added in future
             type: 'fullscreen' = 'fullscreen'
         ) => {
+            const activeElement = document.activeElement;
+            if (activeElement instanceof HTMLElement && activeElement !== document.body && activeElement !== iframe) {
+                containerOpener = activeElement;
+            }
             iframe.style.display = "block";
             
             switch(type) {
@@ -999,6 +1004,10 @@ const makeRisuaiAPIV3 = (iframe:HTMLIFrameElement,plugin:RisuPlugin) => {
         },
         hideContainer: () => {
             iframe.style.display = "none";
+            if (containerOpener?.isConnected) {
+                containerOpener.focus();
+            }
+            containerOpener = null;
         },
         getRootDocument: async () => {
             const conf = await getPluginPermission(plugin.name, 'mainDom');
@@ -1098,7 +1107,8 @@ const makeRisuaiAPIV3 = (iframe:HTMLIFrameElement,plugin:RisuPlugin) => {
                 icon,
                 iconType,
                 callback,
-                id
+                id,
+                isContainerVisible: () => iframe.style.display === 'block'
             }
 
             const buttonStores = [additionalFloatingActionButtons, additionalHamburgerMenu, additionalChatMenu]
