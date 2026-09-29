@@ -110,11 +110,7 @@
         const currentMessage = group.chats[group.chatPage]?.message[idx]
         if (!currentMessage || currentMessage.role !== 'char') return
 
-        if (speakerId) {
-            currentMessage.saying = speakerId
-        } else {
-            delete currentMessage.saying
-        }
+        currentMessage.saying = speakerId
         popupStore.children = null
         popupStore.openId = 0
         ReloadChatPointer.update((value) => {

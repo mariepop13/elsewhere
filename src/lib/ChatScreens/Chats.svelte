@@ -96,7 +96,7 @@
             const groupSpeaker = currentCharacter.type === 'group' && message.role === 'char'
                 ? DBState.db.characters.find((char): char is character => char.type === 'character' && char.chaId === message.saying)
                 : undefined;
-            const speakerName = groupSpeaker?.name?.trim() || message.name?.trim() || 'Unknown Character';
+            const speakerName = groupSpeaker?.name?.trim() || (message.saying === '' ? '' : message.name?.trim()) || 'Unknown Character';
             const speakerImage = groupSpeaker
                 ? getCharImage(groupSpeaker.image, 'css')
                 : currentCharacter.type === 'group' ? getCharImage('', 'css') : charImage;
