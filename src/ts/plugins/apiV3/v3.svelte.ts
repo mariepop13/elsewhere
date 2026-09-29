@@ -1107,7 +1107,8 @@ const makeRisuaiAPIV3 = (iframe:HTMLIFrameElement,plugin:RisuPlugin) => {
                 icon,
                 iconType,
                 callback,
-                id
+                id,
+                isContainerVisible: () => iframe.style.display === 'block'
             }
 
             const buttonStores = [additionalFloatingActionButtons, additionalHamburgerMenu, additionalChatMenu]

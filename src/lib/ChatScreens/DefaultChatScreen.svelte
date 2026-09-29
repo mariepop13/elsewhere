@@ -949,8 +949,12 @@
                     {/if}
 
                     {#each additionalChatMenu as menu}
-                        <button type="button" class="flex items-center cursor-pointer hover:text-green-500 transition-colors" onclick={() => {
-                            menu.callback()
+                        <button type="button" class="flex items-center cursor-pointer hover:text-green-500 transition-colors" onclick={async () => {
+                            try {
+                                await menu.callback()
+                            } finally {
+                                if (!menu.isContainerVisible?.()) openMenu = false
+                            }
                         }}>
                             <PluginDefinedIcon ico={menu} />
                             <span class="ml-2">{menu.name}</span>
