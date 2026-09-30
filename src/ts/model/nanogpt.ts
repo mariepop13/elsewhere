@@ -1,3 +1,4 @@
+import { providerFetch } from "../globalApi.svelte"
 import { getDatabase } from "../storage/database.svelte"
 import {
     NANOGPT_PERSONALIZED_MODELS_ENDPOINT,
@@ -59,7 +60,7 @@ export type NanoGPTSubscriptionUsage = {
 
 export async function getNanoGPTBalance(key: string): Promise<NanoGPTBalance | null> {
     try {
-        const res = await fetch(NANOGPT_BALANCE_ENDPOINT, {
+        const res = await providerFetch(NANOGPT_BALANCE_ENDPOINT, {
             method: 'POST',
             headers: { 'x-api-key': key, 'Content-Type': 'application/json' },
         })
@@ -72,7 +73,7 @@ export async function getNanoGPTBalance(key: string): Promise<NanoGPTBalance | n
 
 export async function getNanoGPTSubscription(key: string): Promise<NanoGPTSubscriptionUsage | null> {
     try {
-        const res = await fetch(NANOGPT_SUBSCRIPTION_ENDPOINT, {
+        const res = await providerFetch(NANOGPT_SUBSCRIPTION_ENDPOINT, {
             headers: { 'Authorization': 'Bearer ' + key },
         })
         if (!res.ok) return null
@@ -124,7 +125,7 @@ export type NanoGPTModelProviders = {
 
 export async function getNanoGPTModelProviders(key: string, modelId: string): Promise<NanoGPTModelProviders | null> {
     try {
-        const res = await fetch(`${NANOGPT_MODEL_PROVIDERS_ENDPOINT}/${encodeURIComponent(modelId)}/providers`, {
+        const res = await providerFetch(`${NANOGPT_MODEL_PROVIDERS_ENDPOINT}/${encodeURIComponent(modelId)}/providers`, {
             headers: { 'Authorization': 'Bearer ' + key },
         })
         if (!res.ok) return null
@@ -137,7 +138,7 @@ export async function getNanoGPTModelProviders(key: string, modelId: string): Pr
 export async function getNanoGPTSubscriptionModels(key: string): Promise<NanoGPTModelInfo[]> {
     if (!key) return []
     try {
-        const res = await fetch(NANOGPT_SUBSCRIPTION_MODELS_ENDPOINT + '?detailed=true', {
+        const res = await providerFetch(NANOGPT_SUBSCRIPTION_MODELS_ENDPOINT + '?detailed=true', {
             headers: { 'Authorization': 'Bearer ' + key },
         })
         if (!res.ok) return []
@@ -170,7 +171,7 @@ export async function getNanoGPTModels(): Promise<NanoGPTModelInfo[]> {
             headers["Authorization"] = "Bearer " + key
         }
 
-        const res = await fetch(endpoint, { headers })
+        const res = await providerFetch(endpoint, { headers })
         const json = await res.json()
 
         const models: any[] = json?.data ?? []

@@ -529,7 +529,6 @@ export async function sendChat(chatProcessIndex = -1,arg:{
     const normalActives = lorepmt.actives.filter(v => {
         return v.pos === '' && v.inject === null
     })
-    console.log(normalActives)
 
     for(const lorebook of normalActives){
         unformated.lorebook.push({
@@ -618,7 +617,6 @@ export async function sendChat(chatProcessIndex = -1,arg:{
     currentTokens += 50
     
     const positionParser = (text:string, loc:string) => {
-        console.log(injectionLorePosSet)
         if(injectionLorePosSet.has(loc)){
             const matchings = injectionLorebooks.filter(v => {
                 return v.inject.location === loc
@@ -652,7 +650,6 @@ export async function sendChat(chatProcessIndex = -1,arg:{
     } as const
 
     function applyPromptBlockRole(chats:OpenAIChat[], role?: 'user'|'bot'|'system'){
-        console.log("Applying ", chats, role)
         if(!role){
             return
         }
@@ -883,7 +880,6 @@ export async function sendChat(chatProcessIndex = -1,arg:{
         currentTokens += await tokenizer.tokenizeChat(chat)
     }
     
-    console.log('Prepared messages for token calculation:', ms)
 
     const triggerResult = await runTrigger(currentChar, 'start', {chat: currentChat})
     if(triggerResult){
@@ -1051,7 +1047,6 @@ export async function sendChat(chatProcessIndex = -1,arg:{
         currentTokens += await tokenizer.tokenizeChat(chat)
         index++
     }
-    console.log(JSON.stringify(chats, null, 2))
 
     const depthPrompts = lorepmt.actives.filter(v => {
         return (v.pos === 'depth' && v.depth > 0) || v.pos === 'reverse_depth'
@@ -1084,10 +1079,8 @@ export async function sendChat(chatProcessIndex = -1,arg:{
             currentTokens = hn.tokens
         }
         else if(DBState.db.hypav2){
-            console.log("Current chat's hypaV2 Data: ", currentChat.hypaV2Data)
             const sp = await hypaMemoryV2(chats, currentTokens, maxContextTokens, currentChat, nowChatroom, tokenizer)
             if(sp.error){
-                console.log(sp)
                 throwError(sp.error)
                 return false
             }
@@ -1097,10 +1090,8 @@ export async function sendChat(chatProcessIndex = -1,arg:{
             DBState.db.characters[selectedChar].chats[selectedChat].hypaV2Data = currentChat.hypaV2Data
 
             currentChat = DBState.db.characters[selectedChar].chats[selectedChat];
-            console.log("[Expected to be updated] chat's HypaV2Data: ", currentChat.hypaV2Data)
         }
         else if(DBState.db.hypaV3){
-            console.log("Current chat's hypaV3 Data: ", currentChat.hypaV3Data)
             const sp = await hypaMemoryV3(chats, currentTokens, maxContextTokens, currentChat, nowChatroom, tokenizer)
             if(sp.error){
                 // Save new summary
@@ -1108,7 +1099,6 @@ export async function sendChat(chatProcessIndex = -1,arg:{
                     currentChat.hypaV3Data = sp.memory
                     DBState.db.characters[selectedChar].chats[selectedChat].hypaV3Data = currentChat.hypaV3Data
                 }
-                console.log(sp)
                 throwError(sp.error)
                 return false
             }
@@ -1118,7 +1108,6 @@ export async function sendChat(chatProcessIndex = -1,arg:{
             DBState.db.characters[selectedChar].chats[selectedChat].hypaV3Data = currentChat.hypaV3Data
     
             currentChat = DBState.db.characters[selectedChar].chats[selectedChat];
-            console.log("[Expected to be updated] chat's HypaV3Data: ", currentChat.hypaV3Data)
         }
         else{
             const sp = await supaMemory(chats, currentTokens, maxContextTokens, currentChat, nowChatroom, tokenizer, {
@@ -1132,7 +1121,6 @@ export async function sendChat(chatProcessIndex = -1,arg:{
             currentTokens = sp.currentTokens
             currentChat.supaMemoryData = sp.memory ?? currentChat.supaMemoryData
             DBState.db.characters[selectedChar].chats[selectedChat].supaMemoryData = currentChat.supaMemoryData
-            console.log(currentChat.supaMemoryData)
             currentChat.lastMemory = sp.lastId ?? currentChat.lastMemory;
         }
         stageTimings.stage2Duration = Date.now() - stageTimings.stage2Start
@@ -1566,7 +1554,6 @@ export async function sendChat(chatProcessIndex = -1,arg:{
         rememberToolUsage: DBState.db.rememberToolUsage,
     }, 'model', abortSignal)
 
-    console.log(req)
     if(req.model){
         generationInfo.model = getGenerationModelString(req.model)
         console.log(generationInfo.model, req.model)

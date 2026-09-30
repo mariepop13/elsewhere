@@ -225,7 +225,6 @@ export async function requestOpenAI(arg:RequestDataArgumentExtended):Promise<req
         })
     }
 
-    console.log(formatedChat)
     if(arg.modelInfo.format === LLMFormat.Mistral){
         requestModel = aiModel
 
@@ -928,7 +927,6 @@ export async function requestOpenAILegacyInstruct(arg:RequestDataArgumentExtende
             m.content = m.content.trim();
         }
 
-        console.log(m.role +":"+m.content);
         switch (m.role) {
             case 'user': author = 'User'; break;
             case 'assistant': author = 'Assistant'; break;
@@ -1035,7 +1033,6 @@ function getTranStream(arg:RequestDataArgumentExtended):TransformStream<Uint8Arr
                                         const extracted = extractJSON(readed[key], arg.extractJson)
                                         JSONreaded[key] = extracted
                                     }
-                                    console.log(JSONreaded)
                                     control.enqueue(JSONreaded)
                                 }
                                 else if(reasoningContent){
@@ -1132,7 +1129,6 @@ function getTranStream(arg:RequestDataArgumentExtended):TransformStream<Uint8Arr
                         const extracted = extractJSON(readed[key], arg.extractJson)
                         JSONreaded[key] = extracted
                     }
-                    console.log(JSONreaded)
                     control.enqueue(JSONreaded)
                 }
                 else if(reasoningContent){

@@ -1,3 +1,4 @@
+import { providerFetch } from "../globalApi.svelte"
 import { sleep } from "../util"
 
 interface HordeModel {
@@ -21,7 +22,7 @@ export async function getHordeModels():Promise<HordeModel[]> {
     if(modelList === null){
         try {
             modelList = 'loading'
-            const models = await fetch("https://stablehorde.net/api/v2/status/models?type=text")
+            const models = await providerFetch("https://stablehorde.net/api/v2/status/models?type=text")
             const res = await models.json()
             modelList = res
             return res

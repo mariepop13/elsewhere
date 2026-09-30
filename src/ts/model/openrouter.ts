@@ -1,3 +1,4 @@
+import { providerFetch } from "../globalApi.svelte"
 import { getDatabase } from "../storage/database.svelte"
 import type { ModelGridItem } from "./modelGrid"
 
@@ -51,7 +52,7 @@ export async function getOpenRouterProviders(): Promise<{ name: string, slug: st
             "Content-Type": "application/json"
         }
 
-        const providers: { data: { name: string, slug: string }[] } = await fetch("https://openrouter.ai/api/v1/providers", {
+        const providers: { data: { name: string, slug: string }[] } = await providerFetch("https://openrouter.ai/api/v1/providers", {
             headers,
         }).then((res) => res.json())
 
@@ -90,7 +91,7 @@ export async function getOpenRouterModels(): Promise<OpenRouterModelInfo[]> {
             "Content-Type": "application/json"
         }
 
-        const aim = await fetch("https://openrouter.ai/api/v1/models", {
+        const aim = await providerFetch("https://openrouter.ai/api/v1/models", {
             headers,
         }).then((res) => res.json())
 
