@@ -142,48 +142,56 @@ export class NodeStorage{
         }
     }
 
-    private async checkAuth(){
-
-        if(!this.authChecked){
-            const data = await (await fetch('/api/test_auth',{
-                headers: {
-                    'risu-auth': await this.createAuth()
-                }
-            })).json()
-
-            if(data.status === 'unset'){
-                const input = await digestPassword(await alertInput(language.setNodePassword))
-                await fetch('/api/set_password',{
-                    method: "POST",
-                    body:JSON.stringify({
-                        password: input 
-                    }),
+    private async checkAuth() {
+        if (!this.authChecked) {
+            const data = await (
+                await fetch('/api/test_auth', {
                     headers: {
-                        'content-type': 'application/json'
-                    }
+                        'risu-auth': await this.createAuth(),
+                    },
                 })
-                return await this.createAuth()
-            }
-            else if(data.status === 'incorrect'){
-                const keypair = await this.getKeyPair()
-                const publicKey = await crypto.subtle.exportKey('jwk', keypair.publicKey)
-                const input = await digestPassword(await alertInput(language.inputNodePassword))
+            ).json()
 
-                const s = await fetch('/api/login',{
-                    method: "POST",
+            if (data.status === 'unset' || data.status === 'incorrect') {
+                const keypair = await this.getKeyPair()
+                const publicKey = await crypto.subtle.exportKey(
+                    'jwk',
+                    keypair.publicKey,
+                )
+                const input = await digestPassword(
+                    await alertInput(
+                        data.status === 'unset'
+                            ? language.setNodePassword
+                            : language.inputNodePassword,
+                    ),
+                )
+
+                if (data.status === 'unset') {
+                    const setup = await fetch('/api/set_password', {
+                        method: 'POST',
+                        body: JSON.stringify({ password: input }),
+                        headers: { 'content-type': 'application/json' },
+                    })
+                    if (!setup.ok) {
+                        throw `Password setup failed (${setup.status}). Reload and sign in if the server already has a password.`
+                    }
+                }
+                // Register this browser's public key before the first authenticated read.
+                const s = await fetch('/api/login', {
+                    method: 'POST',
                     body: JSON.stringify({
                         password: input,
-                        publicKey: publicKey
+                        publicKey: publicKey,
                     }),
                     headers: {
-                        'content-type': 'application/json'
-                    }
+                        'content-type': 'application/json',
+                    },
                 })
-                if(s.status < 200 || s.status >= 300){
+                if (s.status < 200 || s.status >= 300) {
                     let message = `Login failed (${s.status})`
                     try {
                         const body = await s.json()
-                        if(body?.error){
+                        if (body?.error) {
                             message = body.error
                         }
                     } catch {}
@@ -193,9 +201,7 @@ export class NodeStorage{
                 }
                 this.authChecked = true
                 return await this.createAuth()
-            
-            }
-            else{
+            } else {
                 this.authChecked = true
             }
         }
