@@ -659,7 +659,8 @@ export async function requestOpenAI(arg:RequestDataArgumentExtended):Promise<req
 
         const transtream = getTranStream(arg)
 
-        da.body.pipeTo(transtream.writable)
+        // The readable side reports failures; observe the pipe promise to avoid a second global error.
+        void da.body.pipeTo(transtream.writable).catch(() => {})
 
         return {
             type: 'streaming',
@@ -1312,7 +1313,7 @@ function wrapToolStream(
                         }
                         
                         const transtream = getTranStream(arg)                    
-                        resRec.body.pipeTo(transtream.writable)
+                        void resRec.body.pipeTo(transtream.writable).catch(() => {})
                         
                         reader = transtream.readable.getReader()
                         
