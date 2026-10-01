@@ -23,7 +23,10 @@ const server = http.createServer(async (req, res) => {
     const request = { method: req.method, url: req.url, headers: req.headers, body, cancelled: false };
     requests.push(request);
     res.on('close', () => { request.cancelled = !res.writableFinished; });
-    const prompt = JSON.stringify(body.messages ?? body.prompt ?? '');
+    // Earlier fixture scenarios must not change the current user turn's response.
+    const prompt = JSON.stringify(Array.isArray(body.messages)
+        ? body.messages.findLast(message => message?.role === 'user')?.content ?? ''
+        : body.prompt ?? '');
     if (!prompt.includes('fake-')) {
         res.writeHead(400, { 'content-type': 'application/json' });
         res.end('{"error":"Use a prompt starting with fake- in this development fixture."}');

@@ -39,6 +39,7 @@ Request diagnostics retain the destination without URL query values, safe conten
 
 ```sh
 node --test server/node/providerProxy.integration.cjs
+node --test server/node/providerFixture.integration.cjs
 pnpm exec vitest run src/ts/globalApi.svelte.test.ts src/ts/network/nodeProxy.test.ts
 pnpm check
 pnpm test
