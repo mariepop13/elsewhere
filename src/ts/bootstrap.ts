@@ -43,6 +43,8 @@ import { registerModelDynamic } from "./model/modellist";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { appDataDir, join } from "@tauri-apps/api/path";
 
+import { privateLocalMode } from "./firstRun";
+
 const appWindow = isTauri ? getCurrentWebviewWindow() : null
 
 /**
@@ -205,7 +207,10 @@ export async function loadData() {
             saveDb()
             moduleUpdate()
             cleanChunks()
-            alertTOS().then((a) => {
+            // A local setup notice is separate from third-party contract acceptance.
+            // Service-specific alertTOS calls and their acceptance storage are unchanged.
+            const startupAcceptance = privateLocalMode ? Promise.resolve(true) : alertTOS()
+            startupAcceptance.then((a) => {
                 if (a === false) {
                     location.reload()
                 } else if (!isTauri && localStorage.getItem('accountst') === 'able') {

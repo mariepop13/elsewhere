@@ -310,7 +310,7 @@
                         })
                     }}>NO</Button>
                 </div>
-            {:else if $alertStore.type === 'tos' && import.meta.env.VITE_RISU_LEGAL_CONFIGURED}
+            {:else if $alertStore.type === 'tos'}
                 <div class="flex gap-2 w-full">
                     <Button className="mt-4 grow" onclick={() => {
                         alertStore.set({

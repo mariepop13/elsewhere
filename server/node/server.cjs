@@ -1333,6 +1333,7 @@ async function startServer() {
     try {
       
         const port = process.env.PORT || 6001;
+        const host = process.env.HOST || undefined;
         const httpsOptions = await getHttpsOptions();
         let server = null;
 
@@ -1340,7 +1341,7 @@ async function startServer() {
             // HTTPS
             server = https.createServer(httpsOptions, app);
             setupProxyStreamWebSocket(server);
-            server.listen(port, () => {
+            server.listen(port, host, () => {
                 console.log("[Server] HTTPS server is running.");
                 console.log(`[Server] https://localhost:${port}/`);
             });
@@ -1348,7 +1349,7 @@ async function startServer() {
             // HTTP
             server = http.createServer(app);
             setupProxyStreamWebSocket(server);
-            server.listen(port, () => {
+            server.listen(port, host, () => {
                 console.log("[Server] HTTP server is running.");
                 console.log(`[Server] http://localhost:${port}/`);
             });

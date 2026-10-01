@@ -42,29 +42,19 @@ For documentation inherited from RisuAI, see the [upstream wiki](https://github.
 - [Elsewhere repository](https://github.com/mariepop13/elsewhere)
 - [Upstream RisuAI repository](https://github.com/kwaroran/RisuAI)
 
-## Installation
+## Run from source (private local use)
 
-- [Elsewhere releases](https://github.com/mariepop13/elsewhere/releases) (when available)
+This first delivery is source code only. Start with the supported [Node first-run guide](server/node/readme.md#run-locally): clone the repository, install the declared pnpm version, use the frozen lockfile, build, and run an authenticated loopback Node server. No desktop installer, container image, hosted Elsewhere service, or public Elsewhere proxy is provided by this delivery.
+
+Node.js 20.19+ or 22.12+ is required. CI uses Node 24. The exact pnpm version is pinned in `package.json` (`12.4.2`). Rust is not needed for the Node path.
+
+The private local mode shows a setup notice separate from third-party contract acceptance. It does not certify legal configuration for a hosted service. See the guide for data locations, a first run without provider keys, and remaining external dependencies.
+
 - [Desktop data migration](docs/desktop-migration.md)
-- [Maintainer release checklist](docs/releasing.md)
+- [Maintainer release checklist](docs/releasing.md) (separate from this source-only delivery)
 
-### Development prerequisites
+### Vite and Docker development
 
-- Node.js 20.19+ or 22.12+
-- pnpm
+For frontend development, copy `.env.example` to `.env`, install with `pnpm install --frozen-lockfile`, then run `pnpm dev --host 127.0.0.1`. Alternatively, run `docker compose -f docker-compose.dev.yml up` and open `http://localhost:5173` after creating `.env`.
 
-### Docker development server
-
-Run `docker compose -f docker-compose.dev.yml up` and open `http://localhost:5173`.
-The dev server proxies hub requests to the selected main or nightly hub. To use a custom hostname, set `RISU_DEV_ALLOWED_HOSTS` to a comma-separated list before starting Compose. The Compose port remains bound to localhost; configure your own tunnel if remote access is needed.
-
-### Docker Installation
-
-You can run Elsewhere using Docker after the first image is published to `ghcr.io/mariepop13/elsewhere`.
-
-1. Run the Docker container:
-   ```
-   curl -L https://raw.githubusercontent.com/mariepop13/elsewhere/refs/heads/main/docker-compose.yml | docker compose -f - up -d
-   ```
-
-2. Access Elsewhere at `http://localhost:6001` in your web browser.
+Vite development is not the Node self-hosted runtime: it has no Node password, Node save directory, or authenticated `/proxy2` routing guarantees. Its inherited `/hub-proxy` and `/nightly-hub-proxy` development routes still target upstream hubs. Static web routing and further external service separation remain open work ([#19](https://github.com/mariepop13/elsewhere/issues/19), [#20](https://github.com/mariepop13/elsewhere/issues/20)). Use Node for the supported first run. `RISU_DEV_ALLOWED_HOSTS` configures allowed Vite hostnames; Docker's development port remains bound to localhost. Private local mode is available only on loopback browser origins.
