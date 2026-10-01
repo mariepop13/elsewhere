@@ -5,7 +5,7 @@ import type { MultiModal, OpenAIChat } from "./process/index.svelte";
 import { supportsInlayImage } from "./process/files/inlays";
 import { risuChatParser } from "./parser/parser.svelte";
 import { tokenizeGGUFModel } from "./process/models/local";
-import { globalFetch } from "./globalApi.svelte";
+import { providerFetch, globalFetch } from "./globalApi.svelte";
 import { getModelInfo, LLMTokenizer, type LLMModel } from "./model/modellist";
 import { pluginV2 } from "./plugins/plugins.svelte";
 import type { GemmaTokenizer } from "@huggingface/transformers";
@@ -228,7 +228,7 @@ async function tokenizeGoogleCloud(text:string) {
         return new Uint32Array(count)
     }
 
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model.internalID}:countTokens?key=${db.google?.accessToken}`, {
+    const res = await providerFetch(`https://generativelanguage.googleapis.com/v1beta/models/${model.internalID}:countTokens?key=${db.google?.accessToken}`, {
         method: 'POST',
         headers: {
             "Content-Type": "application/json",

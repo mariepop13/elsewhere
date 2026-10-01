@@ -1,6 +1,9 @@
+import { openNodeProviderSocket } from "../../network/nodeProxy";
+import { getNodeServerProxyAuth } from "../../storage/nodeStorage";
+import { isNodeServer, isTauri } from "../../platform";
 import { Ollama } from 'ollama/dist/browser.mjs';
 import { language } from "../../../lang";
-import { fetchNative, globalFetch } from "../../globalApi.svelte";
+import { providerFetch, fetchNative, globalFetch } from "../../globalApi.svelte";
 import { getModelInfo, LLMFlags, LLMFormat, type LLMModel } from "../../model/modellist";
 import { risuChatParser, risuEscape, risuUnescape } from "../../parser/parser.svelte";
 import { pluginProcess, pluginV2 } from "../../plugins/plugins.svelte";
@@ -708,8 +711,10 @@ async function requestOobaLegacy(arg:RequestDataArgumentExtended):Promise<reques
     }
 
     if(useStreaming){
-        const oobaboogaSocket = new WebSocket(streamUrl);
-        const statusCode = await new Promise((resolve) => {
+        const oobaboogaSocket = isNodeServer
+            ? await openNodeProviderSocket(streamUrl, { auth: await getNodeServerProxyAuth(), signal: abortSignal })
+            : new WebSocket(streamUrl);
+        const statusCode = isNodeServer ? 0 : await new Promise((resolve) => {
             oobaboogaSocket.onopen = () => resolve(0)
             oobaboogaSocket.onerror = () => resolve(1001)
             oobaboogaSocket.onclose = ({ code }) => resolve(code)
@@ -722,32 +727,52 @@ async function requestOobaLegacy(arg:RequestDataArgumentExtended):Promise<reques
             })
         }
 
+        let settled = false
+        let streamController: ReadableStreamDefaultController<StreamResponseChunk>
         const close = () => {
+            abortSignal?.removeEventListener('abort', abort)
             oobaboogaSocket.close()
         }
-        const stream = new ReadableStream({
-            start(controller){
-                let readed = "";
-                oobaboogaSocket.onmessage = (event) => {
-                    const json = JSON.parse(event.data);
-                    if (json.event === "stream_end") {
-                        close()
-                        controller.close()
-                        return
+        const finish = (error?: Error) => {
+            if (settled) return
+            settled = true
+            if (error) streamController.error(error)
+            else streamController.close()
+            close()
+        }
+        const abort = () => finish(new DOMException('Provider stream cancelled', 'AbortError'))
+        const stream = new ReadableStream<StreamResponseChunk>({
+            start(controller) {
+                streamController = controller
+                let readed = ''
+                oobaboogaSocket.onmessage = event => {
+                    try {
+                        const json = JSON.parse(event.data)
+                        if (json.type === 'proxy_error') {
+                            finish(new Error(json.message || 'The self-hosted provider stream failed.'))
+                            return
+                        }
+                        if (json.event === 'stream_end') { finish(); return }
+                        if (json.event !== 'text_stream') return
+                        readed += json.text
+                        controller.enqueue({ '0': readed })
+                    } catch {
+                        finish(new Error('The provider returned an invalid streaming response.'))
                     }
-                    if (json.event !== "text_stream") return
-                    readed += json.text
-                    controller.enqueue(readed)
-                };
-                oobaboogaSocket.send(JSON.stringify(bodyTemplate));
+                }
+                oobaboogaSocket.onerror = () => finish(new Error('The provider WebSocket stream failed.'))
+                oobaboogaSocket.onclose = () => {
+                    if (!settled) finish(new Error('The provider WebSocket closed before the response completed.'))
+                }
+                abortSignal?.addEventListener('abort', abort, { once: true })
+                try { oobaboogaSocket.send(JSON.stringify(bodyTemplate)) }
+                catch { finish(new Error('The provider WebSocket is unavailable. Retry the request.')) }
             },
-            cancel(){
+            cancel() {
+                settled = true
                 close()
             }
         })
-        oobaboogaSocket.onerror = close
-        oobaboogaSocket.onclose = close
-        abortSignal?.addEventListener("abort", close)
 
         return {
             type: 'streaming',
@@ -1187,7 +1212,12 @@ async function requestOllama(arg:RequestDataArgumentExtended):Promise<requestDat
     const ollama = new Ollama({
         host: isCloud ? 'https://ollama.com' : db.ollamaURL,
         headers: Object.keys(customHeaders).length > 0 ? customHeaders : undefined,
-        fetch: isCloud ? ollamaCloudFetch : undefined
+        fetch: isCloud || isNodeServer || isTauri ? (input: RequestInfo | URL, init: RequestInit = {}) => ollamaCloudFetch(input, {
+            ...init,
+            signal: arg.abortSignal && init.signal
+                ? AbortSignal.any([arg.abortSignal, init.signal])
+                : arg.abortSignal ?? init.signal,
+        }) : undefined
     })
 
     if(!arg.useStreaming){
@@ -1217,6 +1247,9 @@ async function requestOllama(arg:RequestDataArgumentExtended):Promise<requestDat
                 })
             }
             controller.close()
+        },
+        cancel() {
+            response.abort()
         }
     })
 
@@ -1314,7 +1347,6 @@ async function requestCohere(arg:RequestDataArgumentExtended):Promise<requestDat
     }
 
     body = applyAdditionalParameters(body, headers, getAdditionalParameters(arg.aiModel))
-    console.log(body)
 
     if(arg.previewBody){
         return {
@@ -1411,7 +1443,7 @@ async function requestHorde(arg:RequestDataArgumentExtended):Promise<requestData
 
     let finalBody = applyAdditionalParameters(argument, headers, getAdditionalParameters(arg.aiModel))
 
-    const da = await fetch("https://stablehorde.net/api/v2/generate/text/async", {
+    const da = await providerFetch("https://stablehorde.net/api/v2/generate/text/async", {
         body: JSON.stringify(finalBody),
         method: "POST",
         headers: headers,
@@ -1438,10 +1470,10 @@ async function requestHorde(arg:RequestDataArgumentExtended):Promise<requestData
 
     while(true){
         await sleep(2000)
-        const data = await (await fetch("https://stablehorde.net/api/v2/generate/text/status/" + json.id)).json()
+        const data = await (await providerFetch("https://stablehorde.net/api/v2/generate/text/status/" + json.id, { headers, signal: abortSignal })).json()
         if(!data.is_possible){
-            fetch("https://stablehorde.net/api/v2/generate/text/status/" + json.id, {
-                method: "DELETE"
+            await providerFetch("https://stablehorde.net/api/v2/generate/text/status/" + json.id, {
+                method: "DELETE", headers,
             })
             return {
                 type: 'fail',

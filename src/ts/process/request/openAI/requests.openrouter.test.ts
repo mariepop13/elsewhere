@@ -29,6 +29,7 @@ const mocks = vi.hoisted(() => ({
         useInstructPrompt: false,
     },
     globalFetch: vi.fn(),
+    fetchNative: vi.fn(),
 }))
 
 vi.mock('src/ts/storage/database.svelte', () => ({
@@ -51,7 +52,7 @@ vi.mock('src/ts/model/modellist', () => ({
 
 vi.mock('src/ts/globalApi.svelte', () => ({
     addFetchLog: vi.fn(),
-    fetchNative: vi.fn(),
+    fetchNative: mocks.fetchNative,
     globalFetch: mocks.globalFetch,
     textifyReadableStream: vi.fn(),
 }))
@@ -184,5 +185,36 @@ describe('OpenRouter reasoning request serialization', () => {
             transforms: ['middle-out'],
             provider: { order: ['provider-a'] },
         })
+    })
+})
+
+describe('OpenRouter streaming failures', () => {
+    beforeEach(() => {
+        mocks.fetchNative.mockReset()
+    })
+
+    it.each(['AbortError', 'Error'])('propagates %s to the stream reader without an unhandled pipeline rejection', async (name) => {
+        let source!: ReadableStreamDefaultController<Uint8Array>
+        const body = new ReadableStream<Uint8Array>({
+            start(controller) {
+                source = controller
+                controller.enqueue(new TextEncoder().encode('data: {"choices":[{"index":0,"delta":{"content":"Fake first chunk"}}]}\n\n'))
+            },
+        })
+        mocks.fetchNative.mockResolvedValue({
+            status: 200,
+            headers: new Headers({ 'content-type': 'text/event-stream' }),
+            body,
+        })
+        const result = await requestOpenAI(baseArg({ useStreaming: true }))
+        expect(result.type).toBe('streaming')
+        if (result.type !== 'streaming') throw new Error('Expected streaming result')
+        const reader = result.result.getReader()
+        expect((await reader.read()).value?.['0']).toBe('Fake first chunk')
+        const failure = name === 'AbortError' ? new DOMException('Fake cancellation', name) : new Error('Fake broken stream')
+        source.error(failure)
+        await expect(reader.read()).rejects.toBe(failure)
+        // Allow the runner to observe any unhandled fire-and-forget pipeTo rejection.
+        await new Promise(resolve => setTimeout(resolve, 0))
     })
 })

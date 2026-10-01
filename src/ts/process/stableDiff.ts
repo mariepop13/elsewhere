@@ -2,7 +2,7 @@ import { get } from "svelte/store"
 import { getDatabase, type character } from "../storage/database.svelte"
 import { requestChatData } from "./request/request"
 import { alertError } from "../alert"
-import { fetchNative, globalFetch, readImage } from "../globalApi.svelte"
+import { providerFetch, fetchNative, globalFetch, readImage } from "../globalApi.svelte"
 import { CharEmotion } from "../stores.svelte"
 import type { OpenAIChat } from "./index.svelte"
 import { processZip } from "./processzip"
@@ -121,7 +121,6 @@ export async function generateAIImage(genPrompt:string, currentChar:character, n
             else if(da.ok){
                 let charemotions = get(CharEmotion)
                 const img = `data:image/png;base64,${da.data.images[0]}`
-                console.log(img)
                 const emos:[string, string,number][] = [[img, img, Date.now()]]
                 charemotions[currentChar.chaId] = emos
                 CharEmotion.set(charemotions)
@@ -363,13 +362,11 @@ export async function generateAIImage(genPrompt:string, currentChar:character, n
                 reqlist.body.parameters.noise = db.NAIImgConfig.noise || 0;
             }
             
-            console.log({img2img:reqlist});
         }else{
 
             reqlist = commonReq;
             reqlist.body.action = 'generate';
 
-            console.log({nothing:reqlist});
            
         }
         try {
@@ -420,7 +417,6 @@ export async function generateAIImage(genPrompt:string, currentChar:character, n
             }
         })
 
-        console.log(da)
 
         if(returnSdData === 'inlay'){
             let res = da?.data?.data?.[0]?.b64_json
@@ -467,7 +463,7 @@ export async function generateAIImage(genPrompt:string, currentChar:character, n
         }
 
         const uri = model === 'core' ? 'core' : model === 'ultra' ? 'ultra' : 'sd3'
-        const da = await fetch("https://api.stability.ai/v2beta/stable-image/generate/" + uri, {
+        const da = await providerFetch("https://api.stability.ai/v2beta/stable-image/generate/" + uri, {
             body: formData,
             headers:{
                 "authorization": "Bearer " + db.stabilityKey,
@@ -513,10 +509,8 @@ export async function generateAIImage(genPrompt:string, currentChar:character, n
         }
 
         const fetchWrapper = async (url: string, options = {}) => {
-            console.log(url)
             const response = await globalFetch(url, options)
             if (!response.ok) {
-                console.log(JSON.stringify(response.data))
                 throw new Error(JSON.stringify(response.data))
             }
             return response.data
