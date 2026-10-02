@@ -7,6 +7,9 @@
     import { generateSocialPublication, generateSocialResponse, socialModelIdentity, socialModelSupported } from 'src/ts/social/socialProvider'
     import SocialRelationships from './SocialRelationships.svelte'
     import SocialAvatar from './SocialAvatar.svelte'
+    import SocialWorldSetup from './SocialWorldSetup.svelte'
+    import { applySocialSetup, type SocialSetupDraft } from 'src/ts/social/socialSetup'
+    import { saveAsset } from 'src/ts/globalApi.svelte'
     import { alertRequestLogs } from 'src/ts/alert'
     import { SocialGenerationError } from 'src/ts/social/socialErrors'
     import { getSocialLimits, initializeSocialLimits, SOCIAL_CONTEXT_MIN, SOCIAL_CONTEXT_MAX, SOCIAL_RESPONSE_MIN, SOCIAL_RESPONSE_MAX } from 'src/ts/social/socialLimits'
@@ -23,6 +26,22 @@
     let copy = $derived(language.social)
     let limits = $derived.by(() => { try { return getSocialLimits(feed) } catch { return undefined } })
     let characters = $derived(DBState.db.characters.filter(character => character.type !== 'group'))
+    let setupOpen = $state(false)
+    let setupVersion = 0
+    function openSetup() { cancel(); setupVersion++; setupOpen = true }
+    function closeSetup() { setupVersion++; setupOpen = false }
+    async function saveSetup(draft: SocialSetupDraft, photo?: Uint8Array) {
+        const current = feed
+        const version = setupVersion
+        const snapshot = JSON.stringify({ setup: current.setup, world: current.publicWorld, cast: current.cast })
+        const image = photo ? await saveAsset(photo, '', 'png') : draft.you.image
+        if (DBState.db.socialFeed !== current || version !== setupVersion || !setupOpen || snapshot !== JSON.stringify({ setup: current.setup, world: current.publicWorld, cast: current.cast })) throw new Error('Setup changed')
+        cancel()
+        applySocialSetup(current, { ...draft, you: { ...draft.you, image } })
+        draft.you.image = image
+        status = ''
+    }
+    onDestroy(() => setupVersion++)
     let castExpanded = $state(false)
     let composerExpanded = $state(false)
     let composerInput = $state<HTMLTextAreaElement>()
@@ -41,7 +60,8 @@
     let selectedCard = $state('')
     let publisherId = $state('')
     let authorChoice = $state(-1)
-    let author = $derived(socialPersonaAuthor(DBState.db.personas, DBState.db.selectedPersona, authorChoice, { name: DBState.db.username, image: DBState.db.userIcon }))
+    let personaAuthor = $derived(socialPersonaAuthor(DBState.db.personas, DBState.db.selectedPersona, authorChoice, { name: DBState.db.username, image: DBState.db.userIcon }))
+    let author = $derived(authorChoice === -1 && feed.setup ? feed.setup.you : personaAuthor)
     let busyPost = $state('')
     let status = $state('')
     let deletePost = $state('')
@@ -149,6 +169,11 @@
     }
 </script>
 
+<SocialWorldSetup open={setupOpen} {feed} author={personaAuthor}
+    personas={DBState.db.personas.map((persona, index) => ({ id: persona.id ?? `persona:${index}`, name: persona.name, image: persona.icon }))}
+    characters={characters.map(card => ({ id: card.chaId, name: card.name, image: card.image }))}
+    onclose={closeSetup} onsave={saveSetup} />
+{#if !setupOpen}
 <section class="social-screen flex h-full w-full min-w-0 flex-col bg-bgcolor text-textcolor" aria-label={copy.title}>
     <header class="social-header">
         <button class="social-icon" aria-label={copy.back} title={copy.back} onclick={() => socialFeedOpen.set(false)}><ArrowLeft size={22} /></button>
@@ -170,6 +195,7 @@
         </details>
     </header>
     <div class="min-h-0 flex-1 overflow-y-auto">
+        <div class="mx-auto flex w-full max-w-2xl items-center justify-between gap-3 px-4 pt-4 sm:px-6"><span class="min-w-0 break-words font-semibold">{feed.setup?.title ?? 'Your social world'}</span><button class="social-button" onclick={openSetup}>{feed.setup ? 'Edit world setup' : 'Set up a world'}</button></div>
         <div class="mx-auto flex w-full max-w-2xl flex-wrap items-center justify-between gap-2 px-4 pt-4 sm:px-6">
             <p class="min-w-0 break-words text-sm text-textcolor2">{copy.model}: {modelName}</p>
             <button class="social-button" onclick={openModelSettings}>{copy.modelSettings}</button>
@@ -276,7 +302,7 @@
                             <label class="flex min-w-0 grow flex-col gap-1 text-xs text-textcolor2">
                                 <span>{copy.as}</span>
                                 <select class="social-author-select" bind:value={authorChoice}>
-                                    <option value={-1}>{DBState.db.username} ({copy.currentPersona})</option>
+                                    <option value={-1}>{feed.setup?.you.name ?? DBState.db.username} ({copy.currentPersona})</option>
                                     {#each DBState.db.personas as persona, index}<option value={index}>{persona.name}</option>{/each}
                                 </select>
                             </label>
@@ -353,6 +379,7 @@
         {/if}
     </div>
 </section>
+{/if}
 
 <style>
     .social-header { display: flex; flex: none; align-items: center; gap: .75rem; padding: .65rem 1rem; background: var(--risu-theme-surface-elevated); border-bottom: 1px solid color-mix(in srgb, var(--risu-theme-textcolor) 10%, transparent); position: relative; z-index: 2; }

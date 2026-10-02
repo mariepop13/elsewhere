@@ -310,3 +310,18 @@ Marie clarifies each character must get the same FULL limit. Verified code: Soci
 - Controlled RSS guard stopped the build after46.38seconds:2356844kB observed process-tree RSS,703772kB minimum available memory, exit-15.6866modules transformed; artifact incomplete. No kernel OOM conclusion or blind retry.
 - Owned build process/group fully stopped;3029236kB memory available after cleanup. Runtime index hash remains unchanged. Fresh network health calls are sandbox-blocked and cannot determine service health.
 - Build/validated preview refresh remain blocked on resource headroom or an approved CI route. Commit/push remain unauthorized. Evidence recorded in social-language-relations acceptance/build measurements and source manifest.
+
+
+## Continuation: integrated world setup and social photo (2026-10-02)
+
+Authorization: five-step current-world setup and local profile photo on the existing social branch; no commit, push, merge or deployment. Preserve native cards/personas, legacy feed controls and Elsewords. Reference archive SHA256:1ac3c1e2905d626be5a09272da0f785e83bdd0eaa7be5c991846751222563796.
+
+1. Completed inventory: clean feature/social-feed at e39c0f5a; social8443 routes to6620. Current dist/server/data were copied to a private local rollback; no user-data content was exported or displayed.
+2. Implemented optional World / You / Cast / Starting situation / Review & start. Reuse the existing single feed's persistence and native asset storage, preserve IDs and public snapshots. No multi-world library or card-format migration.
+3. Photo: bounded local raster decode, centered square PNG512 maximum, staged preview with cancellation/race cleanup, native asset persistence on explicit save, historical reference protection for cleanup/backups.
+4. Public boundary: explicitly entered opening event, public player profile and per-character public starting facts enter the existing measured public DTOs; no private chats/card descriptions/persona prompts/memory are imported. No automatic generation or opening-post simulation.
+5. Validation in progress: domain/codec/image bounds, full tests and types sequentially; independent read-only review. Browser mobile320/390, chooser cancel/reselection/race/remove, back/cancel/reopen, legacy editor coexistence and native persisted reload await the exact production build. Heavy production build belongs in cloud under current memory pressure.
+
+Design adaptation: retain the reference's sidebar step sequence, large scene heading, quiet grouped form, persona preview and optional starting-facts disclosure. Use native bgcolor/surface-elevated/textcolor/textcolor2/borderc/selected/focus colors and existing font. Desktop: step sidebar | form; mobile: five compact steps above a single form column. No external font/image requests or prototype-only badges, synthetic cast, placeholder models or scripted completion routes.
+
+Delivery gate: types/tests/build and real app browser acceptance must pass before parent authorizes any controlled8443 refresh. Existing preview and data remain untouched. No inference is exercised during validation.

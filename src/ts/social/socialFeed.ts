@@ -1,3 +1,4 @@
+import { publicSocialWorld, publicSocialActor, type SocialWorldSetup } from './socialSetup'
 import { buildPublicRelationshipContext, type PublicRelationshipContext } from './socialRelations'
 import { buildPublicLanguageContext, type PublicLanguageContext } from './socialLanguage'
 import { DEFAULT_SOCIAL_CONTEXT, DEFAULT_SOCIAL_RESPONSE, getSocialLimits, initializeSocialLimits, type SocialLimits } from './socialLimits'
@@ -14,6 +15,8 @@ export interface SocialActor {
     name: string
     image?: string
     publicProfile: string
+    /** Explicit public starting facts, never imported private memories. */
+    startingFacts?: string
 }
 
 export interface SocialAuthor {
@@ -65,6 +68,7 @@ export interface SocialFeedState {
     cast: SocialActor[]
     posts: SocialPost[]
     draft: string
+    setup?: SocialWorldSetup
     maxContext?: number
     maxResponse?: number
 }
@@ -116,12 +120,8 @@ export function buildPublicContext(
 ): PublicReactionContext {
     // Project an allowlist, never spread cards, personas, chats or database fields.
     return {
-        actor: {
-            characterId: actor.characterId,
-            name: actor.name,
-            publicProfile: actor.publicProfile,
-        },
-        publicWorld: state.publicWorld,
+        actor: publicSocialActor(actor),
+        publicWorld: publicSocialWorld(state),
         language: buildPublicLanguageContext(state, interfaceLanguage),
         relationships: buildPublicRelationshipContext(state, actor, post.author),
         post: { author: post.author.name, text: post.text },
@@ -185,8 +185,8 @@ export interface PublicPublicationContext {
 
 export function buildPublicPublicationContext(state: SocialFeedState, actor: SocialActor, interfaceLanguage = 'en'): PublicPublicationContext {
     return {
-        actor: { characterId: actor.characterId, name: actor.name, publicProfile: actor.publicProfile },
-        publicWorld: state.publicWorld,
+        actor: publicSocialActor(actor),
+        publicWorld: publicSocialWorld(state),
         language: buildPublicLanguageContext(state, interfaceLanguage),
         relationships: buildPublicRelationshipContext(state, actor),
         recentPosts: state.posts.slice(0, 8).map(post => ({

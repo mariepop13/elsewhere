@@ -1,3 +1,4 @@
+import { socialAssetReferences } from './social/socialSetup'
 import {
     writeFile,
     BaseDirectory,
@@ -931,6 +932,7 @@ export function getUncleanablesSync(db: Database, uptype: 'basename' | 'pure' = 
 
     addUncleanable(db.customBackground);
     addUncleanable(db.userIcon);
+    socialAssetReferences(db.socialFeed).forEach(addUncleanable);
     const chars = options?.chars ?? db.characters
 
     for (let cha of chars) {
