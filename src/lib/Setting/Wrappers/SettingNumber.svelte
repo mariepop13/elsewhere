@@ -37,7 +37,7 @@
     {#if item.helpKey}<Help key={item.helpKey as any}/>{/if}
 </span>
 {#if item.bindKey === 'maxContext' || item.bindKey === 'maxResponse'}
-<TokenBudgetInput modelId={ctx.db.aiModel} sharedModelId={item.bindKey === 'maxResponse' ? ctx.db.subModel : undefined} kind={item.bindKey === 'maxContext' ? 'context' : 'output'} contextBudget={ctx.db.maxContext} bind:value={localValue}/>
+<TokenBudgetInput showModelDetails={item.bindKey === 'maxResponse'} modelId={ctx.db.aiModel} sharedModelId={item.bindKey === 'maxResponse' ? ctx.db.subModel : undefined} kind={item.bindKey === 'maxContext' ? 'context' : 'output'} contextBudget={ctx.db.maxContext} bind:value={localValue}/>
 {:else}
 <NumberInput
     marginBottom={true}

@@ -163,6 +163,7 @@
     {@const preset = DBState.db.translatorPresets[DBState.db.translatorPresetId]}
     <span class="text-textcolor mt-4">{language.translationResponseSize}</span>
     <TokenBudgetInput
+        label={language.translationResponseSize}
         modelId={DBState.db.seperateModelsForAxModels ? DBState.db.seperateModels.translate || DBState.db.subModel : DBState.db.subModel}
         bind:value={() => preset.maxResponse, (value) => {
             preset.maxResponse = value;
