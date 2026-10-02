@@ -445,6 +445,20 @@ export function reformater(formated:OpenAIChat[],modelInfo:LLMModel|LLMFlags[]){
 
 
 export async function requestChatDataMain(arg:requestDataArgument, model:ModelModeExtended, abortSignal:AbortSignal=null):Promise<requestDataResponse> {
+    // Capability lookup is asynchronous: do not dispatch a cancelled request or
+    // combine its original capabilities with a newly selected model/route.
+    const requestIdentity = () => {
+        const current = getDatabase()
+        const selected = arg.staticModel || (current.seperateModelsForAxModels && current.seperateModels[model]) || (model === 'model' ? current.aiModel : current.subModel)
+        return JSON.stringify([selected, current.openrouterRequestModel, current.openrouterProvider,
+            current.customProxyRequestModel, current.customAPIFormat, current.forceReplaceUrl,
+            current.nanogptRequestModel, current.ollamaModel, current.ollamaCloudModel,
+            current.ollamaModelSource, current.ollamaRequestFormat, current.ollamaURL,
+            current.textgenWebUIBlockingURL, current.textgenWebUIStreamURL, current.koboldURL,
+            current.customModels?.map(m => [m.id, m.internalId, m.format, m.url])])
+    }
+    const initialRequestIdentity = requestIdentity()
+    if (abortSignal?.aborted) return { type: 'fail', result: 'The request was cancelled. Previous output was retained.', noRetry: true }
     const db = getDatabase()
     const targ:RequestDataArgumentExtended = arg
 
@@ -491,6 +505,8 @@ export async function requestChatDataMain(arg:requestDataArgument, model:ModelMo
 
     targ.tokenSelection = selectionForModel(targ.modelInfo, db.openrouterRequestModel, db.openrouterProvider)
     targ.tokenCapabilities = await loadTokenCapabilities(targ.tokenSelection)
+    if (abortSignal?.aborted) return { type: 'fail', result: 'The request was cancelled. Previous output was retained.', noRetry: true }
+    if (requestIdentity() !== initialRequestIdentity) return { type: 'fail', result: 'The configured model changed. Start this operation again.', noRetry: true }
     targ.tokenContext = model === 'model' ? db.maxContext : undefined
     const tokenErrors = validateTokenBudget(targ.tokenCapabilities, { context: targ.tokenContext, output: targ.maxTokens, input: targ.inputTokenEstimate,
         reasoning: targ.aiModel === 'openrouter' && db.openrouterReasoning?.enabled !== false ? db.openrouterReasoning?.maxTokens : undefined,
