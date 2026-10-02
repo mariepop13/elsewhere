@@ -144,3 +144,10 @@ Opening event is primary; Relationships & starting knowledge is optional and ini
 Save world & open feed enables the mode and keeps all existing posts, unfinished publication draft and selected budgets. It never calls AI. Character publications/reactions still require separate explicit controls with the selected provider and normal provider costs. This phase does not add scripted-demo posts, model preference placeholders or an automatic opening-generation chain. The setup layout follows the supplied five-step reference, adapted to native theme colors and existing typography rather than replacing the app with the React prototype.
 
 The retained legacy editor and wizard share the same saved fields. When those fields change while setup is closed, reopening loads the newer values rather than overwriting them with an obsolete session draft. A conflicting saved-world change during setup blocks saving until the user returns and reloads it. Card format round-trip and Elsewords/native metadata discrepancies remain outside this phase.
+
+
+### Shared model-capability validation
+
+The develop Tokens integration retains the social feed's own saved context/output budgets and local public-prompt preflight. It also validates advertised model limits and the final provider payload through the shared token capability/budget utilities. A social request explicitly forwards its context budget; private-chat context and OpenRouter reasoning settings do not replace it. Model-limit failures return an allowlisted `invalid_limits` diagnostic without transport details or automatic retries. Existing public-only extension guards and final-text extraction remain in force for OpenAI, Anthropic and Google.
+
+The social input ranges are application bounds, not a promise that every selected model accepts their maximum. Standard model settings expose the shared model details and key verification. No model metadata request starts from a new social UI effect; the shared request layer resolves public capability metadata only when generation is requested.

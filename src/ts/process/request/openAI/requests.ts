@@ -1,4 +1,5 @@
 import { publicOpenAIText } from '../publicText'
+import { payloadTokenError } from '../tokenBudget';
 import { language } from "src/lang"
 import { alertError } from "src/ts/alert";
 import { getDatabase } from "src/ts/storage/database.svelte"
@@ -301,6 +302,8 @@ export async function requestOpenAI(arg:RequestDataArgumentExtended):Promise<req
             requestTimeoutMs: networkOptions.requestTimeoutMs
         } as const
 
+        const tokenError = await payloadTokenError(arg, targs.body, targs.headers)
+        if (tokenError) return { type: 'fail', result: tokenError, noRetry: true, publicDiagnostic: arg.publicOnly ? { code: 'invalid_limits' } : undefined }
         if(arg.previewBody){
             return {
                 type: 'success',
@@ -422,7 +425,7 @@ export async function requestOpenAI(arg:RequestDataArgumentExtended):Promise<req
         }
         body.transforms = db.openrouterMiddleOut ? ['middle-out'] : []
 
-        const openrouterReasoning = db.openrouterReasoning
+        const openrouterReasoning = arg.publicOnly ? undefined : db.openrouterReasoning
         if (openrouterReasoning?.enabled === false) {
             body.reasoning = { effort: 'none' }
         } else if (openrouterReasoning) {
@@ -593,6 +596,9 @@ export async function requestOpenAI(arg:RequestDataArgumentExtended):Promise<req
     }
     
     body = applyAdditionalParameters(body, headers, arg.publicOnly ? [] : getAdditionalParameters(aiModel))
+    const tokenError = await payloadTokenError(arg, body, headers)
+    if (tokenError) return { type: 'fail', result: tokenError, noRetry: true, publicDiagnostic: arg.publicOnly ? { code: 'invalid_limits' } : undefined }
+
 
     // Some aux flows are intentionally non-streaming (e.g. memory/translate).
     // If custom Additional Parameters contains stream=true, force non-stream mode back.
@@ -986,6 +992,9 @@ export async function requestOpenAILegacyInstruct(arg:RequestDataArgumentExtende
     }
 
     body = applyAdditionalParameters(body, headers, getAdditionalParameters(arg.aiModel))
+    const tokenError = await payloadTokenError(arg, body, headers)
+    if (tokenError) return { type: 'fail', result: tokenError, noRetry: true, publicDiagnostic: arg.publicOnly ? { code: 'invalid_limits' } : undefined }
+
 
     const response = await globalFetch(arg.customURL ?? "https://api.openai.com/v1/completions", {
         body: body,
@@ -1303,7 +1312,9 @@ function wrapToolStream(
                         
                         do {
                             attempt++
-                            resRec = await fetchNative(replacerURL, {
+                            const tokenError = await payloadTokenError(arg, body, headers)
+                    if (tokenError) throw new Error(tokenError)
+                    resRec = await fetchNative(replacerURL, {
                                 body: JSON.stringify(body),
                                 method: "POST",
                                 headers: headers,

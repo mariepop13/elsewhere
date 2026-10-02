@@ -57,6 +57,7 @@ async function requestPublicMessages(messages: { role: 'system' | 'user'; conten
             staticModel: getDatabase().aiModel,
             bias: {},
             maxTokens: getSocialLimits(limits).maxResponse,
+            tokenContext: getSocialLimits(limits).maxContext,
             useStreaming: false,
             noMultiGen: true,
             tools: [],

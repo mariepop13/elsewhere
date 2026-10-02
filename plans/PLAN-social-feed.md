@@ -325,3 +325,13 @@ Authorization: five-step current-world setup and local profile photo on the exis
 Design adaptation: retain the reference's sidebar step sequence, large scene heading, quiet grouped form, persona preview and optional starting-facts disclosure. Use native bgcolor/surface-elevated/textcolor/textcolor2/borderc/selected/focus colors and existing font. Desktop: step sidebar | form; mobile: five compact steps above a single form column. No external font/image requests or prototype-only badges, synthetic cast, placeholder models or scripted completion routes.
 
 Delivery gate: types/tests/build and real app browser acceptance must pass before parent authorizes any controlled8443 refresh. Existing preview and data remain untouched. No inference is exercised during validation.
+
+
+## Approved develop integration (2026-10-02)
+
+- Preserve the reviewed world setup/photo changes as `dbc9c3c1` before merging the fetched `origin/develop` at `afe39d63bc0de654b462ef35cba0db5c59b069ce` (Tokens squash #33). The local develop worktree is not moved.
+- Save all 12 dirty files and a binary tracked patch under a separate local snapshot; verify the 11 archived files against the exact previously validated cloud source. No auth helper, live save data, dependencies or runtime artifact enters Git.
+- Resolve the English-language additions together and retain both public final-text extraction/extension isolation and shared final-payload token validation in OpenAI, Anthropic and Google.
+- Forward the independent social context budget through the shared request layer, exclude private OpenRouter reasoning settings, and add fixture regressions for safe model-budget diagnostics, output ceilings and final measured context.
+- Independent review finds the private reasoning projection; the guard fixes it and the final targeted review identifies no remaining consequential defect.
+- Validate focused handler/provider/token tests (53 pass), full tests (552 pass, 3 skipped, 52 files) and types (0 errors, 0 warnings) sequentially. Verify all 10 setup/photo source files remain byte-identical to the snapshot and no tracked file is deleted. No local heavy production build under current RAM pressure; transfer the final exact source candidate for a cloud build. Existing 8443 and other previews are not refreshed by this merge.

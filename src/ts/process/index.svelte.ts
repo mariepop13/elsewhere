@@ -1,3 +1,5 @@
+import { selectionForModel, validateTokenBudget } from '../model/tokenCapabilities';
+import { loadTokenCapabilities } from '../model/tokenCapabilities.svelte';
 import { get, writable } from "svelte/store";
 import { type character, type MessageGenerationInfo, type Chat, type MessagePresetInfo, changeToPreset, setCurrentChat, type Message, type StreamingDisplayOptimizationMode } from "../storage/database.svelte";
 import { DBState } from '../stores.svelte';
@@ -343,6 +345,9 @@ export async function sendChat(chatProcessIndex = -1,arg:{
     let currentChat = runCurrentChatFunction(nowChatroom.chats[selectedChat])
     nowChatroom.chats[selectedChat] = currentChat
     let maxContextTokens = DBState.db.maxContext
+    const capabilities = await loadTokenCapabilities(selectionForModel(getModelInfo(DBState.db.aiModel), DBState.db.openrouterRequestModel, DBState.db.openrouterProvider))
+    const budgetErrors = validateTokenBudget(capabilities, { context: maxContextTokens, output: DBState.db.maxResponse })
+    if (budgetErrors.length) { throwError(budgetErrors.join('\n')); return false }
 
     chatProcessStage.set(1)
     stageTimings.stage1Start = Date.now()
@@ -1492,9 +1497,9 @@ export async function sendChat(chatProcessIndex = -1,arg:{
         inputTokens += await tokenizer.tokenizeChat(chat)
     }
 
-    if(inputTokens > maxContextTokens){
+    if(inputTokens + DBState.db.maxResponse > maxContextTokens){
         let pointer = 0
-        while(inputTokens > maxContextTokens){
+        while(inputTokens + DBState.db.maxResponse > maxContextTokens){
             if(pointer >= formated.length){
                 throwError(language.errors.toomuchtoken + "\n\nAt token rechecking. Required Tokens: " + inputTokens)
                 return false
@@ -1512,9 +1517,6 @@ export async function sendChat(chatProcessIndex = -1,arg:{
 
     //estimate tokens
     let outputTokens = DBState.db.maxResponse
-    if(inputTokens + outputTokens > maxContextTokens){
-        outputTokens = maxContextTokens - inputTokens
-    }
     const generationId = v4()
     const generationModel = getGenerationModelString()
 
@@ -1540,6 +1542,7 @@ export async function sendChat(chatProcessIndex = -1,arg:{
     }
 
     const req = await requestChatData({
+        inputTokenEstimate: inputTokens,
         formated: formated,
         biasString: biases,
         currentChar: currentChar,

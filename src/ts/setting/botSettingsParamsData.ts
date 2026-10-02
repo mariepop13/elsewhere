@@ -17,7 +17,7 @@ export const basicParameterItems: SettingItem[] = [
         type: 'number',
         labelKey: 'maxContextSize',
         bindKey: 'maxContext',
-        options: { min: 0 },
+        options: { min: 1 },
         keywords: ['context', 'size', 'token', 'limit'],
     },
     {
@@ -25,7 +25,7 @@ export const basicParameterItems: SettingItem[] = [
         type: 'number',
         labelKey: 'maxResponseSize',
         bindKey: 'maxResponse',
-        options: { min: 0, max: 2048 },
+        options: { min: 1 },
         keywords: ['response', 'size', 'output', 'length'],
     },
 ];

@@ -1,4 +1,5 @@
 <script lang="ts">
+    import TokenBudgetInput from '../TokenBudgetInput.svelte';
     import { language } from 'src/lang';
     import Accordion from 'src/lib/UI/Accordion.svelte';
     import Check from 'src/lib/UI/GUI/CheckInput.svelte';
@@ -86,7 +87,15 @@
             {#if reasoning?.supportsMaxTokens}
                 <label class="flex flex-col gap-1 text-textcolor">
                     <span>{language.openRouterReasoningTokenBudget}</span>
-                    <NumberInput value={tokenBudget} min={1} fullwidth marginBottom onChange={updateTokenBudget}/>
+                    <Check check={DBState.db.openrouterReasoning?.maxTokens !== undefined} name={language.openRouterReasoningTokenBudget} onChange={(enabled) => {
+                        const config = { ...DBState.db.openrouterReasoning };
+                        if (enabled) config.maxTokens = 1;
+                        else delete config.maxTokens;
+                        DBState.db.openrouterReasoning = Object.keys(config).length ? config : undefined;
+                    }}/>
+                    {#if DBState.db.openrouterReasoning?.maxTokens !== undefined}
+                        <TokenBudgetInput modelId="openrouter" kind="reasoning" bind:value={DBState.db.openrouterReasoning.maxTokens} />
+                    {/if}
                 </label>
             {/if}
         {/if}

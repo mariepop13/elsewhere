@@ -119,6 +119,7 @@ describe('explicit common social response budget', () => {
         mocks.request.mockResolvedValue({ type: 'success', result: '{"reaction":"like","comment":"Hello"}' })
         await generateSocialResponse(context, new AbortController().signal, { maxContext: 8000, maxResponse: 1200 })
         expect(mocks.request.mock.calls[0][0].maxTokens).toBe(1200)
+        expect(mocks.request.mock.calls[0][0].tokenContext).toBe(8000)
     })
     it('rejects invalid limits before any provider request', async () => {
         await expect(generateSocialResponse(context, new AbortController().signal, { maxContext: 8000, maxResponse: 0 })).rejects.toThrow('invalid_limits')
@@ -150,4 +151,11 @@ it('detects NanoGPT and custom model selection changes without projecting keys',
     const changed = socialModelIdentity()
     mocks.db.customModels[0].url = 'https://other.invalid/api'
     expect(socialModelIdentity()).not.toBe(changed)
+})
+
+
+it('reports model budget failures without exposing transport details or retrying', async () => {
+    mocks.request.mockResolvedValue({ type: 'fail', result: 'PRIVATE_TRANSPORT_DETAILS', noRetry: true, publicDiagnostic: { code: 'invalid_limits' } })
+    await expect(generateSocialResponse(context, new AbortController().signal, { maxContext: 8000, maxResponse: 1200 })).rejects.toMatchObject({ code: 'invalid_limits', message: 'invalid_limits' })
+    expect(mocks.request).toHaveBeenCalledTimes(1)
 })

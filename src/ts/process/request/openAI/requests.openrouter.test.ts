@@ -67,6 +67,7 @@ vi.mock('src/ts/network/localNetwork', () => ({
 }))
 
 vi.mock('src/ts/tokenizer', () => ({
+    encodeWithTokenizer: async (text: string) => Array.from(text),
     strongBan: vi.fn(),
     tokenizeNum: vi.fn(),
 }))
@@ -114,7 +115,7 @@ const baseArg = (overrides: Record<string, unknown> = {}) => ({
     bias: {},
     biasString: [],
     formated: [{ role: 'user', content: 'Hello' }],
-    maxTokens: 100,
+    maxTokens: 4096,
     mode: 'model',
     modelInfo: {
         flags: [],
@@ -218,3 +219,20 @@ describe('OpenRouter streaming failures', () => {
         await new Promise(resolve => setTimeout(resolve, 0))
     })
 })
+
+
+describe('token budget transport preflight', () => {
+    beforeEach(() => { mocks.globalFetch.mockReset(); mocks.fetchNative.mockReset(); mocks.db.openrouterReasoning = undefined; });
+    it('rejects an over-cap completion without HTTP or retry', async () => {
+        const result = await requestOpenAI(baseArg({ tokenCapabilities: { requestedId: 'openai/gpt-4o', output: 1000, contextKind: 'total', routeCoverage: 'catalog' } }));
+        expect(result).toMatchObject({ type: 'fail', noRetry: true });
+        expect(mocks.globalFetch).not.toHaveBeenCalled();
+        expect(mocks.fetchNative).not.toHaveBeenCalled();
+    });
+    it('rejects reasoning which consumes the entire output budget', async () => {
+        mocks.db.openrouterReasoning = { enabled: true, maxTokens: 4096 };
+        const result = await requestOpenAI(baseArg());
+        expect(result).toMatchObject({ type: 'fail', noRetry: true });
+        expect(mocks.globalFetch).not.toHaveBeenCalled();
+    });
+});

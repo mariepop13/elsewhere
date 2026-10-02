@@ -47,6 +47,8 @@ export const tokenizerList = [
 
 export async function encodeWithTokenizer(data: string, tokenizerType: string): Promise<(number[] | Uint32Array | Int32Array)> {
     switch (tokenizerType) {
+        case 'tik-o200':
+            return await tikJS(data, 'o200k_base');
         case 'tik':
             return await tikJS(data, 'cl100k_base');
         case 'mistral':

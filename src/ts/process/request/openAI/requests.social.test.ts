@@ -74,6 +74,7 @@ vi.mock('src/ts/network/localNetwork', () => ({
 }))
 
 vi.mock('src/ts/tokenizer', () => ({
+    encodeWithTokenizer: async (text: string) => Array.from(text),
     strongBan: vi.fn(),
     tokenizeNum: vi.fn(),
 }))
@@ -277,5 +278,28 @@ describe('public selected output ceiling', () => {
         expect(body[completionMode ? 'max_completion_tokens' : 'max_tokens']).toBe(4000)
         expect(body[completionMode ? 'max_tokens' : 'max_completion_tokens']).toBeUndefined()
         expect(mocks.globalFetch).toHaveBeenCalledOnce()
+    })
+})
+
+
+describe('merged model budgets on isolated public requests', () => {
+    it('keeps private OpenRouter reasoning outside the social request', async () => {
+        mocks.db.openrouterReasoning = { enabled: true, maxTokens: 4096, effort: 'high' }
+        const result = await requestOpenAI(baseArg({ publicOnly: true, tools: [], maxTokens: 320 }))
+        expect(result.type).toBe('success')
+        expect(mocks.globalFetch.mock.calls[0][1].body.reasoning).toBeUndefined()
+        expect(mocks.globalFetch).toHaveBeenCalledOnce()
+    })
+    it('rejects a model output ceiling before transport with a safe social diagnostic', async () => {
+        const result = await requestOpenAI(baseArg({ publicOnly: true, tools: [], maxTokens: 320,
+            tokenCapabilities: { requestedId: 'fixture/model', contextKind: 'total', routeCoverage: 'native', output: 256 } }))
+        expect(result).toMatchObject({ type: 'fail', noRetry: true, publicDiagnostic: { code: 'invalid_limits' } })
+        expect(mocks.globalFetch).not.toHaveBeenCalled()
+    })
+    it('checks the final measured payload against the explicit social context', async () => {
+        const result = await requestOpenAI(baseArg({ publicOnly: true, tools: [], maxTokens: 320, tokenContext: 512,
+            formated: [{ role: 'user', content: 'x'.repeat(600) }] }))
+        expect(result).toMatchObject({ type: 'fail', noRetry: true, publicDiagnostic: { code: 'invalid_limits' } })
+        expect(mocks.globalFetch).not.toHaveBeenCalled()
     })
 })

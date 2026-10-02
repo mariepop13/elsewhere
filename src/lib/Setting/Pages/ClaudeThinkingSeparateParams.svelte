@@ -3,6 +3,7 @@
     import { DBState } from 'src/ts/stores.svelte';
     import { getModelInfo } from 'src/ts/model/modellist';
     import { LLMFlags } from 'src/ts/model/types';
+    import TokenBudgetInput from '../TokenBudgetInput.svelte';
     import SliderInput from 'src/lib/UI/GUI/SliderInput.svelte';
     import SelectInput from 'src/lib/UI/GUI/SelectInput.svelte';
     import OptionInput from 'src/lib/UI/GUI/OptionInput.svelte';
@@ -57,7 +58,7 @@
 </SelectInput>
 {#if value.thinking_type === 'budget'}
     <span class="text-textcolor">{language.thinkingTokens}</span>
-    <SliderInput min={0} max={64000} marginBottom step={200} fixed={0} bind:value={value.thinking_tokens} disableable/>
+    <TokenBudgetInput modelId={effectiveModel} kind="reasoning" bind:value={value.thinking_tokens}/>
 {/if}
 {#if value.thinking_type === 'adaptive'}
     <span class="text-textcolor">{language.adaptiveThinkingEffort ?? 'Adaptive Thinking Effort'}</span>
