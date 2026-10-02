@@ -1,3 +1,6 @@
+import { payloadTokenError } from './tokenBudget';
+import { selectionForModel, validateTokenBudget, type TokenCapabilities, type TokenSelection } from '../../model/tokenCapabilities';
+import { loadTokenCapabilities } from '../../model/tokenCapabilities.svelte';
 import { openNodeProviderSocket } from "../../network/nodeProxy";
 import { getNodeServerProxyAuth } from "../../storage/nodeStorage";
 import { isNodeServer, isTauri } from "../../platform";
@@ -35,6 +38,7 @@ interface requestDataArgument{
     biasString?: [string,number][]
     currentChar?: character
     temperature?: number
+    inputTokenEstimate?: number
     maxTokens?:number
     PresensePenalty?: number
     frequencyPenalty?: number,
@@ -66,6 +70,9 @@ export interface RequestDataArgumentExtended extends requestDataArgument{
     customURL?:string
     mode?:ModelModeExtended
     key?:string
+    tokenCapabilities?: TokenCapabilities
+    tokenSelection?: TokenSelection
+    tokenContext?: number
     additionalOutput?:string
     saveSignatures?:boolean
 }
@@ -482,6 +489,14 @@ export async function requestChatDataMain(arg:requestDataArgument, model:ModelMo
         targ.key = found?.key
     }
 
+    targ.tokenSelection = selectionForModel(targ.modelInfo, db.openrouterRequestModel, db.openrouterProvider)
+    targ.tokenCapabilities = await loadTokenCapabilities(targ.tokenSelection)
+    targ.tokenContext = model === 'model' ? db.maxContext : undefined
+    const tokenErrors = validateTokenBudget(targ.tokenCapabilities, { context: targ.tokenContext, output: targ.maxTokens, input: targ.inputTokenEstimate,
+        reasoning: targ.aiModel === 'openrouter' && db.openrouterReasoning?.enabled !== false ? db.openrouterReasoning?.maxTokens : undefined,
+        reasoningKind: 'openrouter' })
+    if (tokenErrors.length) return { type: 'fail', result: tokenErrors.join('\n'), noRetry: true }
+
     const format = targ.modelInfo.format
 
     targ.formated = reformater(targ.formated, targ.modelInfo)
@@ -632,6 +647,8 @@ async function requestNovelAI(arg:RequestDataArgumentExtended):Promise<requestDa
     }
 
     body = applyAdditionalParameters(body, headers, getAdditionalParameters(aiModel))
+    const tokenError = await payloadTokenError(arg, body)
+    if (tokenError) return { type: 'fail', result: tokenError, noRetry: true }
 
     const da = await globalFetch(aiModel === 'novelai_kayra' ? "https://text.novelai.net/ai/generate" : "https://api.novelai.net/ai/generate", {
         body: body,
@@ -672,7 +689,7 @@ async function requestOobaLegacy(arg:RequestDataArgumentExtended):Promise<reques
     }
 
     bodyTemplate = {
-        'max_new_tokens': db.maxResponse,
+        'max_new_tokens': maxTokens,
         'do_sample': db.ooba.do_sample,
         'temperature': (db.temperature / 100),
         'top_p': db.ooba.top_p,
@@ -686,7 +703,7 @@ async function requestOobaLegacy(arg:RequestDataArgumentExtended):Promise<reques
         'penalty_alpha': db.ooba.penalty_alpha,
         'length_penalty': db.ooba.length_penalty,
         'early_stopping': false,
-        'truncation_length': maxTokens,
+        'truncation_length': db.maxContext,
         'ban_eos_token': db.ooba.ban_eos_token,
         'stopping_strings': stopStrings,
         'seed': -1,
@@ -700,6 +717,8 @@ async function requestOobaLegacy(arg:RequestDataArgumentExtended):Promise<reques
     }
 
     bodyTemplate = applyAdditionalParameters(bodyTemplate, headers, getAdditionalParameters(aiModel))
+    const tokenError = await payloadTokenError(arg, bodyTemplate)
+    if (tokenError) return { type: 'fail', result: tokenError, noRetry: true }
 
     if(arg.previewBody){
         return {
@@ -854,6 +873,8 @@ async function requestOoba(arg:RequestDataArgumentExtended):Promise<requestDataR
 
     let headers: Record<string, string> = {}
     bodyTemplate = applyAdditionalParameters(bodyTemplate, headers, getAdditionalParameters(aiModel))
+    const tokenError = await payloadTokenError(arg, bodyTemplate)
+    if (tokenError) return { type: 'fail', result: tokenError, noRetry: true }
 
     if(arg.previewBody){
         return {
@@ -1023,6 +1044,8 @@ async function requestKobold(arg:RequestDataArgumentExtended):Promise<requestDat
     }
 
     body = applyAdditionalParameters(body, headers, getAdditionalParameters(arg.aiModel)) as KoboldGenerationInputSchema
+    const tokenError = await payloadTokenError(arg, body)
+    if (tokenError) return { type: 'fail', result: tokenError, noRetry: true }
 
     if(arg.previewBody){
         return {
@@ -1101,6 +1124,8 @@ async function requestNovelList(arg:RequestDataArgumentExtended):Promise<request
     };
 
     send_body = applyAdditionalParameters(send_body, headers, getAdditionalParameters(arg.aiModel))
+    const tokenError = await payloadTokenError(arg, send_body)
+    if (tokenError) return { type: 'fail', result: tokenError, noRetry: true }
 
     if(arg.previewBody){
         return {
@@ -1191,10 +1216,13 @@ async function requestOllama(arg:RequestDataArgumentExtended):Promise<requestDat
         model: ollamaModel,
         messages: messages,
         stream: arg.useStreaming,
+        options: { num_predict: arg.maxTokens, num_ctx: db.maxContext },
         think: ollamaThinkMode
     }
 
     requestBody = applyAdditionalParameters(requestBody, customHeaders, getAdditionalParameters(arg.aiModel))
+    const tokenError = await payloadTokenError(arg, requestBody)
+    if (tokenError) return { type: 'fail', result: tokenError, noRetry: true }
 
     if(arg.previewBody){
         return {
@@ -1297,6 +1325,7 @@ async function requestCohere(arg:RequestDataArgumentExtended):Promise<requestDat
     //reformat chat
 
     let body = applyParameters({
+        max_tokens: arg.maxTokens,
         message: lastChatPrompt,
         chat_history: formated.map((v) => {
             if(v.role === 'assistant'){
@@ -1349,6 +1378,8 @@ async function requestCohere(arg:RequestDataArgumentExtended):Promise<requestDat
     }
 
     body = applyAdditionalParameters(body, headers, getAdditionalParameters(arg.aiModel))
+    const tokenError = await payloadTokenError(arg, body)
+    if (tokenError) return { type: 'fail', result: tokenError, noRetry: true }
 
     if(arg.previewBody){
         return {
@@ -1415,8 +1446,8 @@ async function requestHorde(arg:RequestDataArgumentExtended):Promise<requestData
         "prompt": prompt,
         "params": {
             "n": 1,
-            "max_context_length": db.maxContext + 100,
-            "max_length": db.maxResponse,
+            "max_context_length": db.maxContext,
+            "max_length": arg.maxTokens,
             "singleline": false,
             "temperature": db.temperature / 100,
             "top_k": db.top_k,
@@ -1444,6 +1475,8 @@ async function requestHorde(arg:RequestDataArgumentExtended):Promise<requestData
     }
 
     let finalBody = applyAdditionalParameters(argument, headers, getAdditionalParameters(arg.aiModel))
+    const tokenError = await payloadTokenError(arg, finalBody)
+    if (tokenError) return { type: 'fail', result: tokenError, noRetry: true }
 
     const da = await providerFetch("https://stablehorde.net/api/v2/generate/text/async", {
         body: JSON.stringify(finalBody),
@@ -1528,6 +1561,8 @@ async function requestWebLLM(arg:RequestDataArgumentExtended):Promise<requestDat
     } as any
 
     const finalParams = applyAdditionalParameters(transformersParams, {}, getAdditionalParameters(arg.aiModel))
+    const tokenError = await payloadTokenError(arg, finalParams)
+    if (tokenError) return { type: 'fail', result: tokenError, noRetry: true }
 
     const v = await runTransformers(prompt, realModel, finalParams)
     return {

@@ -64,6 +64,9 @@
   --color-neutral-800: var(--risu-theme-neutral-800);
   --color-neutral-900: var(--risu-theme-neutral-900);
 
+  --color-warning-100: var(--risu-theme-warning-100);
+  --color-warning-900: var(--risu-theme-warning-900);
+
   --color-success-50: var(--risu-theme-success-50);
   --color-success-100: var(--risu-theme-success-100);
   --color-success-200: var(--risu-theme-success-200);
@@ -263,6 +266,9 @@ body {
   --risu-theme-danger-700: #b91c1c;
   --risu-theme-danger-800: #991b1b;
   --risu-theme-danger-900: #7f1d1d;
+
+  --risu-theme-warning-100: #fef3c7;
+  --risu-theme-warning-900: #78350f;
 
   --risu-theme-success-50: #f0fdf4;
   --risu-theme-success-100: #dcfce7;

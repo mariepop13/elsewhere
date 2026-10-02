@@ -151,3 +151,14 @@ describe("translator preset file codec", () => {
         );
     });
 });
+
+
+describe('token budget preservation', () => {
+    it('retains large and invalid finite budgets through legacy normalization for explicit correction', () => {
+        for (const maxResponse of [128000, -20, 1.5]) {
+            const state = normalizeTranslatorPresetState({ translatorMaxResponse: maxResponse, translatorPresets: [] as unknown[] });
+            expect(state.translatorPresets[0]).toMatchObject({ maxResponse });
+            expect(state.translatorMaxResponse).toBe(maxResponse);
+        }
+    });
+});
