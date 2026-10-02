@@ -1054,6 +1054,7 @@ export const languageEnglish = {
     importPersona: "Import Persona",
     export: "Export",
     import: "Import",
+    softwareLicenses: "Software licenses",
     supporterThanks: "Supporter Thanks",
     supporterThanksDesc: "Thank you for your support!",
     donatorPatreonDesc: "For default, it will not be shown in the list for privacy. If you want to show your nickname, go to Risuai's patreon page and press the link button.",

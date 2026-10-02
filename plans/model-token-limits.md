@@ -34,3 +34,8 @@ LLMModel has no capacities; OpenRouter discards completion/provider/alias metada
 
 ## Handoff
 No commit, push, PR, merge or deployment authorized or performed. Work remains uncommitted on feature/model-token-limits. Dependencies and store are private. Retain this plan. Final UI typecheck log: /tmp/model-limits-check-ui-final.log.
+
+## Local develop synchronization (2026-10-02)
+Marie explicitly authorizes the local develop merge and preservation checkpoints after PR32, without publication. Refresh origin/develop to15ff45f6ab70f929459ea9010fe01e7c635ae48a. Preserve the exact26-file candidate and existing plan in local checkpoint8124694f; also retain /tmp/model-token-limits-pre-develop-sync/{files.tar,tracked.patch,manifest.json} as a reversible backup. Merge origin/develop with --no-ff, without rebase, reset, stash or other worktree/service changes.
+
+The merge has no conflicts. Before this additive plan update,25 candidate files match their pre-merge SHA256 exactly; en.ts differs only by the upstream softwareLicenses label and retains all feature labels. Incoming changes contain notices, license UI and source-distribution/roadmap documentation. git diff --cached --check passes and the unmerged index is empty. No build, full suite or browser preview runs during synchronization. Prior356-test/Svelte/live evidence applies to the checkpoint, not a newly validated merged tree. Next: schedule private typecheck and focused capability/request/preset fixtures, then decide serialized full validation and eventual build separately. No push/PR/deployment is authorized.
