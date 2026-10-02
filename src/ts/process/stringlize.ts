@@ -101,7 +101,7 @@ const userStrings = ["user", "human", "input", "inst", "instruction"]
 function toTitleCase(s:string){
     return s[0].toUpperCase() + s.slice(1).toLowerCase()
 }
-export function getStopStrings(suggesting:boolean=false){
+export function getStopStrings(suggesting:boolean=false, isolatedContext = false){
     const db = getDatabase()
     let { userPrefix, seperator } = db.ooba.formating;
     if(!seperator){
@@ -114,7 +114,7 @@ export function getStopStrings(suggesting:boolean=false){
         "<|end",
         "<|im_end",
         userPrefix,
-        `${username}:`,
+        ...(isolatedContext ? [] : [`${username}:`]),
     ]
     if(suggesting){
         stopStrings.push("\n\n")
@@ -209,12 +209,12 @@ export function getUnstringlizerChunks(formated:OpenAIChat[], char:string, mode:
     return {chunks,extChunk:charNames.concat(chunks)}
 }
 
-export function stringlizeAINChat(formated:OpenAIChat[], char:string, continued: boolean){
+export function stringlizeAINChat(formated:OpenAIChat[], char:string, continued: boolean, isolatedContext = false){
     let resultString:string[] = []
     const db = getDatabase()
 
     for(const form of formated){
-        console.log(form)
+        if (!isolatedContext) console.log(form)
         if(form.memo && form.memo.startsWith("newChat") || form.content === "[Start a new chat]"){
             resultString.push("[新しいチャットの始まり]")
             continue
@@ -223,7 +223,7 @@ export function stringlizeAINChat(formated:OpenAIChat[], char:string, continued:
             resultString.push(form.content)
         }
         else if(form.role === 'user'){
-            resultString.push(...formatToAIN(getUserName(), form.content))
+            resultString.push(...formatToAIN(isolatedContext ? "User" : getUserName(), form.content))
         }
         else if(form.name || form.role === 'assistant'){
             resultString.push(...formatToAIN(form.name ?? char, form.content))
@@ -234,7 +234,7 @@ export function stringlizeAINChat(formated:OpenAIChat[], char:string, continued:
     }
     let res = resultString.join('\n\n')
     if(!continued){
-        res +=  + `\n\n${char} 「`
+        res += `\n\n${isolatedContext ? "Assistant" : char} 「`
     }
     else{
         res += " 「"

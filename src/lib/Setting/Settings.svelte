@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { openElsewords } from 'src/ts/elsewords/entry';
     import { AccessibilityIcon, ActivityIcon, PackageIcon, BotIcon, CodeIcon, ContactIcon, ImageIcon, LanguagesIcon, MonitorIcon, Sailboat, UserIcon, CircleXIcon, KeyboardIcon, SparkleIcon } from "@lucide/svelte";
     import { language } from "src/lang";
     import DisplaySettings from "./Pages/DisplaySettings.svelte";
@@ -64,6 +65,7 @@
                     <span class="settings-index-caption">{language.settings}</span>
                 </div>
                 <nav class="settings-index-list" aria-label={language.settings}>
+                <button class="settings-nav-item flex gap-2 items-center" onclick={openElsewords}><LanguagesIcon /><span>Elsewords</span></button>
                 {#if !$isLite}
                     <button class="settings-nav-item flex gap-2 items-center"
                         class:settings-nav-item-active={$SettingsMenuIndex === 1 || $SettingsMenuIndex === 13}
