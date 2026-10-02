@@ -1,4 +1,4 @@
-import { hubURL } from "../characterCards"
+import { hubURL, hubFetchURL } from "../characterCards"
 import { getDatabase, setDatabase } from "../storage/database.svelte"
 import { alertConfirm, alertError, alertMd, alertNormal, alertSelect, alertWait } from "../alert"
 import { AppendableBuffer } from "../globalApi.svelte"
@@ -25,7 +25,7 @@ export async function saveRisuAccountData() {
         alertError("Not logged in error")
         return
     }
-    const s = await fetch(hubURL + '/hub/account/save', {
+    const s = await fetch(hubFetchURL + '/hub/account/save', {
         method: "POST",
         body: JSON.stringify({
             token: db.account.token,

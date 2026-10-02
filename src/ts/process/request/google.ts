@@ -1,4 +1,4 @@
-import { fetchNative, textifyReadableStream } from "src/ts/globalApi.svelte"
+import { providerFetch, fetchNative, textifyReadableStream } from "src/ts/globalApi.svelte"
 import { LLMFlags, LLMFormat, type LLMModel } from "src/ts/model/modellist"
 import { getDatabase, setDatabase } from "src/ts/storage/database.svelte"
 import { base64url, simplifySchema } from "src/ts/util"
@@ -476,8 +476,9 @@ export async function requestGoogleCloudVertex(arg:RequestDataArgumentExtended):
 
         const jwt = `${encodedHeader}.${encodedClaimSet}.${base64url(new Uint8Array(signature))}`;
 
-        const response = await fetch("https://oauth2.googleapis.com/token", {
+        const response = await providerFetch("https://oauth2.googleapis.com/token", {
             method: "POST",
+            signal: arg.abortSignal,
             body: `grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=${jwt}`,
             headers: {
                 "Content-Type": "application/x-www-form-urlencoded",
@@ -525,7 +526,6 @@ export async function requestGoogleCloudVertex(arg:RequestDataArgumentExtended):
     if(db.jsonSchemaEnabled || arg.schema){
         body.generation_config.response_mime_type = "application/json"
         body.generation_config.response_schema = getGeneralJSONSchema(arg.schema, ['$schema','additionalProperties'])
-        console.log(body.generation_config.response_schema)
     }    
     
     let url = ''
@@ -948,7 +948,6 @@ async function requestGoogle(url:string, body:any, headers:{[key:string]:string}
         }
     }
 
-    console.log(result)
     return {
         type: 'success',
         result: result

@@ -2,11 +2,11 @@
     import { language } from "src/lang";
     import { DBState } from "src/ts/stores.svelte";
 
-    
+
 </script>
 
 {#if window.innerWidth < 768}
-    <span class="text-red-500">
+    <span class="text-danger-500">
         {language.screenTooSmall}
     </span>
 

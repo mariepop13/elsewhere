@@ -9,7 +9,7 @@
     import WelcomeRisu from './lib/Others/WelcomeRisu.svelte';
     import BookmarkList from './lib/Others/BookmarkList.svelte';
     import Settings from './lib/Setting/Settings.svelte';
-    import { showRealmInfoStore, importCharacterProcess } from './ts/characterCards';
+    import { showRealmInfoStore, importCharacterProcess, upstreamRealmEnabled } from './ts/characterCards';
     import { importPreset, getDatabase, setDatabase } from './ts/storage/database.svelte';
     import { readModule } from './ts/process/modules';
     import { alertNormal } from './ts/alert';
@@ -40,6 +40,11 @@
 
 
   
+    import LocalSourceNotice from './lib/Others/LocalSourceNotice.svelte';
+    import { privateLocalMode, localNoticeKey } from './ts/firstRun';
+
+    let localNoticeRead = $state(localStorage.getItem(localNoticeKey) === 'acknowledged');
+
     let didFirstSetup: boolean  = $derived(DBState.db?.didFirstSetup)
     let gridOpen = $state(false)
     let aprilFools = $state(new Date().getMonth() === 3 && new Date().getDate() === 1)
@@ -122,7 +127,14 @@
     }
 
 }}>
-    {#if !import.meta.env.VITE_RISU_LEGAL_CONFIGURED}
+    {#if privateLocalMode && !localNoticeRead}
+        <LocalSourceNotice
+            oncontinue={() => {
+                localStorage.setItem(localNoticeKey, 'acknowledged')
+                localNoticeRead = true
+            }}
+        />
+    {:else if !privateLocalMode && !import.meta.env.VITE_RISU_LEGAL_CONFIGURED}
         <Legal />
     {:else if aprilFools}
 
@@ -238,10 +250,10 @@
     {#if $alertStore.type !== 'none'}
         <AlertComp />
     {/if}
-    {#if $showRealmInfoStore}
+    {#if upstreamRealmEnabled && $showRealmInfoStore}
         <RealmPopUp bind:openedData={$showRealmInfoStore} />
     {/if}
-    {#if $ShowRealmFrameStore}
+    {#if upstreamRealmEnabled && $ShowRealmFrameStore}
         <RealmFrame />
     {/if}
     {#if $openPresetList}

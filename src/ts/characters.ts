@@ -5,7 +5,7 @@ import { language } from "../lang";
 import { checkNullish, findCharacterbyId, findCharacterIndexbyId, getUserName, selectMultipleFile, selectSingleFile } from "./util";
 import { v4 as uuidv4, v4 } from 'uuid';
 import { getImageType } from "./media";
-import { DBState, MobileGUIStack, OpenRealmStore, selectedCharID } from "./stores.svelte";
+import { DBState, MobileGUIStack, selectedCharID } from "./stores.svelte";
 import { AppendableBuffer, changeChatTo, checkCharOrder, downloadFile, getFileSrc, requiresFullEncoderReload } from "./globalApi.svelte";
 import { updateInlayScreen } from "./process/inlayScreen";
 import { parseMarkdownSafe } from "./parser/parser.svelte";
@@ -845,12 +845,6 @@ export async function addCharacter(arg:{
     MobileGUIStack.set(100)
     const reseter = arg.reseter ?? (() => {})
     const r = await alertAddCharacter()
-    if(r === 'importFromRealm'){
-        selectedCharID.set(-1)
-        OpenRealmStore.set(true)
-        MobileGUIStack.set(0)
-        return
-    }
     reseter();
     switch(r){
         case 'createfromScratch':

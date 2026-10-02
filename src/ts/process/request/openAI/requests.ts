@@ -3,7 +3,7 @@ import { alertError } from "src/ts/alert";
 import { getDatabase } from "src/ts/storage/database.svelte"
 import { LLMFlags, LLMFormat, LLMProvider } from "src/ts/model/modellist"
 import { strongBan, tokenizeNum } from "src/ts/tokenizer"
-import { getFreeOpenRouterModels } from "src/ts/model/openrouter"
+import { getFreeOpenRouterModels, openRouterGatewayReasoningEfforts } from "src/ts/model/openrouter"
 import { addFetchLog, fetchNative, globalFetch, textifyReadableStream } from "src/ts/globalApi.svelte"
 import { isNodeServer, isTauri } from "src/ts/platform"
 import { simplifySchema } from "src/ts/util"
@@ -225,7 +225,6 @@ export async function requestOpenAI(arg:RequestDataArgumentExtended):Promise<req
         })
     }
 
-    console.log(formatedChat)
     if(arg.modelInfo.format === LLMFormat.Mistral){
         requestModel = aiModel
 
@@ -422,6 +421,25 @@ export async function requestOpenAI(arg:RequestDataArgumentExtended):Promise<req
         }
         body.transforms = db.openrouterMiddleOut ? ['middle-out'] : []
 
+        const openrouterReasoning = db.openrouterReasoning
+        if (openrouterReasoning?.enabled === false) {
+            body.reasoning = { effort: 'none' }
+        } else if (openrouterReasoning) {
+            const reasoning: Record<string, boolean | number | string> = {}
+            if (openrouterReasoning.effort && openRouterGatewayReasoningEfforts.includes(openrouterReasoning.effort)) {
+                reasoning.effort = openrouterReasoning.effort
+            }
+            if (Number.isInteger(openrouterReasoning.maxTokens) && openrouterReasoning.maxTokens > 0) {
+                reasoning.max_tokens = openrouterReasoning.maxTokens
+            }
+            if (!Object.keys(reasoning).length && openrouterReasoning.enabled === true) {
+                reasoning.enabled = true
+            }
+            if (Object.keys(reasoning).length) {
+                body.reasoning = reasoning
+            }
+        }
+
         if(db.openrouterProvider){
             const provider: typeof db.openrouterProvider = {} as typeof db.openrouterProvider;
             if (db.openrouterProvider.order?.length) {
@@ -553,8 +571,8 @@ export async function requestOpenAI(arg:RequestDataArgumentExtended):Promise<req
         headers["Authorization"] = "Bearer " + db.OaiCompAPIKeys[arg.modelInfo.keyIdentifier]
     }
     if(aiModel === 'openrouter'){
-        headers["X-Title"] = 'RisuAI'
-        headers["HTTP-Referer"] = 'https://risuai.xyz'
+        headers["X-Title"] = 'Elsewhere'
+        headers["HTTP-Referer"] = 'https://github.com/mariepop13/elsewhere'
     }
     if(aiModel === 'nanogpt' && db.nanogptProvider){
         headers["X-Provider"] = db.nanogptProvider
@@ -641,7 +659,8 @@ export async function requestOpenAI(arg:RequestDataArgumentExtended):Promise<req
 
         const transtream = getTranStream(arg)
 
-        da.body.pipeTo(transtream.writable)
+        // The readable side reports failures; observe the pipe promise to avoid a second global error.
+        void da.body.pipeTo(transtream.writable).catch(() => {})
 
         return {
             type: 'streaming',
@@ -909,7 +928,6 @@ export async function requestOpenAILegacyInstruct(arg:RequestDataArgumentExtende
             m.content = m.content.trim();
         }
 
-        console.log(m.role +":"+m.content);
         switch (m.role) {
             case 'user': author = 'User'; break;
             case 'assistant': author = 'Assistant'; break;
@@ -1016,7 +1034,6 @@ function getTranStream(arg:RequestDataArgumentExtended):TransformStream<Uint8Arr
                                         const extracted = extractJSON(readed[key], arg.extractJson)
                                         JSONreaded[key] = extracted
                                     }
-                                    console.log(JSONreaded)
                                     control.enqueue(JSONreaded)
                                 }
                                 else if(reasoningContent){
@@ -1113,7 +1130,6 @@ function getTranStream(arg:RequestDataArgumentExtended):TransformStream<Uint8Arr
                         const extracted = extractJSON(readed[key], arg.extractJson)
                         JSONreaded[key] = extracted
                     }
-                    console.log(JSONreaded)
                     control.enqueue(JSONreaded)
                 }
                 else if(reasoningContent){
@@ -1297,7 +1313,7 @@ function wrapToolStream(
                         }
                         
                         const transtream = getTranStream(arg)                    
-                        resRec.body.pipeTo(transtream.writable)
+                        void resRec.body.pipeTo(transtream.writable).catch(() => {})
                         
                         reader = transtream.readable.getReader()
                         

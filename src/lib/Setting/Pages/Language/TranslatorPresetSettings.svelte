@@ -43,7 +43,7 @@
 
 <div class="flex items-center mb-4">
     <button
-        class="mr-2 text-textcolor2 hover:text-green-500 cursor-pointer"
+        class="mr-2 text-textcolor2 hover:text-focus cursor-pointer"
         onclick={() => {
             const newPreset = createTranslatorPreset();
             const presets = DBState.db.translatorPresets;
@@ -57,7 +57,7 @@
     </button>
 
     <button
-        class="mr-2 text-textcolor2 hover:text-green-500 cursor-pointer"
+        class="mr-2 text-textcolor2 hover:text-focus cursor-pointer"
         onclick={async () => {
             const presets = DBState.db.translatorPresets;
 
@@ -81,7 +81,7 @@
     </button>
 
     <button
-        class="mr-2 text-textcolor2 hover:text-green-500 cursor-pointer"
+        class="mr-2 text-textcolor2 hover:text-focus cursor-pointer"
         onclick={async () => {
             const presets = DBState.db.translatorPresets;
 
@@ -108,7 +108,7 @@
     <div class="ml-2 mr-4 w-px h-full bg-darkborderc"></div>
 
     <button
-        class="mr-2 text-textcolor2 hover:text-green-500 cursor-pointer"
+        class="mr-2 text-textcolor2 hover:text-focus cursor-pointer"
         onclick={async () => {
             try {
                 const presets = DBState.db.translatorPresets;
@@ -133,7 +133,7 @@
     </button>
 
     <button
-        class="mr-2 text-textcolor2 hover:text-green-500 cursor-pointer"
+        class="mr-2 text-textcolor2 hover:text-focus cursor-pointer"
         onclick={async () => {
             try {
                 const selectedFile = await selectSingleFile(translatorPresetImportExtensions);

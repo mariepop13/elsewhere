@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Elsewhere icon">
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#111827" />
+      <stop offset="1" stop-color="#252044" />
+    </linearGradient>
+    <linearGradient id="slashes" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#75f0ed" />
+      <stop offset="1" stop-color="#a78bfa" />
+    </linearGradient>
+  </defs>
+  <rect x="8" y="8" width="496" height="496" rx="112" fill="url(#background)" />
+  <path d="M228 112h66L218 400h-66zm116 0h66l-76 288h-66z" fill="url(#slashes)" />
+</svg>

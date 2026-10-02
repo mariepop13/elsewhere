@@ -9,11 +9,12 @@
         pinnedItems?: ModelGridPinnedItem[]
         loading?: boolean
         showSubBadge?: boolean
+        showSortControls?: boolean
         selectedLabelOverride?: string
         onselect?: (id: string, displayName: string) => void
     }
 
-    let { value = $bindable(''), items = [], pinnedItems = [], loading = false, showSubBadge = false, selectedLabelOverride, onselect }: Props = $props()
+    let { value = $bindable(''), items = [], pinnedItems = [], loading = false, showSubBadge = false, showSortControls = true, selectedLabelOverride, onselect }: Props = $props()
 
     let searchQuery = $state('')
     let sortField = $state<'name' | 'price' | 'provider'>('price')
@@ -79,27 +80,29 @@
     {/if}
 
     {#if !loading && items.length > 0}
-        <div class="flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:items-center sm:gap-1">
-            <div class="flex gap-1">
-                {#each sortFields as sf}
-                    <button
-                        onclick={() => { sortField = sf.key }}
-                        class="rounded px-3 py-1 text-sm transition-colors {sortField === sf.key ? 'bg-selected text-textcolor font-bold ring-2 ring-textcolor/30 ring-offset-1 ring-offset-bgcolor shadow-md' : 'bg-darkbutton text-textcolor2 font-medium hover:bg-darkbutton hover:text-textcolor'}"
-                    >{sf.label}</button>
-                {/each}
-            </div>
+        {#if showSortControls}
+            <div class="flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:items-center sm:gap-1">
+                <div class="flex gap-1">
+                    {#each sortFields as sf}
+                        <button
+                            onclick={() => { sortField = sf.key }}
+                            class="rounded px-3 py-1 text-sm transition-colors {sortField === sf.key ? 'bg-selected text-textcolor font-bold ring-2 ring-textcolor/30 ring-offset-1 ring-offset-bgcolor shadow-md' : 'bg-darkbutton text-textcolor2 font-medium hover:bg-darkbutton hover:text-textcolor'}"
+                        >{sf.label}</button>
+                    {/each}
+                </div>
 
-            <span class="hidden sm:inline mx-1.5 select-none text-textcolor2">|</span>
+                <span class="hidden sm:inline mx-1.5 select-none text-textcolor2">|</span>
 
-            <div class="flex gap-1">
-                {#each sortDirs as sd}
-                    <button
-                        onclick={() => { sortDir = sd.key }}
-                        class="rounded px-3 py-1 text-sm transition-colors {sortDir === sd.key ? 'bg-selected text-textcolor font-bold ring-2 ring-textcolor/30 ring-offset-1 ring-offset-bgcolor shadow-md' : 'bg-darkbutton text-textcolor2 font-medium hover:bg-darkbutton hover:text-textcolor'}"
-                    >{sd.label}</button>
-                {/each}
+                <div class="flex gap-1">
+                    {#each sortDirs as sd}
+                        <button
+                            onclick={() => { sortDir = sd.key }}
+                            class="rounded px-3 py-1 text-sm transition-colors {sortDir === sd.key ? 'bg-selected text-textcolor font-bold ring-2 ring-textcolor/30 ring-offset-1 ring-offset-bgcolor shadow-md' : 'bg-darkbutton text-textcolor2 font-medium hover:bg-darkbutton hover:text-textcolor'}"
+                        >{sd.label}</button>
+                    {/each}
+                </div>
             </div>
-        </div>
+        {/if}
 
         <TextInput bind:value={searchQuery} placeholder={language.openRouterSearchModel} size="sm" />
     {/if}

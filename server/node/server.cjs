@@ -12,10 +12,37 @@ const fs = require('fs/promises')
 const crypto = require('crypto')
 const rateLimit = require('express-rate-limit');
 const { WebSocketServer } = require('ws');
-app.use(express.static(path.join(process.cwd(), 'dist'), {index: false}));
-app.use(express.json({ limit: '100mb' }));
-app.use(express.raw({ type: 'application/octet-stream', limit: '100mb' }));
-app.use(express.text({ limit: '100mb' }));
+const { createProviderProxy, normalizeForwardHeaders } = require('./providerProxy.cjs');
+const { createProviderWebSocketHandler } = require('./providerWebSocket.cjs');
+const serveStatic = express.static(path.join(process.cwd(), 'dist'), { index: false });
+app.use((req, res, next) => {
+    try {
+        const requestedPath = path.posix.normalize(decodeURIComponent(req.path)).replace(/\/+$/, '').toLowerCase();
+        // Every app entry point must receive the Node platform flag injected at /.
+        if (requestedPath === '/index.html') {
+            const queryStart = req.originalUrl.indexOf('?');
+            res.redirect('/' + (queryStart >= 0 ? req.originalUrl.slice(queryStart) : ''));
+            return;
+        }
+    } catch {
+        res.status(400).json({ error: 'Invalid request path.' });
+        return;
+    }
+    serveStatic(req, res, next);
+});
+// Preserve JSON, form, multipart, and binary provider bodies byte for byte.
+app.use(['/proxy', '/proxy2'], (req, res, next) => {
+    // Include the marker even when the parser or rate limiter rejects a request.
+    res.setHeader('x-elsewhere-proxy', '1');
+    res.setHeader('cache-control', 'no-store');
+    next();
+}, express.raw({ type: () => true, limit: '100mb' }));
+app.use(['/proxy', '/proxy2'], (error, req, res, next) => {
+    const status = [400, 413, 415].includes(error.status) ? error.status : 400;
+    res.status(status).json({ error: status === 413
+        ? 'The self-hosted proxy request body exceeds the 100 MB limit.'
+        : 'The self-hosted proxy could not read the request body. Check its content encoding.' });
+});
 const {pipeline} = require('stream/promises')
 const https = require('https');
 const sslPath = path.join(process.cwd(), 'server/node/ssl/certificate');
@@ -164,39 +191,9 @@ async function isAuthorizedProxyRequest(req) {
 }
 
 async function checkProxyAuth(req, res) {
-    if (isAuthorizedRequest(req)) {
-        return true;
-    }
-    return await checkAuth(req, res);
-}
-
-function getRequestTimeoutMs(timeoutHeader) {
-    const raw = Array.isArray(timeoutHeader) ? timeoutHeader[0] : timeoutHeader;
-    if (!raw) {
-        return null;
-    }
-    const timeoutMs = Number.parseInt(raw, 10);
-    if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
-        return null;
-    }
-    return timeoutMs;
-}
-
-function createTimeoutController(timeoutMs) {
-    if (!timeoutMs) {
-        return {
-            signal: undefined,
-            cleanup: () => {}
-        };
-    }
-
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
-
-    return {
-        signal: controller.signal,
-        cleanup: () => clearTimeout(timer)
-    };
+    if (await isAuthorizedProxyRequest(req)) return true;
+    res.status(401).json({ error: 'Self-hosted proxy authentication failed. Sign in to this Node server again.' });
+    return false;
 }
 
 function normalizeProxyStreamTimeoutMs(timeoutMs) {
@@ -251,8 +248,8 @@ function isLocalNetworkHost(hostname) {
         return false;
     }
 
-    const normalizedHost = hostname.toLowerCase().replace(/\.$/, '').split('%')[0];
-    if (normalizedHost === 'localhost' || normalizedHost === '::1' || normalizedHost.endsWith('.local')) {
+    const normalizedHost = hostname.toLowerCase().replace(/^\[|\]$/g, '').replace(/\.$/, '').split('%')[0];
+    if (normalizedHost === 'localhost' || normalizedHost === '::1' || normalizedHost.endsWith('.local') || /^[a-z][a-z0-9_-]*$/.test(normalizedHost)) {
         return true;
     }
 
@@ -289,33 +286,11 @@ function sanitizeTargetUrl(raw) {
         if (!isLocalNetworkHost(parsed.hostname)) {
             return null;
         }
-        parsed.username = '';
-        parsed.password = '';
+        if (parsed.username || parsed.password) return null;
         return parsed.toString();
     } catch {
         return null;
     } // lgtm[js/request-forgery]
-}
-
-function normalizeForwardHeaders(input) {
-    if (!input || typeof input !== 'object' || Array.isArray(input)) {
-        return {};
-    }
-    const normalized = {};
-    for (const [key, value] of Object.entries(input)) {
-        if (typeof key !== 'string') {
-            continue;
-        }
-        if (typeof value === 'string') {
-            normalized[key] = value;
-        }
-    }
-    delete normalized['risu-auth'];
-    delete normalized['risu-timeout-ms'];
-    delete normalized['host'];
-    delete normalized['connection'];
-    delete normalized['content-length'];
-    return normalized;
 }
 
 function normalizeProxyResponseHeaders(headers) {
@@ -527,7 +502,7 @@ async function runProxyStreamJob(job, arg) {
         pushJobEvent(job, { type: 'done' });
         markJobDone(job);
     } catch (error) {
-        const message = error?.name === 'AbortError' ? 'Proxy stream job aborted' : `${error}`;
+        const message = error?.name === 'AbortError' ? 'Proxy stream job aborted' : 'The self-hosted proxy could not reach the LAN provider.';
         pushJobEvent(job, {
             type: 'error',
             status: 504,
@@ -728,7 +703,7 @@ async function checkAuth(req, res, returnOnlyStatus = false){
         
         return true   
     } catch (error) {
-        console.log(error)
+        console.warn('[Server] Invalid authentication data')
         if(returnOnlyStatus){
             return false;
         }
@@ -739,153 +714,7 @@ async function checkAuth(req, res, returnOnlyStatus = false){
     }
 }
 
-const reverseProxyFunc = async (req, res, next) => {
-    if(!await checkProxyAuth(req, res)){
-        return;
-    }
-    
-    const urlParam = req.headers['risu-url'] ? decodeURIComponent(req.headers['risu-url']) : req.query.url;
-
-    if (!urlParam) {
-        res.status(400).send({
-            error:'URL has no param'
-        });
-        return;
-    }
-    const header = req.headers['risu-header'] ? JSON.parse(decodeURIComponent(req.headers['risu-header'])) : req.headers;
-    if(!header['x-forwarded-for']){
-        header['x-forwarded-for'] = req.ip
-    }
-
-    if(req.headers['authorization']?.startsWith('X-SERVER-REGISTER')){
-        if(!existsSync(authCodePath)){
-            delete header['authorization']
-        }
-        else{
-            const authCode = await fs.readFile(authCodePath, {
-                encoding: 'utf-8'
-            })
-            header['authorization'] = `Bearer ${authCode}`
-        }
-    }
-    const timeoutMs = getRequestTimeoutMs(req.headers['risu-timeout-ms']);
-    const timeout = createTimeoutController(timeoutMs);
-    let originalResponse;
-    try {
-        // make request to original server
-        originalResponse = await fetch(urlParam, {
-            method: req.method,
-            headers: header,
-            body: JSON.stringify(req.body),
-            signal: timeout.signal
-        });
-        // get response body as stream
-        const originalBody = originalResponse.body;
-        // get response headers
-        const head = new Headers(originalResponse.headers);
-        head.delete('content-security-policy');
-        head.delete('content-security-policy-report-only');
-        head.delete('clear-site-data');
-        head.delete('Cache-Control');
-        head.delete('Content-Encoding');
-        const headObj = {};
-        for (let [k, v] of head) {
-            headObj[k] = v;
-        }
-        // send response headers to client
-        res.header(headObj);
-        // send response status to client
-        res.status(originalResponse.status);
-        // send response body to client
-        await pipeline(originalResponse.body, res);
-
-    }
-    catch (err) {
-        if (err?.name === 'AbortError') {
-            if (!res.headersSent) {
-                res.status(504).send({
-                    error: timeoutMs
-                        ? `Proxy request timed out after ${timeoutMs}ms`
-                        : 'Proxy request aborted'
-                });
-            } else {
-                res.end();
-            }
-            return;
-        }
-        next(err);
-        return;
-    } finally {
-        timeout.cleanup();
-    }
-}
-
-const reverseProxyFunc_get = async (req, res, next) => {
-    if(!await checkProxyAuth(req, res)){
-        return;
-    }
-    
-    const urlParam = req.headers['risu-url'] ? decodeURIComponent(req.headers['risu-url']) : req.query.url;
-
-    if (!urlParam) {
-        res.status(400).send({
-            error:'URL has no param'
-        });
-        return;
-    }
-    const header = req.headers['risu-header'] ? JSON.parse(decodeURIComponent(req.headers['risu-header'])) : req.headers;
-    if(!header['x-forwarded-for']){
-        header['x-forwarded-for'] = req.ip
-    }
-    const timeoutMs = getRequestTimeoutMs(req.headers['risu-timeout-ms']);
-    const timeout = createTimeoutController(timeoutMs);
-    let originalResponse;
-    try {
-        // make request to original server
-        originalResponse = await fetch(urlParam, {
-            method: 'GET',
-            headers: header,
-            signal: timeout.signal
-        });
-        // get response body as stream
-        const originalBody = originalResponse.body;
-        // get response headers
-        const head = new Headers(originalResponse.headers);
-        head.delete('content-security-policy');
-        head.delete('content-security-policy-report-only');
-        head.delete('clear-site-data');
-        head.delete('Cache-Control');
-        head.delete('Content-Encoding');
-        const headObj = {};
-        for (let [k, v] of head) {
-            headObj[k] = v;
-        }
-        // send response headers to client
-        res.header(headObj);
-        // send response status to client
-        res.status(originalResponse.status);
-        // send response body to client
-        await pipeline(originalResponse.body, res);
-    }
-    catch (err) {
-        if (err?.name === 'AbortError') {
-            if (!res.headersSent) {
-                res.status(504).send({
-                    error: timeoutMs
-                        ? `Proxy request timed out after ${timeoutMs}ms`
-                        : 'Proxy request aborted'
-                });
-            } else {
-                res.end();
-            }
-            return;
-        }
-        next(err);
-        return;
-    } finally {
-        timeout.cleanup();
-    }
-}
+const providerProxy = createProviderProxy(checkProxyAuth);
 
 let accessTokenCache = {
     token: null,
@@ -953,7 +782,9 @@ async function hubProxyFunc(req, res) {
     const excludedHeaders = [
         'content-encoding',
         'content-length',
-        'transfer-encoding'
+        'transfer-encoding',
+        'set-cookie',
+        'clear-site-data'
     ];
 
     try {
@@ -968,11 +799,22 @@ async function hubProxyFunc(req, res) {
             externalURL = hubURL + pathAndQuery;
         }
         
+        const target = new URL(externalURL);
+        const targetPath = decodeURIComponent(target.pathname);
+        if (target.origin !== new URL(hubURL).origin
+            || /(?:^|\/)(?:proxy2?|proxy-stream-jobs)(?:\/|$)/.test(targetPath)
+            || req.headers['risu-url'] || req.headers['risu-header']) {
+            res.status(410).json({ error: 'Provider requests through the RisuAI hub are disabled. Use the authenticated same-origin /proxy2 route.' });
+            return;
+        }
+
         const headersToSend = { ...req.headers };
         delete headersToSend.host;
         delete headersToSend.connection;
         delete headersToSend['content-length'];
         delete headersToSend['x-risu-node-path'];
+        delete headersToSend['risu-auth'];
+        delete headersToSend.cookie;
 
         const hubOrigin = new URL(hubURL).origin;
         headersToSend.origin = hubOrigin;
@@ -1007,27 +849,9 @@ async function hubProxyFunc(req, res) {
         res.status(response.status);
 
         if (response.status >= 300 && response.status < 400 && response.headers.get('location')) {
-            const redirectUrl = response.headers.get('location');
-            const newHeaders = { ...headersToSend };
-            const redirectResponse = await fetch(redirectUrl, {
-                method: req.method,
-                headers: newHeaders,
-                body: req.method !== 'GET' && req.method !== 'HEAD' ? req.body : undefined,
-                redirect: 'manual',
-                duplex: 'half'
-            });
-            for (const [key, value] of redirectResponse.headers.entries()) {
-                if (excludedHeaders.includes(key.toLowerCase())) {
-                    continue;
-                }
-                res.setHeader(key, value);
-            }
-            res.status(redirectResponse.status);
-            if (redirectResponse.body) {
-                await pipeline(redirectResponse.body, res);
-            } else {
-                res.end();
-            }
+            await response.body?.cancel();
+            res.removeHeader('location');
+            res.status(502).json({ error: 'The legacy hub service redirected. This route does not forward credentials to another destination.' });
             return;
         }
         
@@ -1038,21 +862,22 @@ async function hubProxyFunc(req, res) {
         }
         
     } catch (error) {
-        console.error("[Hub Proxy] Error:", error);
+        console.warn("[Hub Proxy] Request failed");
         if (!res.headersSent) {
-            res.status(502).send({ error: 'Proxy request failed: ' + error.message });
+            res.status(502).send({ error: 'The legacy hub service is unavailable.' });
         } else {
             res.end();
         }
     }
 }
 
-app.get('/proxy', authenticatedRouteLimiter, reverseProxyFunc_get);
-app.get('/proxy2', authenticatedRouteLimiter, reverseProxyFunc_get);
+app.all('/proxy', authenticatedRouteLimiter, providerProxy);
+app.all('/proxy2', authenticatedRouteLimiter, providerProxy);
+app.use(express.json({ limit: '100mb' }));
+app.use(express.raw({ type: 'application/octet-stream', limit: '100mb' }));
+app.use(express.text({ limit: '100mb' }));
 app.get('/hub-proxy/*', authenticatedRouteLimiter, hubProxyFunc);
 
-app.post('/proxy', authenticatedRouteLimiter, reverseProxyFunc);
-app.post('/proxy2', authenticatedRouteLimiter, reverseProxyFunc);
 app.post('/hub-proxy/*', authenticatedRouteLimiter, hubProxyFunc);
 app.post('/proxy-stream-jobs', authenticatedRouteLimiter, async (req, res) => {
     if (!await checkProxyAuth(req, res)) {
@@ -1082,7 +907,9 @@ app.post('/proxy-stream-jobs', authenticatedRouteLimiter, async (req, res) => {
         res.status(429).send({ error: 'Too many active stream jobs. Retry shortly.' });
         return;
     }
-    const headers = normalizeForwardHeaders(req.body?.headers);
+    let headers;
+    try { headers = normalizeForwardHeaders(req.body?.headers); }
+    catch { res.status(400).json({ error: 'Invalid provider headers.' }); return; }
     const heartbeatSec = normalizeHeartbeatSec(Number(req.body?.heartbeatSec));
     const job = createProxyStreamJob({
         heartbeatSec,
@@ -1423,9 +1250,15 @@ async function getHttpsOptions() {
 
 function setupProxyStreamWebSocket(server) {
     const wsServer = new WebSocketServer({ noServer: true });
+    const providerSockets = new WebSocketServer({ noServer: true, maxPayload: 8 * 1024 * 1024 });
+    providerSockets.on('connection', createProviderWebSocketHandler(isAuthorizedProxyRequest));
     server.on('upgrade', async (req, socket, head) => {
         try {
             const reqUrl = new URL(req.url, `http://${req.headers.host}`);
+            if (reqUrl.pathname === '/proxy-websocket') {
+                providerSockets.handleUpgrade(req, socket, head, ws => providerSockets.emit('connection', ws));
+                return;
+            }
             if (!reqUrl.pathname.startsWith('/proxy-stream-jobs/') || !reqUrl.pathname.endsWith('/ws')) {
                 socket.destroy();
                 return;
@@ -1500,6 +1333,7 @@ async function startServer() {
     try {
       
         const port = process.env.PORT || 6001;
+        const host = process.env.HOST || undefined;
         const httpsOptions = await getHttpsOptions();
         let server = null;
 
@@ -1507,7 +1341,7 @@ async function startServer() {
             // HTTPS
             server = https.createServer(httpsOptions, app);
             setupProxyStreamWebSocket(server);
-            server.listen(port, () => {
+            server.listen(port, host, () => {
                 console.log("[Server] HTTPS server is running.");
                 console.log(`[Server] https://localhost:${port}/`);
             });
@@ -1515,7 +1349,7 @@ async function startServer() {
             // HTTP
             server = http.createServer(app);
             setupProxyStreamWebSocket(server);
-            server.listen(port, () => {
+            server.listen(port, host, () => {
                 console.log("[Server] HTTP server is running.");
                 console.log(`[Server] http://localhost:${port}/`);
             });

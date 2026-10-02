@@ -135,8 +135,8 @@
         })
     })
 </script>
-<div class="flex flex-col w-full h-[calc(100%-2rem)] max-h-[calc(100%-2rem)]">
-    <Button className="relative bottom-2" onclick={() => {
+<div class="sidechat-list flex flex-col w-full h-[calc(100%-2rem)] max-h-[calc(100%-2rem)]">
+    <Button styled="outlined" size="sm" className="sidechat-new-chat relative bottom-2" onclick={() => {
         const cha = chara
         const len = chara.chats.length
         let chats = chara.chats
@@ -164,7 +164,7 @@
             <!-- chat folder -->
             {#each chara.chatFolders as folder, i}
             <div data-risu-chat-folder-idx={i}
-                class="flex flex-col mb-2 border-solid border-1 border-darkborderc cursor-pointer rounded-md">
+                class="flex flex-col mb-2 border-solid border-1 border-darkborderc bg-surface-subtle cursor-pointer rounded-md">
                 <!-- folder header -->
                 <button 
                     onclick={() => {
@@ -173,7 +173,7 @@
                             $ReloadGUIPointer += 1
                         }
                     }}
-                    class="flex items-center text-textcolor border-solid border-0 border-darkborderc p-2 cursor-pointer rounded-md"
+                    class="chat-folder-header flex items-center text-textcolor border-solid border-0 border-darkborderc p-2 cursor-pointer rounded-md"
                     class:bg-red-900={folder.color === 'red'}
                     class:bg-yellow-900={folder.color === 'yellow'}
                     class:bg-green-900={folder.color === 'green'}
@@ -249,13 +249,13 @@
                             changeChatTo(chara.chats.indexOf(chat))
                             $ReloadGUIPointer += 1
                         }
-                    }} class="risu-chats flex items-center text-textcolor border-solid border-0 border-darkborderc p-2 cursor-pointer rounded-md"class:bg-selected={chara.chats.indexOf(chat) === chara.chatPage}>
+                    }} class="chat-list-item risu-chats flex items-center text-textcolor border-solid border-0 border-darkborderc p-2 cursor-pointer rounded-md" class:chat-list-item-active={chara.chats.indexOf(chat) === chara.chatPage} class:bg-selected={chara.chats.indexOf(chat) === chara.chatPage}>
                         {#if editMode}
                             <TextInput bind:value={chat.name} className="grow min-w-0" padding={false}/>
                         {:else}
-                            <span>{chat.name}</span>
+                            <span class="min-w-0 flex-1 truncate text-left">{chat.name || language.Chat}</span>
                         {/if}
-                        <div class="grow flex justify-end">
+                        <div class="ml-auto flex shrink-0 justify-end">
                             <div role="button" tabindex="0" onkeydown={(e) => {
                                 if(e.key === 'Enter'){
                                     e.currentTarget.click()
@@ -301,7 +301,7 @@
                             }}>
                                 <MenuIcon size={18}/>
                             </div>
-                            <div role="button" tabindex="0" onkeydown={(e) => {
+                            <div role="button" tabindex="0" aria-label={`${language.edit} ${chat.name || language.Chat}`} onkeydown={(e) => {
                                 if(e.key === 'Enter'){
                                     e.currentTarget.click()
                                 }
@@ -359,14 +359,15 @@
                     $ReloadGUIPointer += 1
                 }
             }}
-            class="flex items-center text-textcolor border-solid border-0 border-darkborderc p-2 cursor-pointer rounded-md"
+            class="chat-list-item flex items-center text-textcolor border-solid border-0 border-darkborderc p-2 cursor-pointer rounded-md"
+            class:chat-list-item-active={i === chara.chatPage}
             class:bg-selected={i === chara.chatPage}>
                 {#if editMode}
                     <TextInput bind:value={chara.chats[i].name} className="grow min-w-0" padding={false}/>
                 {:else}
-                    <span>{chat.name}</span>
+                    <span class="min-w-0 flex-1 truncate text-left">{chat.name || language.Chat}</span>
                 {/if}
-                <div class="grow flex justify-end">
+                <div class="ml-auto flex shrink-0 justify-end">
                     <div role="button" tabindex="0" onkeydown={(e) => {
                         if(e.key === 'Enter'){
                             e.currentTarget.click()
@@ -413,7 +414,7 @@
                     }}>
                         <MenuIcon size={18}/>
                     </div>
-                    <div role="button" tabindex="0" onkeydown={(e) => {
+                    <div role="button" tabindex="0" aria-label={`${language.edit} ${chat.name || language.Chat}`} onkeydown={(e) => {
                         if(e.key === 'Enter'){
                             e.currentTarget.click()
                         }
@@ -519,3 +520,38 @@
     </div>
     {/if}
 </div>
+
+<style>
+    :global(.sidechat-new-chat) {
+        box-shadow: none;
+    }
+
+    .chat-list-item {
+        min-height: 2.75rem;
+        border-left: 2px solid transparent;
+        transition: background-color 150ms ease, border-color 150ms ease;
+    }
+
+
+    .chat-list-item:hover,
+    .chat-folder-header:hover {
+        background-color: var(--risu-theme-surface-elevated);
+    }
+
+    .chat-list-item-active {
+        border-left-color: var(--risu-theme-focus);
+        border-radius: 0.5rem;
+        background: var(--risu-theme-surface-subtle);
+        box-shadow: inset 3px 0 0 var(--risu-theme-focus);
+    }
+
+    .sidechat-list [role='button']:hover,
+    .sidechat-list > .border-t button:not(:disabled):hover {
+        color: var(--risu-theme-focus);
+    }
+
+    .sidechat-list .chat-list-item:hover,
+    .sidechat-list .chat-folder-header:hover {
+        color: var(--risu-theme-textcolor);
+    }
+</style>

@@ -3,7 +3,7 @@
     import Check from "src/lib/UI/GUI/CheckInput.svelte";
     import { language } from "src/lang";
     import Help from "src/lib/Others/Help.svelte";
-    
+
     import { DBState } from 'src/ts/stores.svelte';
     import { customProviderStore } from "src/ts/plugins/plugins.svelte";
     import { downloadFile } from "src/ts/globalApi.svelte";
@@ -41,7 +41,7 @@
     import { allBasicParameterItems } from "src/ts/setting/botSettingsParamsData";
     import SeparateParametersSection from "./SeparateParametersSection.svelte";
     import AuxModelSelectors from './Model/AuxModelSelectors.svelte'
-    
+
     const openrouterPinnedItems: ModelGridPinnedItem[] = [
         { id: 'risu/free',       displayName: 'Free Auto',       providerName: 'Risu'       },
         { id: 'openrouter/auto', displayName: 'OpenRouter Auto', providerName: 'OpenRouter' },
@@ -186,7 +186,7 @@
             <OptionInput value={'us-west1'}>
                 us-west1
             </OptionInput>
-        </SelectInput>    
+        </SelectInput>
     {/if}
     {#if modelInfo.provider === LLMProvider.NovelList || subModelInfo.provider === LLMProvider.NovelList}
         <span class="text-textcolor">NovelList {language.apiKey}</span>
@@ -416,7 +416,7 @@
     <div class="py-2 flex flex-col gap-2 mb-4">
         {#if !usesOllamaCloud && (modelInfo.flags.includes(LLMFlags.hasStreaming) || subModelInfo.flags.includes(LLMFlags.hasStreaming))}
             <Check bind:check={DBState.db.useStreaming} name={`Response ${language.streaming}`}/>
-            
+
             {#if DBState.db.useStreaming && (modelInfo.flags.includes(LLMFlags.geminiThinking) || subModelInfo.flags.includes(LLMFlags.geminiThinking))}
                 <Check bind:check={DBState.db.streamGeminiThoughts} name={`Stream Gemini Thoughts`}/>
             {/if}
@@ -526,7 +526,7 @@
         {#if DBState.db.localStopStrings}
             <div class="flex flex-col p-2 rounded-sm border border-selected mt-2 gap-1">
                 <div class="p-2">
-                    <button class="font-medium flex justify-center items-center h-full cursor-pointer hover:text-green-500 w-full" onclick={() => {
+                    <button class="font-medium flex justify-center items-center h-full cursor-pointer hover:text-focus w-full" onclick={() => {
                         let localStopStrings = DBState.db.localStopStrings
                         localStopStrings.push('')
                         DBState.db.localStopStrings = localStopStrings
@@ -538,7 +538,7 @@
                             <TextInput marginBottom bind:value={DBState.db.localStopStrings[i]} fullwidth fullh/>
                         </div>
                         <div>
-                            <button class="font-medium flex justify-center items-center h-full cursor-pointer hover:text-green-500 w-full" onclick={() => {
+                            <button class="font-medium flex justify-center items-center h-full cursor-pointer hover:text-focus w-full" onclick={() => {
                                 let localStopStrings = DBState.db.localStopStrings
                                 localStopStrings.splice(i, 1)
                                 DBState.db.localStopStrings = localStopStrings
@@ -552,7 +552,7 @@
             <ChatFormatSettings />
         </div>
         <Check bind:check={DBState.db.ooba.formating.useName} name={language.useNamePrefix}/>
-    
+
     {:else if modelInfo.format === LLMFormat.NovelAI}
         <div class="flex flex-col p-3 bg-darkbg mt-4">
             <span class="text-textcolor">Starter</span>
@@ -626,7 +626,7 @@
                 <th class="font-medium">Bias</th>
                 <th class="font-medium">{language.value}</th>
                 <th>
-                    <button class="font-medium cursor-pointer hover:text-green-500 w-full flex justify-center items-center" onclick={() => {
+                    <button class="font-medium cursor-pointer hover:text-focus w-full flex justify-center items-center" onclick={() => {
                         let bia = DBState.db.bias
                         bia.push(['', 0])
                         DBState.db.bias = bia
@@ -647,7 +647,7 @@
                         <NumberInput bind:value={DBState.db.bias[i][1]} max={100} min={-101} size="lg" fullwidth/>
                     </td>
                     <td>
-                        <button class="font-medium flex justify-center items-center h-full cursor-pointer hover:text-green-500 w-full" onclick={() => {
+                        <button class="font-medium flex justify-center items-center h-full cursor-pointer hover:text-focus w-full" onclick={() => {
                             let bia = DBState.db.bias
                             bia.splice(i, 1)
                             DBState.db.bias = bia
@@ -679,7 +679,7 @@
                 <th class="font-medium">{language.key}</th>
                 <th class="font-medium">{language.value}</th>
                 <th>
-                    <button class="font-medium cursor-pointer hover:text-green-500 w-full flex justify-center items-center" onclick={() => {
+                    <button class="font-medium cursor-pointer hover:text-focus w-full flex justify-center items-center" onclick={() => {
                         DBState.db.additionalParams.push(['', ''])
                     }}><PlusIcon /></button>
                 </th>
@@ -698,7 +698,7 @@
                         <TextInput bind:value={DBState.db.additionalParams[i][1]} size="lg" fullwidth/>
                     </td>
                     <td>
-                        <button class="font-medium flex justify-center items-center h-full cursor-pointer hover:text-green-500 w-full" onclick={() => {
+                        <button class="font-medium flex justify-center items-center h-full cursor-pointer hover:text-focus w-full" onclick={() => {
                             let additionalParams = DBState.db.additionalParams
                             additionalParams.splice(i, 1)
                             DBState.db.additionalParams = additionalParams
@@ -783,7 +783,7 @@
             }
         }} />
     </Accordion>
-    
+
     <Accordion styled name={language.regexScript}>
         <RegexList bind:value={DBState.db.presetRegex} buttons />
     </Accordion>
@@ -835,7 +835,7 @@
         <span class="text-textcolor2 mb-6 text-sm mt-2">{tokens.jailbreak} {language.tokens}</span>
         <span class="text-textcolor">{language.globalNote} <Help key="globalNote"/></span>
         <TextAreaInput fullwidth autocomplete="off" height={"32"} bind:value={DBState.db.globalNote}></TextAreaInput>
-        <span class="text-textcolor2 mb-6 text-sm mt-2">{tokens.globalNote} {language.tokens}</span>  
+        <span class="text-textcolor2 mb-6 text-sm mt-2">{tokens.globalNote} {language.tokens}</span>
         <span class="text-textcolor mb-2 mt-4">{language.formatingOrder} <Help key="formatOrder"/></span>
         <DropList bind:list={DBState.db.formatingOrder} />
         <div class="flex items-center mt-4">

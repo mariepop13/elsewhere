@@ -1,10 +1,9 @@
 [package]
-name = "risuai"
-version = "0.0.0"
-description = "A Tauri App"
-authors = ["you"]
+name = "elsewhere"
+version = "1.0.0"
+description = "Elsewhere desktop chat application"
 license = ""
-repository = ""
+repository = "https://github.com/mariepop13/elsewhere"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

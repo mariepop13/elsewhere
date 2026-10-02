@@ -1,6 +1,6 @@
 <script lang="ts">
     import { language } from "src/lang";
-    
+
     import { DBState } from 'src/ts/stores.svelte';
     import Button from "src/lib/UI/GUI/Button.svelte";
     import ModuleMenu from "src/lib/Setting/Pages/Module/ModuleMenu.svelte";
@@ -28,7 +28,7 @@
         return modules.filter((v) => {
             if(search === '') return true
             return v.name.toLowerCase().includes(search.toLowerCase())
-        
+
         }).sort((a, b) => {
             let score = a.name.toLowerCase().localeCompare(b.name.toLowerCase())
             return score
@@ -69,15 +69,15 @@
                                 checkCharOrder()
                             }}>
                                 <UserIcon size={18}/>
-                                
+
                             </button>
                         {:else}
                             <button class={(DBState.db.enabledModules.includes(rmodule.id)) ?
-                                    "mr-2 cursor-pointer text-blue-500" :
-                                    rmodule.namespace && 
+                                    "mr-2 cursor-pointer text-focus" :
+                                    rmodule.namespace &&
                                     DBState.db.moduleIntergration?.split(',').map((s) => s.trim()).includes(rmodule.namespace) ?
-                                    "text-amber-500 hover:text-green-500 mr-2 cursor-pointer" :
-                                    "text-textcolor2 hover:text-green-500 mr-2 cursor-pointer"
+                                    "text-ambient hover:text-focus mr-2 cursor-pointer" :
+                                    "text-textcolor2 hover:text-focus mr-2 cursor-pointer"
                                 } use:tooltip={language.enableGlobal} onclick={async (e) => {
                                 e.stopPropagation()
                                 if(DBState.db.enabledModules.includes(rmodule.id)){
@@ -92,7 +92,7 @@
                                 <Globe size={18}/>
                             </button>
                             {#if !rmodule.mcp}
-                                <button class="text-textcolor2 hover:text-green-500 mr-2 cursor-pointer" use:tooltip={language.download} onclick={async (e) => {
+                                <button class="text-textcolor2 hover:text-focus mr-2 cursor-pointer" use:tooltip={language.download} onclick={async (e) => {
                                     e.stopPropagation()
                                     const sel = parseInt(await alertSelect([`CharX (${language.recommended})`, `RisuM (Legacy)`]))
                                     if(sel === 0){
@@ -104,7 +104,7 @@
                                 }}>
                                     <Share2Icon size={18}/>
                                 </button>
-                                <button class="text-textcolor2 hover:text-green-500 mr-2 cursor-pointer" use:tooltip={language.edit} onclick={async (e) => {
+                                <button class="text-textcolor2 hover:text-focus mr-2 cursor-pointer" use:tooltip={language.edit} onclick={async (e) => {
                                     e.stopPropagation()
                                     const index = DBState.db.modules.findIndex((v) => v.id === rmodule.id)
                                     tempModule = rmodule
@@ -121,7 +121,7 @@
                                     <SquarePen size={18}/>
                                 </button>
                             {/if}
-                            <button class="text-textcolor2 hover:text-green-500 mr-2 cursor-pointer" use:tooltip={language.remove} onclick={async (e) => {
+                            <button class="text-textcolor2 hover:text-focus mr-2 cursor-pointer" use:tooltip={language.remove} onclick={async (e) => {
                                 e.stopPropagation()
                                 const d = await alertConfirm(`${language.removeConfirm}` + rmodule.name)
                                 if(d){
@@ -148,7 +148,7 @@
     </div>
 
     <div class="flex mr-2 mt-4">
-        <button class="text-textcolor2 hover:text-blue-500 mr-2 cursor-pointer" onclick={async () => {
+        <button class="text-textcolor2 hover:text-focus mr-2 cursor-pointer" onclick={async () => {
             tempModule = {
                 name: '',
                 description: '',
@@ -159,17 +159,17 @@
         }}>
             <PlusIcon />
         </button>
-        <button class="text-textcolor2 hover:text-blue-500 mr-2 cursor-pointer" onclick={async () => {
+        <button class="text-textcolor2 hover:text-focus mr-2 cursor-pointer" onclick={async () => {
             charConversionMode = !charConversionMode
         }}>
             <UserIcon />
         </button>
-        <button class="text-textcolor2 hover:text-blue-500 mr-2 cursor-pointer" onclick={async () => {
+        <button class="text-textcolor2 hover:text-focus mr-2 cursor-pointer" onclick={async () => {
             importMCPModule()
         }}>
             <Waypoints />
         </button>
-        <button class="text-textcolor2 hover:text-blue-500 mr-2 cursor-pointer" onclick={async () => {
+        <button class="text-textcolor2 hover:text-focus mr-2 cursor-pointer" onclick={async () => {
             importModule()
         }}>
             <HardDriveUpload  />

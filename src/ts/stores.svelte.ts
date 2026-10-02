@@ -35,7 +35,7 @@ export const openPresetList = writable(false)
 export const openPersonaList = writable(false)
 export const bookmarkListOpen = writable(false)
 export const MobileGUI = writable(false)
-export const MobileGUIStack = writable(0)
+export const MobileGUIStack = writable(1)
 export const MobileSideBar = writable(0)
 export const SettingsMenuIndex = writable(-1)
 export const ReloadGUIPointer = writable(0)
@@ -128,6 +128,7 @@ export type MenuDef = {
     iconType:'html'|'img'|'none',
     callback: any,
     id: string,
+    isContainerVisible?: () => boolean,
 }
 
 export type ChatPanelDef = {

@@ -23,11 +23,17 @@ import { AccountStorage } from "./storage/accountStorage"
 
 const EXTERNAL_HUB_URL = 'https://sv.risuai.xyz';
 const NIGHTLY_HUB_URL = 'https://nightly.sv.risuai.xyz'
+export const upstreamRealmEnabled = false
 export const hubURL = isNodeServer
     ? '/hub-proxy'
     : (import.meta.env.VITE_RISU_NIGHTLY_BUILD === 'TRUE' || localStorage.getItem('hub') === 'nightly')
     ? NIGHTLY_HUB_URL 
     : EXTERNAL_HUB_URL;
+const isDevWeb = import.meta.env.DEV && !isTauri && !isNodeServer
+export const hubFetchURL = isDevWeb
+    ? (hubURL === NIGHTLY_HUB_URL ? '/nightly-hub-proxy' : '/hub-proxy')
+    : hubURL
+export const mainHubFetchURL = isDevWeb ? '/hub-proxy' : EXTERNAL_HUB_URL
 
 export async function importCharacter() {
     try {
@@ -255,12 +261,12 @@ export async function importCharacterProcess<T extends boolean = false>(f:{
 
             readedPngChunks++
 
-            if(db.account?.useSync && f.lightningRealmImport){
+            if(upstreamRealmEnabled && db.account?.useSync && f.lightningRealmImport){
                 const id = await hasher(assetData)
                 const xid = 'assets/' + id + '.png'
                 queueFetchKey.push(assetIndex)
                 queueFetchData.push(assetData)
-                queueFetch.push(fetch('https://sv.risuai.xyz/rs/' + xid))
+                queueFetch.push(fetch(mainHubFetchURL + '/rs/' + xid))
                 assets[assetIndex] =  'xid:' + xid
                 if(queueFetch.length > 10){
                     const res = await Promise.all(queueFetch)
@@ -389,11 +395,14 @@ export async function importCharacterProcess<T extends boolean = false>(f:{
 }
 
 export const getRealmInfo = async (realmPath:string) => {
+    if (!upstreamRealmEnabled) {
+        return
+    }
     const url = new URL(location.href);
     url.searchParams.delete('realm');
     window.history.pushState(null, '', url.toString());
 
-    const res = await fetch(`${hubURL}/hub/info/${realmPath}`)
+    const res = await fetch(`${hubFetchURL}/hub/info/${realmPath}`)
     if(res.status !== 200){
         alertError(await res.text())
         return
@@ -404,6 +413,9 @@ export const getRealmInfo = async (realmPath:string) => {
 export const showRealmInfoStore:Writable<null|hubType> = writable(null)
 
 export async function characterURLImport() {
+    if (!upstreamRealmEnabled) {
+        return
+    }
     const realmPath = (new URLSearchParams(location.search)).get('realm')
     try {
         if(realmPath){
@@ -707,7 +719,7 @@ export async function exportChar(charaID:number):Promise<string> {
     else if(option.type === 'ccv2'){
         exportCharacterCard(char,'png', {spec: 'v2'})
     }
-    else if(option.type === 'realm'){
+    else if(option.type === 'realm' && upstreamRealmEnabled){
         ShowRealmFrameStore.set("character")
     }
     else{
@@ -717,7 +729,7 @@ export async function exportChar(charaID:number):Promise<string> {
 }
 
 
-async function importCharacterCardSpec<T extends boolean = false>(card:CharacterCardV2Risu|CharacterCardV3, img?:Uint8Array, mode:'hub'|'normal' = 'normal', assetDict:{[key:string]:string} = {}, overrideLorebook: loreBook[] = null, returnValue:T = false as T):Promise<T extends true ? character|false : boolean>{
+async function importCharacterCardSpec<T extends boolean = false>(card:CharacterCardV2Risu|CharacterCardV3, img?:Uint8Array, mode:'hub'|'normal' = 'normal', assetDict:{[key:string]:string} = {}, overrideLorebook: loreBook[] = null, returnValue:T = false as T, confirmLowLevelAccess: (message: string) => Promise<boolean> = alertConfirm):Promise<T extends true ? character|false : boolean>{
     if(!card ||(card.spec !== 'chara_card_v2' && card.spec !== 'chara_card_v3' )){
         return false
     }
@@ -913,7 +925,7 @@ async function importCharacterCardSpec<T extends boolean = false>(card:Character
     }
 
     if(risuext && risuext?.lowLevelAccess){
-        const conf = await alertConfirm(language.lowLevelAccessConfirm)
+        const conf = await confirmLowLevelAccess(language.lowLevelAccessConfirm)
         if(!conf){
             return false
         }
@@ -1033,6 +1045,10 @@ async function importCharacterCardSpec<T extends boolean = false>(card:Character
     alertNormal(language.importedCharacter)
     return true as any
 
+}
+
+export function prepareCharacterFromCard(card: CharacterCardV2Risu | CharacterCardV3, confirmLowLevelAccess: (message: string) => Promise<boolean>): Promise<character | false> {
+    return importCharacterCardSpec(card, undefined, 'normal', {}, null, true, confirmLowLevelAccess)
 }
 
 function convertCharbook(arg:{
@@ -1685,6 +1701,10 @@ export async function shareRisuHub2(char:character, arg:{
     anon: boolean,
     update: boolean
 }) {
+    if (!upstreamRealmEnabled) {
+        alertError('RisuRealm uploads are unavailable in Elsewhere.')
+        return
+    }
     try {
         char = safeStructuredClone(char)
         char.license = arg.license
@@ -1714,7 +1734,7 @@ export async function shareRisuHub2(char:character, arg:{
             return
         }
     
-        const fetchPromise = fetch(hubURL + '/hub/realm/upload', {
+        const fetchPromise = fetch(hubFetchURL + '/hub/realm/upload', {
             method: "POST",
             body: writer.buf.buffer as any,
             headers: {
@@ -1778,11 +1798,14 @@ export async function getRisuHub(arg:{
     nsfw:boolean
     sort:string
 }):Promise<hubType[]> {
+    if (!upstreamRealmEnabled) {
+        return []
+    }
     try {
         arg.search += ' __shared'
         const stringArg = `search==${arg.search}&&page==${arg.page}&&nsfw==${arg.nsfw}&&sort==${arg.sort}&&web==${(!isNodeServer && !isTauri) ? 'web' : 'other'}`
 
-        const da = await fetch(hubURL + '/realm/' + encodeURIComponent(stringArg) + "?cache=30", {
+        const da = await fetch(hubFetchURL + '/realm/' + encodeURIComponent(stringArg) + "?cache=30", {
             headers: {
                 "x-risuai-info": appVer + ';' + (isNodeServer ? 'node' : (isTauri ? 'tauri' : 'web'))
             }
@@ -1804,6 +1827,10 @@ export async function getRisuHub(arg:{
 export async function downloadRisuHub(id:string, arg:{
     forceRedirect?: boolean
 } = {}) {
+    if (!upstreamRealmEnabled) {
+        alertError('RisuRealm is unavailable in Elsewhere.')
+        return
+    }
     try {
         if(!arg.forceRedirect){
             if(!(await alertTOS())){
@@ -1874,7 +1901,10 @@ export async function downloadRisuHub(id:string, arg:{
 }
 
 export async function getHubResources(id:string) {
-    const res = await fetch(`${hubURL}/resource/${id}`)
+    if (!upstreamRealmEnabled) {
+        throw new Error('RisuRealm resources are unavailable in Elsewhere.')
+    }
+    const res = await fetch(`${hubFetchURL}/resource/${id}`)
     if(res.status !== 200){
         throw (await res.text())
     }
@@ -1902,7 +1932,7 @@ export function isCharacterHasAssets(char:character|groupChat){
 }
 
 
-type CharacterCardV2Risu = {
+export type CharacterCardV2Risu = {
     spec: 'chara_card_v2'
     spec_version: '2.0' // May 8th addition
     data: {

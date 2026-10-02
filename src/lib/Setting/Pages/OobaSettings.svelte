@@ -2,7 +2,7 @@
     import SelectInput from "src/lib/UI/GUI/SelectInput.svelte";
     import OptionInput from "src/lib/UI/GUI/OptionInput.svelte";
     import OptionalInput from "src/lib/UI/GUI/OptionalInput.svelte";
-    
+
     import { DBState } from 'src/ts/stores.svelte';
     import CheckInput from "src/lib/UI/GUI/CheckInput.svelte";
     import { language } from "src/lang";
@@ -104,7 +104,7 @@
     <OptionalInput marginBottom={true} bind:value={DBState.db.reverseProxyOobaArgs.custom_token_bans} />
     <span class="text-textcolor">grammar_string</span>
     <OptionalInput marginBottom={true} bind:value={DBState.db.reverseProxyOobaArgs.grammar_string} />
-    
+
     <span class="text-textcolor">temperature_last</span>
     <OptionalInput marginBottom={true} bind:value={DBState.db.reverseProxyOobaArgs.temperature_last} boolMode />
     <span class="text-textcolor">do_sample</span>
@@ -121,7 +121,7 @@
     <span class="text-textcolor">skip_special_tokens</span>
     <OptionalInput marginBottom={true} bind:value={DBState.db.reverseProxyOobaArgs.skip_special_tokens} boolMode />
 
-    
+
     {#if instructionMode}
         <div class="flex items-center mt-4">
             <CheckInput check={!!DBState.db.localStopStrings} name={language.customStopWords} onChange={() => {
@@ -136,7 +136,7 @@
         {#if DBState.db.localStopStrings}
             <div class="flex flex-col p-2 rounded-sm border border-selected mt-2 gap-1">
                 <div class="p-2">
-                    <button class="font-medium flex justify-center items-center h-full cursor-pointer hover:text-green-500 w-full" onclick={() => {
+                    <button class="font-medium flex justify-center items-center h-full cursor-pointer hover:text-focus w-full" onclick={() => {
                         let localStopStrings = DBState.db.localStopStrings
                         localStopStrings.push('')
                         DBState.db.localStopStrings = localStopStrings
@@ -148,7 +148,7 @@
                             <TextInput marginBottom bind:value={DBState.db.localStopStrings[i]} fullwidth fullh/>
                         </div>
                         <div>
-                            <button class="font-medium flex justify-center items-center h-full cursor-pointer hover:text-green-500 w-full" onclick={() => {
+                            <button class="font-medium flex justify-center items-center h-full cursor-pointer hover:text-focus w-full" onclick={() => {
                                 let localStopStrings = DBState.db.localStopStrings
                                 localStopStrings.splice(i, 1)
                                 DBState.db.localStopStrings = localStopStrings

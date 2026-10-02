@@ -10,14 +10,14 @@
     import { sayTTS } from "src/ts/process/tts"
     import { DBState, ReloadChatPointer, CurrentTriggerIdStore, popupStore } from 'src/ts/stores.svelte'
     import { ConnectionOpenStore } from "src/ts/sync/multiuser"
-    import { capitalize, getUserIcon, getUserName, sleep } from "src/ts/util"
+    import { capitalize, findCharacterbyId, getUserIcon, getUserName, sleep } from "src/ts/util"
     import { onDestroy, onMount } from "svelte"
     import { type Unsubscriber } from "svelte/store"
     import { v4 as uuidv4, v4 } from 'uuid'
     import { language } from "../../lang"
     import { alertClear, alertConfirm, alertInput, alertNormal, alertRequestData, alertWait } from "../../ts/alert"
     import { ParseMarkdown, type CbsConditions, type simpleCharacterArgument } from "../../ts/parser/parser.svelte"
-    import { getCurrentCharacter, getCurrentChat, setCurrentChat, type MessageGenerationInfo, type StreamingDisplayOptimizationMode } from "../../ts/storage/database.svelte"
+    import { getCurrentCharacter, getCurrentChat, setCurrentChat, type groupChat, type MessageGenerationInfo, type StreamingDisplayOptimizationMode } from "../../ts/storage/database.svelte"
     import { selectedCharID } from "../../ts/stores.svelte"
     import { HideIconStore, ReloadGUIPointer, selIdState } from "../../ts/stores.svelte"
     import AutoresizeArea from "../UI/GUI/TextAreaResizable.svelte"
@@ -101,6 +101,22 @@
         isOptimizedStreamingMessage = state.isOptimizedStreamingMessage
         streamingOptimizationMode = state.streamingOptimizationMode
         rawStreamingText = state.rawStreamingText
+    }
+
+    function setGroupSpeaker(speakerId: string) {
+        const group = DBState.db.characters[selIdState.selId]
+        if (group?.type !== 'group' || idx < 0) return
+
+        const currentMessage = group.chats[group.chatPage]?.message[idx]
+        if (!currentMessage || currentMessage.role !== 'char') return
+
+        currentMessage.saying = speakerId
+        popupStore.children = null
+        popupStore.openId = 0
+        ReloadChatPointer.update((value) => {
+            value[idx] = (value[idx] ?? 0) + 1
+            return value
+        })
     }
 
     async function rm(e:MouseEvent, rec?:boolean){
@@ -436,7 +452,7 @@
                     {language.retranslate}
                 </span>
             </button>
-            <button class={"text-sm p-1 border-darkborderc float-end mr-2 my-1 rounded-md transition-all flex justify-center items-center " + (editTranslationMode ? 'text-blue-400 hover:ring-darkbutton hover:ring-3 hover:text-textcolor' : translationEditControlDisabled ? 'text-textcolor2 opacity-50 cursor-not-allowed' : 'text-textcolor2 hover:ring-darkbutton hover:ring-3 hover:text-textcolor')}
+            <button class={"text-sm p-1 border-darkborderc float-end mr-2 my-1 rounded-md transition-all flex justify-center items-center " + (editTranslationMode ? 'text-focus hover:ring-darkbutton hover:ring-3 hover:text-textcolor' : translationEditControlDisabled ? 'text-textcolor2 opacity-50 cursor-not-allowed' : 'text-textcolor2 hover:ring-darkbutton hover:ring-3 hover:text-textcolor')}
                     disabled={translationEditControlDisabled}
                     onclick={() => {
                         if(editTranslationMode){
@@ -473,7 +489,7 @@
                 {@const type = parts[1]}
 
                 {#if type === 'branchedfrom'}
-                    <button class="text-blue-500 hover:underline"
+                    <button class="text-focus hover:underline"
                         onclick={() => {
                             console.log(parts)
                             changeChatTo(parts[2] ?? '')
@@ -548,7 +564,7 @@
     <div class="grow flex items-center justify-end" class:text-textcolor2={options?.applyTextColors !== false}>
         {#if isComment}
             <button
-                class="flex items-center hover:text-blue-500 transition-colors button-icon-remove"
+                class="flex items-center hover:text-focus transition-colors button-icon-remove"
                 onclick={async (e) => {
                     await rm(e, true)
                 }}
@@ -587,7 +603,7 @@
 
 {#snippet majorIconButtonsBody(showNames:boolean)}
     {#if DBState.db.useChatCopy && !blankMessage}
-    <button class="flex items-center hover:text-blue-500 transition-colors button-icon-copy" onclick={async ()=>{
+    <button class="flex items-center hover:text-focus transition-colors button-icon-copy" onclick={async ()=>{
         const copyText = renderRawStreaming
             ? risuChatParser(rawStreamingText, {chara: name, chatID: idx, rmVar: true, visualize: true, cbsConditions: getCbsCondition()})
             : msgDisplay
@@ -821,7 +837,7 @@
 {/if}
 {#if idx > -1}
     {#if DBState.db.characters[selIdState.selId].type !== 'group' && DBState.db.characters[selIdState.selId].ttsMode !== 'none' && (DBState.db.characters[selIdState.selId].ttsMode)}
-        <button class="flex items-center hover:text-blue-500 transition-colors button-icon-tts" onclick={()=>{
+        <button class="flex items-center hover:text-focus transition-colors button-icon-tts" onclick={()=>{
             return sayTTS(null, isOptimizedStreamingMessage ? rawStreamingText : message)
         }}>
             <Volume2Icon size={20}/>
@@ -831,7 +847,7 @@
         </button>
     {/if}
     {#if !$ConnectionOpenStore}
-        <button class="flex items-center hover:text-blue-500 transition-colors button-icon-remove" onclick={(e) => rm(e, false)} use:longpress={(e) => rm(e, true)}>
+        <button class="flex items-center hover:text-focus transition-colors button-icon-remove" onclick={(e) => rm(e, false)} use:longpress={(e) => rm(e, true)}>
             <TrashIcon size={20}/>
 
             {#if showNames}
@@ -845,7 +861,7 @@
 {#snippet translationButton(showNames = false)}
     {#if DBState.db.translator !== '' && !blankMessage && !isOptimizedStreamingMessage}
         <button
-            class={"flex items-center transition-colors button-icon-translate " + (translationViewControlsDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:text-blue-500') + (translated ? ' text-blue-400' : '')}
+            class={"flex items-center transition-colors button-icon-translate " + (translationViewControlsDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:text-focus') + (translated ? ' text-focus' : '')}
             class:translating={translating}
             disabled={translationViewControlsDisabled}
             onclick={toggleTranslation}
@@ -858,7 +874,7 @@
     {/if}
     {#if idx > -1 && !isOptimizedStreamingMessage}
         <button
-            class={"flex items-center transition-colors button-icon-edit " + (editMode ? 'text-blue-400 hover:text-blue-500' : originalEditControlDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:text-blue-500')}
+            class={"flex items-center transition-colors button-icon-edit " + (editMode ? 'text-focus hover:text-focus' : originalEditControlDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:text-focus')}
             disabled={originalEditControlDisabled}
             onclick={toggleOriginalEdit}
         >
@@ -874,17 +890,17 @@
 {#snippet rerolls()}
     {#if rerollIcon || altGreeting}
         {#if DBState.db.swipe || altGreeting}
-            <button class="flex items-center hover:text-blue-500 transition-colors button-icon-unreroll" class:dyna-icon={rerollIcon === 'dynamic'} onclick={unReroll}>
+            <button class="flex items-center hover:text-focus transition-colors button-icon-unreroll" class:dyna-icon={rerollIcon === 'dynamic'} onclick={unReroll}>
                 <ArrowLeft size={22}/>
             </button>
             {#if firstMessage && DBState.db.swipe && DBState.db.showFirstMessagePages}
                 <span class="flex items-center text-xs text-textcolor2">{currentPage}/{totalPages}</span>
             {/if}
-            <button class="flex items-center hover:text-blue-500 transition-colors button-icon-reroll" class:dyna-icon={rerollIcon === 'dynamic'} onclick={onReroll}>
+            <button class="flex items-center hover:text-focus transition-colors button-icon-reroll" class:dyna-icon={rerollIcon === 'dynamic'} onclick={onReroll}>
                 <ArrowRight size={22}/>
             </button>
         {:else}
-            <button class="flex items-center hover:text-blue-500 transition-colors button-icon-reroll" class:dyna-icon={rerollIcon === 'dynamic'} onclick={onReroll}>
+            <button class="flex items-center hover:text-focus transition-colors button-icon-reroll" class:dyna-icon={rerollIcon === 'dynamic'} onclick={onReroll}>
                 <RefreshCcwIcon size={20}/>
             </button>
         {/if}
@@ -892,9 +908,21 @@
 {/snippet}
 
 {#snippet minorIconButtonsBody(showNames:boolean)}
+    {#if role === 'char' && idx >= 0 && DBState.db.characters[selIdState.selId]?.type === 'group'}
+        {@const group = DBState.db.characters[selIdState.selId] as groupChat}
+        <span class="text-xs text-textcolor2">{language.character}</span>
+        <button type="button" class="text-textcolor hover:text-focus" onclick={() => setGroupSpeaker('')}>
+            Unknown Character
+        </button>
+        {#each group.characters as characterId}
+            <button type="button" class="text-textcolor hover:text-focus" onclick={() => setGroupSpeaker(characterId)}>
+                {findCharacterbyId(characterId).name}
+            </button>
+        {/each}
+    {/if}
     
     {#if DBState.db.enableBookmark}
-        <button class="flex items-center hover:text-blue-500 transition-colors button-icon-bookmark {isBookmarked ? 'text-yellow-400' : ''}" onclick={async () => {
+        <button class="flex items-center hover:text-focus transition-colors button-icon-bookmark {isBookmarked ? 'text-ambient' : ''}" onclick={async () => {
             await sleep(1)
             toggleBookmark()
         }}>
@@ -905,7 +933,7 @@
         </button>
     {/if}
 
-    <button class="flex items-center hover:text-blue-500 transition-colors" onclick={async () => {
+    <button class="flex items-center hover:text-focus transition-colors" onclick={async () => {
         await sleep(1)
         const currentChat = DBState.db.characters[selIdState.selId].chats[DBState.db.characters[selIdState.selId].chatPage]
         
@@ -942,7 +970,7 @@
         {/if}
     </button>
 
-    <button class="flex items-center hover:text-blue-500 transition-colors" onclick={async () => {
+    <button class="flex items-center hover:text-focus transition-colors" onclick={async () => {
         await sleep(1)
         const currentMessage = DBState.db.characters[selIdState.selId].chats[DBState.db.characters[selIdState.selId].chatPage].message[idx]
         DBState.db.characters[selIdState.selId].chats[DBState.db.characters[selIdState.selId].chatPage].message[idx].disabled = !currentMessage.disabled
@@ -953,7 +981,7 @@
         {/if}
     </button>
 
-    <button class="flex items-center hover:text-blue-500 transition-colors" onclick={async () => {
+    <button class="flex items-center hover:text-focus transition-colors" onclick={async () => {
         await sleep(1)
         const currentMessage = DBState.db.characters[selIdState.selId].chats[DBState.db.characters[selIdState.selId].chatPage].message[idx]
         DBState.db.characters[selIdState.selId].chats[DBState.db.characters[selIdState.selId].chatPage].message[idx].disabled = currentMessage.disabled === 'allBefore' ? false : 'allBefore'
@@ -981,7 +1009,10 @@
                 <div class="shadow-lg bg-textcolor2" style={options?.styleFix ??`height:${DBState.db.iconsize * 3.5 / 100}rem;width:${DBState.db.iconsize * 3.5 / 100}rem;min-width:${DBState.db.iconsize * 3.5 / 100}rem`}
                 class:rounded-md={!options?.rounded} class:rounded-full={options?.rounded}></div>
             {:then m}
-                {#if largePortrait && (!options?.rounded)}
+                {#if !m}
+                    <div class="shadow-lg bg-textcolor2 flex items-center justify-center text-textcolor" style={options?.styleFix ?? `height:${DBState.db.iconsize * 3.5 / 100}rem;width:${DBState.db.iconsize * 3.5 / 100}rem;min-width:${DBState.db.iconsize * 3.5 / 100}rem`}
+                    class:rounded-md={!options?.rounded} class:rounded-full={options?.rounded} aria-hidden="true"><UserIcon /></div>
+                {:else if largePortrait && (!options?.rounded)}
                     <div class="shadow-lg bg-textcolor2" style={m + (options?.styleFix ?? `height:${DBState.db.iconsize * 3.5 / 100 / 0.75}rem;width:${DBState.db.iconsize * 3.5 / 100}rem;min-width:${DBState.db.iconsize * 3.5 / 100}rem`)}
                     class:rounded-md={!options?.rounded} class:rounded-full={options?.rounded}></div>
                 {:else}
@@ -1135,7 +1166,7 @@
 
 
 {#if disabled === true}
-<div class="w-full border-t-2 border-dashed border-blue-500"></div>
+<div class="w-full border-t-2 border-dashed border-focus"></div>
 {/if}
 <div class="flex max-w-full justify-center risu-chat"
      data-chat-index={idx}
@@ -1229,7 +1260,7 @@
 {#if disabled}
 <div class={{
     "w-full border-t-2 border-dashed": true,
-    "border-blue-500": disabled === true,
-    "border-amber-500": disabled === 'allBefore',
+    "border-focus": disabled === true,
+    "border-ambient": disabled === 'allBefore',
 }}></div>
 {/if}

@@ -3,7 +3,6 @@ import * as fflate from "fflate";
 import { asBuffer, Semaphore, sleep } from "../util";
 import { alertStore } from "../alert";
 import { hasher } from "../parser/parser.svelte";
-import { hubURL } from "../characterCards";
 
 // File size and chunk size constants
 const MAX_ASSET_SIZE_BYTES = 50 * 1024 * 1024; // 50MB
@@ -12,9 +11,6 @@ const CHUNK_SIZE_BYTES = 1024 * 1024; // 1MB
 // Queue management constants
 const MAX_CONCURRENT_ASSET_SAVES = 10;
 
-// HTTP status code ranges
-const HTTP_STATUS_OK_MIN = 200;
-const HTTP_STATUS_OK_MAX = 300;
 
 export async function processZip(dataArray: Uint8Array): Promise<string> {
     const unzipped = await new Promise<fflate.Unzipped>((resolve, reject) => {
@@ -428,23 +424,15 @@ export class CharXImporter{
 
 
 /**
- * Checks if a CharX file's assets already exist on the server.
- *
- * This optimization allows skipping asset uploads when importing from the hub:
- * 1. Hashes the entire file
- * 2. Double-hashes the hash (for privacy/security)
- * 3. Checks if server has this hash registered
- *
- * If successful, the importer can skip saving assets and just reference server copies.
+ * Hashes a CharX asset without querying the upstream asset service.
+ * Assets are always saved locally in Elsewhere.
  *
  * @returns {success: boolean, hash: string} - Whether assets exist on server, and the file hash
  */
 export async function CharXSkippableChecker(data:Uint8Array){
     const hashed = await hasher(data)
-    const reHashed = await hasher(new TextEncoder().encode(hashed))
-    const x = await fetch(hubURL + '/rs/assets/' + reHashed + '.png')
     return {
-        success: x.status >= HTTP_STATUS_OK_MIN && x.status < HTTP_STATUS_OK_MAX,
+        success: false,
         hash: hashed
     }
 }

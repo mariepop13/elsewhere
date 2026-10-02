@@ -45,7 +45,7 @@
                     {plugin.displayName ?? plugin.name}
                 </span>
                 {#if hotReloading.includes(plugin.name)}
-                    <span class="text-sm rounded bg-amber-700 ml-2 px-2 py-1 text-white">
+                    <span class="text-sm rounded bg-ambient ml-2 px-2 py-1 text-textcolor">
                         Hot
                     </span>
                 {/if}

@@ -68,7 +68,7 @@ Show Statistics
         await downloadFile('risuai-settings-report.json', new TextEncoder().encode(json))
         await navigator.clipboard.writeText(json)
         alertNormal(language.settingsExported)
-        
+
 
     }}
 >

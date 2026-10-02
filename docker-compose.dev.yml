@@ -1,0 +1,27 @@
+name: risuai-dev
+
+services:
+  risuai-dev:
+    image: node:24-slim
+    working_dir: /app
+    environment:
+      PNPM_HOME: /pnpm
+      RISU_DEV_ALLOWED_HOSTS: ${RISU_DEV_ALLOWED_HOSTS:-}
+      VITE_ELSEWHERE_USAGE_MODE: ${VITE_ELSEWHERE_USAGE_MODE:-}
+      VITE_RISU_LEGAL_CONFIGURED: ${VITE_RISU_LEGAL_CONFIGURED:-}
+      npm_config_store_dir: /pnpm/store
+    command: >-
+      sh -c "corepack enable && corepack install --global pnpm@12.4.2 &&
+      corepack pnpm install --frozen-lockfile &&
+      corepack pnpm exec vite --host 0.0.0.0 --port 5173 --strictPort"
+    volumes:
+      - .:/app
+      - risuai-dev-node-modules:/app/node_modules
+      - risuai-dev-pnpm-store:/pnpm/store
+    ports:
+      - "127.0.0.1:5173:5173"
+    restart: unless-stopped
+
+volumes:
+  risuai-dev-node-modules:
+  risuai-dev-pnpm-store:

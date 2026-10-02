@@ -824,29 +824,29 @@
         width: 32px;
         height: 32px;
         padding: 8px;
-        background: rgba(255, 255, 255, 0.95);
-        border: 1px solid rgba(0, 0, 0, 0.15);
+        background: var(--risu-theme-surface-elevated);
+        border: 1px solid var(--risu-theme-darkborderc);
         border-radius: 6px;
         cursor: pointer;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        box-shadow: 0 2px 8px rgb(0 0 0 / 0.15);
         transition: all 0.15s ease;
-        color: #666;
+        color: var(--risu-theme-textcolor2);
     }
 
     :global(.partial-edit-btn-edit:hover) {
-        background: #e0f2fe;
-        border-color: #3b82f6;
-        color: #3b82f6;
+        background: var(--risu-theme-surface-subtle);
+        border-color: var(--risu-theme-focus);
+        color: var(--risu-theme-focus);
     }
 
     :global(.partial-edit-btn-delete:hover) {
-        background: #fee2e2;
-        border-color: #ef4444;
-        color: #ef4444;
+        background: var(--risu-theme-danger-100);
+        border-color: var(--risu-theme-danger-500);
+        color: var(--risu-theme-danger-500);
     }
 
     .partial-match-failed-modal {
-        background: var(--risu-theme-bgcolor, #fff);
+        background: var(--risu-theme-surface-elevated);
         border-radius: 12px;
         padding: 20px;
         width: 50vw;
@@ -878,7 +878,7 @@
     }
 
     .partial-delete-modal {
-        background: var(--risu-theme-bgcolor, #fff);
+        background: var(--risu-theme-surface-elevated);
         border-radius: 12px;
         padding: 20px;
         width: 50vw;
@@ -910,7 +910,7 @@
 
     .partial-delete-preview {
         padding: 12px;
-        background: var(--risu-theme-darkbg, #f5f5f5);
+        background: var(--risu-theme-surface-subtle);
         border-radius: 8px;
         font-size: 13px;
         color: var(--risu-theme-textcolor, #000);
@@ -930,12 +930,12 @@
         font-weight: 500;
         cursor: pointer;
         transition: all 0.15s ease;
-        background: #ef4444;
-        color: white;
+        background: var(--risu-theme-danger-500);
+        color: var(--risu-theme-textcolor);
     }
 
     .partial-delete-confirm-btn:hover {
-        background: #dc2626;
+        background: var(--risu-theme-danger-600);
     }
 
     .partial-edit-overlay {
@@ -944,7 +944,7 @@
         left: 0;
         right: 0;
         bottom: 0;
-        background: rgba(0, 0, 0, 0.4);
+        background: var(--risu-theme-overlay);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -952,7 +952,7 @@
     }
 
     .partial-edit-modal {
-        background: var(--risu-theme-bgcolor, #fff);
+        background: var(--risu-theme-surface-elevated);
         border-radius: 12px;
         padding: 20px;
         width: 50vw;
@@ -993,12 +993,12 @@
         font-weight: 600;
         padding: 2px 6px;
         border-radius: 4px;
-        background: #10b981;
-        color: white;
+        background: var(--risu-theme-focus);
+        color: var(--risu-theme-textcolor);
     }
 
     .partial-match-confidence.low-confidence {
-        background: #f59e0b;
+        background: var(--risu-theme-ambient);
     }
 
     .partial-edit-textarea {
@@ -1006,9 +1006,9 @@
         min-height: 120px;
         max-height: 50vh;
         padding: 12px;
-        border: 1px solid var(--risu-theme-darkborderc, #ddd);
+        border: 1px solid var(--risu-theme-darkborderc);
         border-radius: 8px;
-        background: var(--risu-theme-darkbg, #f5f5f5);
+        background: var(--risu-theme-surface-subtle);
         color: var(--risu-theme-textcolor, #000);
         font-family: inherit;
         resize: vertical;
@@ -1017,8 +1017,8 @@
 
     .partial-edit-textarea:focus {
         outline: none;
-        border-color: #3b82f6;
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        border-color: var(--risu-theme-focus);
+        box-shadow: 0 0 0 3px var(--risu-theme-surface-subtle);
     }
 
     .partial-edit-buttons {
@@ -1042,26 +1042,26 @@
     }
 
     .partial-edit-save-btn {
-        background: #3b82f6;
-        color: white;
+        background: var(--risu-theme-action-primary);
+        color: var(--risu-theme-textcolor);
     }
 
     .partial-edit-save-btn:hover {
-        background: #2563eb;
+        background: var(--risu-theme-focus);
     }
 
     .partial-edit-cancel-btn {
-        background: #6b7280;
-        color: white;
+        background: var(--risu-theme-surface-subtle);
+        color: var(--risu-theme-textcolor);
     }
 
     .partial-edit-cancel-btn:hover {
-        background: #4b5563;
+        background: var(--risu-theme-darkborderc);
     }
 
     /* Match Selection Modal */
     .partial-match-selection-modal {
-        background: var(--risu-theme-bgcolor, #fff);
+        background: var(--risu-theme-surface-elevated);
         border-radius: 12px;
         padding: 20px;
         width: 50vw;
@@ -1111,17 +1111,17 @@
         flex-direction: column;
         gap: 8px;
         padding: 16px;
-        border: 1px solid var(--risu-theme-darkborderc, #ddd);
+        border: 1px solid var(--risu-theme-darkborderc);
         border-radius: 8px;
-        background: var(--risu-theme-darkbg, #f9f9f9);
+        background: var(--risu-theme-surface-subtle);
         cursor: pointer;
         transition: all 0.15s ease;
     }
 
     .match-item:hover {
-        background: var(--risu-theme-bgcolor, #fff);
-        border-color: #3b82f6;
-        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+        background: var(--risu-theme-surface-elevated);
+        border-color: var(--risu-theme-focus);
+        box-shadow: 0 2px 8px var(--risu-theme-surface-subtle);
         transform: translateY(-1px);
     }
 
@@ -1150,15 +1150,15 @@
     }
 
     .match-confidence.high-confidence {
-        background: #10b981;
+        background: var(--risu-theme-focus);
     }
 
     .match-confidence.medium-confidence {
-        background: #3b82f6;
+        background: var(--risu-theme-action-primary);
     }
 
     .match-confidence.low-confidence {
-        background: #f59e0b;
+        background: var(--risu-theme-ambient);
     }
 
     .match-method {
@@ -1190,7 +1190,7 @@
         padding: 10px 12px;
         background: var(--risu-theme-bgcolor, #fff);
         border-radius: 6px;
-        border-left: 3px solid #3b82f6;
+        border-left: 3px solid var(--risu-theme-focus);
         line-height: 1.5;
         font-weight: 500;
         white-space: pre-line;

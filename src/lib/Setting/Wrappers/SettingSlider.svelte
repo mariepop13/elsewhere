@@ -41,9 +41,9 @@
     {getLabel(item)}
     {#if item.helpKey}<Help key={item.helpKey as any}/>{/if}
 </span>
-<SliderInput 
+<SliderInput
     marginBottom={true}
-    min={item.options?.min} 
+    min={item.options?.min}
     max={item.options?.max}
     step={item.options?.step}
     fixed={item.options?.fixed}

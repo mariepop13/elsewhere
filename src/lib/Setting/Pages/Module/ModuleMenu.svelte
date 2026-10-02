@@ -15,7 +15,7 @@
     import { alertNormal, alertError } from "src/ts/alert";
     import { exportRegex, importRegex } from "src/ts/process/scripts";
     import { selectMultipleFile } from "src/ts/util";
-    
+
     import { DBState } from 'src/ts/stores.svelte';
   import { v4 } from "uuid";
 
@@ -34,7 +34,7 @@
                 for(let i = 0; i < currentModule.assets.length; i++){
                     if(currentModule.assets[i].length > 2 && currentModule.assets[i][2]) {
                         assetFileExtensions[i] = currentModule.assets[i][2]
-                    } else 
+                    } else
                         assetFileExtensions[i] = currentModule.assets[i][1].split('.').pop()
                         getFileSrc(currentModule.assets[i][1]).then((filePath) => {
                         assetFilePath[i] = filePath
@@ -81,7 +81,7 @@
 
     async function exportLoreBook(){
         try {
-            const lore = currentModule.lorebook        
+            const lore = currentModule.lorebook
             const stringl = Buffer.from(JSON.stringify({
                 type: 'risu',
                 ver: 1,
@@ -231,13 +231,13 @@
     <TextAreaInput bind:value={currentModule.backgroundEmbedding} className="mt-2" placeholder={language.backgroundHTML} size="sm"/>
     <RegexList bind:value={currentModule.regex}/>
     <div class="text-textcolor2 mt-2 flex gap-2">
-        <button class="font-medium cursor-pointer hover:text-green-500" onclick={() => {
+        <button class="font-medium cursor-pointer hover:text-focus" onclick={() => {
             addRegex()
         }}><PlusIcon /></button>
-        <button class="font-medium cursor-pointer hover:text-green-500" onclick={() => {
+        <button class="font-medium cursor-pointer hover:text-focus" onclick={() => {
             exportRegex(currentModule.regex)
         }}><DownloadIcon /></button>
-        <button class="font-medium cursor-pointer hover:text-green-500" onclick={async () => {
+        <button class="font-medium cursor-pointer hover:text-focus" onclick={async () => {
             currentModule.regex = await importRegex(currentModule.regex)
         }}><HardDriveUploadIcon /></button>
     </div>
@@ -250,7 +250,7 @@
             <tr>
                 <th class="font-medium">{language.value}</th>
                 <th class="font-medium cursor-pointer w-10">
-                    <button class="hover:text-green-500" onclick={async () => {
+                    <button class="hover:text-focus" onclick={async () => {
                         const da = await selectMultipleFile(['png', 'webp', 'mp4', 'mp3', 'gif', 'jpeg', 'jpg', 'ttf', 'otf', 'css', 'webm', 'woff', 'woff2', 'svg', 'avif'])
                         currentModule.assets = currentModule.assets ?? []
                         if(!da){
@@ -289,9 +289,9 @@
                             {/if}
                             <TextInput fullwidth size="sm" marginBottom bind:value={currentModule.assets[i][0]} placeholder="..." />
                         </td>
-                        
+
                         <th class="font-medium cursor-pointer w-10">
-                            <button class="hover:text-green-500" onclick={() => {
+                            <button class="hover:text-focus" onclick={() => {
                                 let additionalAssets = currentModule.assets
                                 additionalAssets.splice(i, 1)
                                 currentModule.assets = additionalAssets

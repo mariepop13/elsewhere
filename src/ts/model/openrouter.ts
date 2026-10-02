@@ -1,8 +1,20 @@
+import { providerFetch } from "../globalApi.svelte"
 import { getDatabase } from "../storage/database.svelte"
 import type { ModelGridItem } from "./modelGrid"
 
 /** Per-1M-token price entry. undefined means the field is not available for this model. */
 export type PriceEntry = number | undefined
+
+export const openRouterGatewayReasoningEfforts = ['none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max'] as const
+export type OpenRouterReasoningEffort = (typeof openRouterGatewayReasoningEfforts)[number]
+
+export type OpenRouterReasoningMetadata = {
+    supportedEfforts?: OpenRouterReasoningEffort[] | null
+    defaultEffort?: OpenRouterReasoningEffort
+    defaultEnabled?: boolean
+    supportsMaxTokens?: boolean
+    mandatory?: boolean
+}
 
 export type OpenRouterModelInfo = {
     id: string
@@ -28,6 +40,8 @@ export type OpenRouterModelInfo = {
     cacheWritePrice1M: PriceEntry
     /** Internal reasoning token price per 1M tokens in USD (optional) */
     internalReasoningPrice1M: PriceEntry
+    /** OpenRouter reasoning capabilities reported by the Models API. */
+    reasoning?: OpenRouterReasoningMetadata
 }
 
 export async function getOpenRouterProviders(): Promise<{ name: string, slug: string }[]> {
@@ -38,7 +52,7 @@ export async function getOpenRouterProviders(): Promise<{ name: string, slug: st
             "Content-Type": "application/json"
         }
 
-        const providers: { data: { name: string, slug: string }[] } = await fetch("https://openrouter.ai/api/v1/providers", {
+        const providers: { data: { name: string, slug: string }[] } = await providerFetch("https://openrouter.ai/api/v1/providers", {
             headers,
         }).then((res) => res.json())
 
@@ -46,6 +60,27 @@ export async function getOpenRouterProviders(): Promise<{ name: string, slug: st
     } catch (error) {
         return []
     }
+}
+
+function parseReasoningMetadata(value: unknown): OpenRouterReasoningMetadata | undefined {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined
+
+    const reasoning = value as Record<string, unknown>
+    const isEffort = (effort: unknown): effort is OpenRouterReasoningEffort =>
+        typeof effort === 'string' && (openRouterGatewayReasoningEfforts as readonly string[]).includes(effort)
+    const metadata: OpenRouterReasoningMetadata = {}
+
+    if (reasoning.supported_efforts === null) {
+        metadata.supportedEfforts = null
+    } else if (Array.isArray(reasoning.supported_efforts)) {
+        metadata.supportedEfforts = reasoning.supported_efforts.filter(isEffort)
+    }
+    if (isEffort(reasoning.default_effort)) metadata.defaultEffort = reasoning.default_effort
+    if (typeof reasoning.default_enabled === 'boolean') metadata.defaultEnabled = reasoning.default_enabled
+    if (typeof reasoning.supports_max_tokens === 'boolean') metadata.supportsMaxTokens = reasoning.supports_max_tokens
+    if (typeof reasoning.mandatory === 'boolean') metadata.mandatory = reasoning.mandatory
+
+    return metadata
 }
 
 export async function getOpenRouterModels(): Promise<OpenRouterModelInfo[]> {
@@ -56,7 +91,7 @@ export async function getOpenRouterModels(): Promise<OpenRouterModelInfo[]> {
             "Content-Type": "application/json"
         }
 
-        const aim = await fetch("https://openrouter.ai/api/v1/models", {
+        const aim = await providerFetch("https://openrouter.ai/api/v1/models", {
             headers,
         }).then((res) => res.json())
 
@@ -94,6 +129,7 @@ export async function getOpenRouterModels(): Promise<OpenRouterModelInfo[]> {
                 cacheReadPrice1M: toPrice1M(model.pricing?.input_cache_read),
                 cacheWritePrice1M: toPrice1M(model.pricing?.input_cache_write),
                 internalReasoningPrice1M: toPrice1M(model.pricing?.internal_reasoning),
+                reasoning: parseReasoningMetadata(model.reasoning),
             }
         }).filter((model: OpenRouterModelInfo) => {
             return model.price >= 0

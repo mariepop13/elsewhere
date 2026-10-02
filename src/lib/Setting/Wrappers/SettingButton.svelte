@@ -11,7 +11,7 @@
     let { item }: Props = $props();
 </script>
 
-<Button 
+<Button
     className={item.classes ?? 'mt-4'}
     onclick={item.options?.onClick}
 >

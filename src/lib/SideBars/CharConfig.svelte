@@ -4,13 +4,12 @@
     import { getCurrentCharacter, saveImage as saveAsset, type character, type groupChat } from "../../ts/storage/database.svelte";
     import { DBState } from 'src/ts/stores.svelte';
     import { untrack } from 'svelte';
-    import { CharConfigSubMenu, MobileGUI, ShowRealmFrameStore, selectedCharID, hypaV3ModalOpen } from "../../ts/stores.svelte";
-    import { PlusIcon, SmileIcon, TrashIcon, UserIcon, ActivityIcon, BookIcon, User, Braces, Volume2Icon, DownloadIcon, HardDriveUploadIcon, Share2Icon, ImageIcon, ImageOffIcon, ArrowUp, ArrowDown } from '@lucide/svelte'
+    import { CharConfigSubMenu, MobileGUI, selectedCharID, hypaV3ModalOpen } from "../../ts/stores.svelte";
+    import { PlusIcon, SmileIcon, TrashIcon, UserIcon, ActivityIcon, BookIcon, Braces, Volume2Icon, DownloadIcon, HardDriveUploadIcon, Share2Icon, ImageIcon, ImageOffIcon, ArrowUp, ArrowDown } from '@lucide/svelte'
     import Check from "../UI/GUI/CheckInput.svelte";
     import { addCharEmotion, addingEmotion, getCharImage, rmCharEmotion, selectCharImg, makeGroupImage, removeChar, changeCharImage } from "../../ts/characters";
     import LoreBook from "./LoreBook/LoreBookSetting.svelte";
-    import { alertNormal, alertTOS, showHypaV2Alert } from "../../ts/alert";
-    import BarIcon from "./BarIcon.svelte";
+    import { alertNormal, showHypaV2Alert } from "../../ts/alert";
     import { findCharacterbyId, getAuthorNoteDefaultText, selectMultipleFile, selectSingleFile } from "../../ts/util";
     import Help from "../Others/Help.svelte";
     import { exportChar } from "src/ts/characterCards";
@@ -275,30 +274,34 @@
 
     {:else if licensed !== 'private' && DBState.db.characters[$selectedCharID].type === 'group'}
         <TextInput size="xl" marginBottom placeholder="Group Name" bind:value={DBState.db.characters[$selectedCharID].name} />
+        <button type="button" class="mb-4 flex items-center gap-2 text-draculared hover:underline" onclick={() => {
+            removeChar($selectedCharID, DBState.db.characters[$selectedCharID].name)
+        }}>
+            <TrashIcon size={18} />
+            <span>{language.removeGroup}</span>
+        </button>
         <span class="text-textcolor">{language.character}</span>
         <div class="p-4 gap-2 bg-bgcolor rounded-lg char-grid">
             {#if (DBState.db.characters[$selectedCharID] as groupChat).characters.length === 0}
                 <span class="text-textcolor2">No Character</span>
             {:else}
-                <div></div>
+                <div class="text-textcolor2">{language.character}</div>
                 <div class="text-center">{language.talkness}</div>
                 <div class="text-center">{language.active}</div>
+                <div></div>
                 {#each (DBState.db.characters[$selectedCharID] as groupChat).characters as char, i}
-                    {#await getCharImage(findCharacterbyId(char).image, 'css')}
-                        <BarIcon onClick={() => {
-                            rmCharFromGroup(i)
-                        }}>
-                            <User/>
-                        </BarIcon>
-                    {:then im} 
-                        <BarIcon onClick={() => {
-                            rmCharFromGroup(i)
-                        }} additionalStyle={im} />
-                    {/await}
+                    <div class="flex min-w-0 items-center gap-2 text-textcolor">
+                        {#await getCharImage(findCharacterbyId(char).image, 'css')}
+                            <div class="h-10 w-10 shrink-0 rounded-md bg-selected"></div>
+                        {:then im}
+                            <div class="h-10 w-10 shrink-0 rounded-md bg-selected bg-cover bg-center" style={im}></div>
+                        {/await}
+                        <span class="truncate" title={findCharacterbyId(char).name}>{findCharacterbyId(char).name}</span>
+                    </div>
                     <div class="flex items-center px-2 py-3">
                         {#each [1,2,3,4,5,6] as barIndex}
                             <button class="bg-selected h-full flex-1 border-r-bgcolor border-r" 
-                                aria-labelledby="loading"
+                                aria-label={`${language.talkness}: ${findCharacterbyId(char).name}, ${Math.round(barIndex / 6 * 100)}%`}
                                 class:bg-green-500={(DBState.db.characters[$selectedCharID] as groupChat).characterTalks[i] >= (1 / 6 * barIndex)}
                                 class:bg-selected={(DBState.db.characters[$selectedCharID] as groupChat).characterTalks[i] < (1 / 6 * barIndex)}
                                 class:rounded-l-lg={barIndex === 1}
@@ -312,8 +315,11 @@
                         {/each}
                     </div>
                     <div class="flex items-center justify-center">
-                        <Check margin={false} bind:check={(DBState.db.characters[$selectedCharID] as groupChat).characterActive[i]} />
+                        <Check margin={false} hiddenName name={`${language.active}: ${findCharacterbyId(char).name}`} bind:check={(DBState.db.characters[$selectedCharID] as groupChat).characterActive[i]} />
                     </div>
+                    <button type="button" class="flex items-center justify-center text-textcolor2 hover:text-draculared" aria-label={`${language.removeCharacter}: ${findCharacterbyId(char).name}`} onclick={() => rmCharFromGroup(i)}>
+                        <TrashIcon size={18} />
+                    </button>
                 {/each}
             {/if}
         </div>
@@ -565,8 +571,10 @@
             
             <span class="text-textcolor mt-2">{language.imgGenPrompt}</span>
             <TextAreaInput highlight bind:value={(DBState.db.characters[$selectedCharID] as character).newGenData.prompt} />
-            <span class="text-textcolor mt-2">{language.imgGenNegatives}</span>
-            <TextAreaInput highlight bind:value={(DBState.db.characters[$selectedCharID] as character).newGenData.negative} />
+            {#if DBState.db.sdProvider !== 'openrouter'}
+                <span class="text-textcolor mt-2">{language.imgGenNegatives}</span>
+                <TextAreaInput highlight bind:value={(DBState.db.characters[$selectedCharID] as character).newGenData.negative} />
+            {/if}
             <span class="text-textcolor mt-2">{language.imgGenInstructions}</span>
             <TextAreaInput highlight bind:value={(DBState.db.characters[$selectedCharID] as character).newGenData.instructions} />
 
@@ -718,22 +726,6 @@
         {/if}
     {/if}
 {:else if $CharConfigSubMenu === 6}
-
-    {#if DBState.db.characters[$selectedCharID].license !== 'CC BY-NC-SA 4.0'
-    && DBState.db.characters[$selectedCharID].license !== 'CC BY-SA 4.0'
-    }
-        <Button size="lg" onclick={async () => {
-            if(await alertTOS()){
-                $ShowRealmFrameStore = 'character'
-            }
-        }} className="mt-2">
-            {#if DBState.db.characters[$selectedCharID].realmId}
-                {language.updateRealm}
-            {:else}
-                {language.shareCloud}
-            {/if}
-        </Button>
-    {/if}
 
     {#if DBState.db.characters[$selectedCharID].license !== 'CC BY-NC-SA 4.0'
         && DBState.db.characters[$selectedCharID].license !== 'CC BY-SA 4.0'
@@ -1298,6 +1290,6 @@
 
     .char-grid{
         display: grid;
-        grid-template-columns: auto 1fr auto;
+        grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) auto auto;
     }
 </style>

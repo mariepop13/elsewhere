@@ -3,12 +3,12 @@ import { SandboxHost } from "./factory";
 import { getDatabase } from "src/ts/storage/database.svelte";
 import { SafeLocalPluginStorage, tagWhitelist } from "../pluginSafeClass";
 import DOMPurify from 'dompurify';
-import { additionalChatMenu, additionalFloatingActionButtons, additionalHamburgerMenu, additionalSettingsMenu, bodyIntercepterStore, chatPanelStore, DBState, selectedCharID, type MenuDef } from "src/ts/stores.svelte";
+import { additionalChatMenu, additionalFloatingActionButtons, additionalHamburgerMenu, additionalSettingsMenu, alertStore, bodyIntercepterStore, chatPanelStore, DBState, selectedCharID, type MenuDef } from "src/ts/stores.svelte";
 import { v4 } from "uuid";
 import { sleep } from "src/ts/util";
 import { alertConfirm, alertError, alertNormal } from "src/ts/alert";
 import { language } from "src/lang";
-import { checkCharOrder, forageStorage, getFetchLogs } from "src/ts/globalApi.svelte";
+import { checkCharOrder, forageStorage, getFetchLogs, saveAsset } from "src/ts/globalApi.svelte";
 import { changeColorScheme, updateColorScheme, updateTextThemeAndCSS, type ColorScheme } from "src/ts/gui/colorscheme";
 import { isNodeServer, isTauri } from "src/ts/platform";
 import { get } from "svelte/store";
@@ -18,6 +18,9 @@ import { getInlayAsset } from "src/ts/process/files/inlays";
 import { getLLMCache, searchLLMCache } from "src/ts/translator/translator";
 import { hasher, risuChatParser, type CbsConditions } from "src/ts/parser/parser.svelte";
 import localforage from "localforage";
+import { generatePluginImage, type GenerateImageOptions } from "./imageGeneration";
+import { confirmUninterrupted, createCharacterFromCard, type CreateCharacterFromCardOptions } from "./characterCreation";
+import { prepareCharacterFromCard } from "src/ts/characterCards";
 import { LLMFlags, LLMFormat, LLMProvider, LLMTokenizer, type LLMModel } from "src/ts/model/types";
 import { sendChat as processSendChat, doingChat } from "src/ts/process/index.svelte";
 import { processScriptFull } from "src/ts/process/scripts";
@@ -566,11 +569,12 @@ type PluginV3ProviderOptions = PluginV2ProviderOptions & {
 
 export const customV3ProviderMetaStore:LLMModel[] = []
 
-const getPluginPermission = async (pluginName: string, permissionDesc: 'fetchLogs'|'db'|'mainDom'|'replacer'|'provider'|'sendChat'|'inlay', reconfirm: boolean|'periodically' = false) => {
-    if(permissionGivenPlugins.has(pluginName)){
+const getPluginPermission = async (pluginName: string, permissionDesc: 'fetchLogs'|'db'|'mainDom'|'replacer'|'provider'|'sendChat'|'inlay'|'generateImage', reconfirm: boolean|'periodically' = false) => {
+    const permissionKey = `${pluginName}_${permissionDesc}`;
+    if(reconfirm === false && permissionGivenPlugins.has(permissionKey)){
         return true;
     }
-    if(permissionDeniedPlugins.has(pluginName)){
+    if(reconfirm === false && permissionDeniedPlugins.has(permissionKey)){
         return false;
     }
 
@@ -596,7 +600,7 @@ const getPluginPermission = async (pluginName: string, permissionDesc: 'fetchLog
     ) + `_${permissionDesc}`;
 
     if(!requiresReconfirm &&await permissionForage.getItem(pluginHash)){
-        permissionGivenPlugins.add(pluginName);
+        permissionGivenPlugins.add(permissionKey);
         return true;
     }   
     
@@ -609,20 +613,21 @@ const getPluginPermission = async (pluginName: string, permissionDesc: 'fetchLog
         : permissionDesc === 'provider' ? language.providerPermissionConsent.replace("{}", pluginName)
         : permissionDesc === 'sendChat' ? language.sendChatConsent.replace("{}", pluginName)
         : permissionDesc === 'inlay' ? language.inlayPermissionConsent.replace("{}", pluginName)
+        : permissionDesc === 'generateImage' ? language.generateImageConsent.replace("{}", pluginName)
         : `Error`
     if(alertTitle === 'Error'){
         return false;
     }
     const conf = await alertConfirm(alertTitle)
     if(conf && pluginHash){
-        permissionGivenPlugins.add(pluginName);
+        permissionGivenPlugins.add(permissionKey);
         await permissionForage.setItem(pluginHash, true);
         if(reconfirm === 'periodically'){
             await permissionForage.setItem(pluginName + '_' + permissionDesc + '_lastGrantTime', Date.now());
         }
         return true;
     }
-    permissionDeniedPlugins.add(pluginName);
+    permissionDeniedPlugins.add(permissionKey);
     return false;
 }
 
@@ -641,6 +646,7 @@ const authorizationHeaders = [
 const makeRisuaiAPIV3 = (iframe:HTMLIFrameElement,plugin:RisuPlugin) => {
 
     const oldApis = getV2PluginAPIs();
+    let containerOpener: HTMLElement | null = null;
     return {
 
         //Old APIs from v2.1
@@ -968,6 +974,10 @@ const makeRisuaiAPIV3 = (iframe:HTMLIFrameElement,plugin:RisuPlugin) => {
             //more types may be added in future
             type: 'fullscreen' = 'fullscreen'
         ) => {
+            const activeElement = document.activeElement;
+            if (activeElement instanceof HTMLElement && activeElement !== document.body && activeElement !== iframe) {
+                containerOpener = activeElement;
+            }
             iframe.style.display = "block";
             
             switch(type) {
@@ -984,7 +994,7 @@ const makeRisuaiAPIV3 = (iframe:HTMLIFrameElement,plugin:RisuPlugin) => {
                     iframe.style.width = "100%";
                     iframe.style.height = "100%";
                     iframe.style.border = "none";
-                    iframe.style.zIndex = "1000";
+                    iframe.style.zIndex = "40";
                     break;
                 }
                 default: {
@@ -994,6 +1004,10 @@ const makeRisuaiAPIV3 = (iframe:HTMLIFrameElement,plugin:RisuPlugin) => {
         },
         hideContainer: () => {
             iframe.style.display = "none";
+            if (containerOpener?.isConnected) {
+                containerOpener.focus();
+            }
+            containerOpener = null;
         },
         getRootDocument: async () => {
             const conf = await getPluginPermission(plugin.name, 'mainDom');
@@ -1093,7 +1107,8 @@ const makeRisuaiAPIV3 = (iframe:HTMLIFrameElement,plugin:RisuPlugin) => {
                 icon,
                 iconType,
                 callback,
-                id
+                id,
+                isContainerVisible: () => iframe.style.display === 'block'
             }
 
             const buttonStores = [additionalFloatingActionButtons, additionalHamburgerMenu, additionalChatMenu]
@@ -1252,6 +1267,30 @@ const makeRisuaiAPIV3 = (iframe:HTMLIFrameElement,plugin:RisuPlugin) => {
         checkCharOrder: checkCharOrder,
         requestPluginPermission: (permission:string) => {
             return getPluginPermission(plugin.name, permission as any);
+        },
+        generateImage: (options: GenerateImageOptions) => {
+            const db = getDatabase();
+            return generatePluginImage(options, {
+                apiKey: db.openrouterKey,
+                modelId: db.openrouterImageModel,
+                imageOptions: db.openrouterImageOptions,
+                requestPermission: () => getPluginPermission(plugin.name, 'generateImage', true),
+            });
+        },
+        createCharacterFromCard: (options: CreateCharacterFromCardOptions) => {
+            return createCharacterFromCard(options, {
+                pluginName: plugin.name,
+                confirm: message => confirmUninterrupted(message, alertConfirm, alertStore),
+                importCard: card => prepareCharacterFromCard(card, message =>
+                    confirmUninterrupted(message, alertConfirm, alertStore)),
+                savePortrait: bytes => saveAsset(bytes),
+                decodeImage: async bytes => {
+                    const image = await createImageBitmap(new Blob([bytes.slice().buffer], { type: 'image/png' }));
+                    image.close();
+                },
+                getCharacters: () => DBState.db.characters,
+                updateCharacterOrder: checkCharOrder,
+            });
         },
         //Internal use APIs
         _getOldKeys: () => {

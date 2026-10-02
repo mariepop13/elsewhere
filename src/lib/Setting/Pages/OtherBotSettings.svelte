@@ -21,11 +21,14 @@
     import { PlusIcon, PencilIcon, TrashIcon, DownloadIcon, HardDriveUploadIcon } from "@lucide/svelte";
     import { alertError, alertInput, alertConfirm, alertNormal } from "src/ts/alert";
     import { createHypaV3Preset } from "src/ts/process/memory/hypav3";
+    import OpenrouterImageSettings from './OpenrouterImageSettings.svelte';
 
+    let { imageOnly = false }: { imageOnly?: boolean } = $props();
     let submenu = $state(DBState.db.useLegacyGUI ? -1 : 0);
 
     // HypaV3
     $effect(() => {
+        if (imageOnly) return;
         const settings = DBState.db.hypaV3Presets?.[DBState.db.hypaV3PresetId]?.settings;
         const currentValue = settings?.similarMemoryRatio;
 
@@ -43,6 +46,7 @@
     });
 
     $effect(() => {
+        if (imageOnly) return;
         const settings = DBState.db.hypaV3Presets?.[DBState.db.hypaV3PresetId]?.settings;
         const currentValue = settings?.recentMemoryRatio;
 
@@ -93,11 +97,13 @@
     let wavespeedModels = $state<WavespeedModel[]>([]);
     let isWavespeedLoading = $state(false);
     let wavespeedSearchQuery = $state("");
-    let wavespeedLoras = $state<LoraItem[]>([
-        { path: "", scale: 1.0 },
-        { path: "", scale: 1.0 },
-        { path: "", scale: 1.0 }
-    ]);
+    const savedWavespeedLoras = DBState.db.wavespeedImage?.loras ?? [];
+    let wavespeedLoras = $state<LoraItem[]>(Array.from(
+        { length: Math.max(3, savedWavespeedLoras.length) },
+        (_, index) => savedWavespeedLoras[index]
+            ? { ...savedWavespeedLoras[index] }
+            : { path: "", scale: 1.0 }
+    ));
 
     /**
      * Fetch models from WaveSpeed API dynamically
@@ -211,7 +217,7 @@
 
     $effect(() => {
         // Sync loras to DB, filtering out empty URLs
-        if (DBState.db.wavespeedImage) {
+        if (imageOnly && DBState.db.wavespeedImage) {
             DBState.db.wavespeedImage.loras = wavespeedLoras
               .filter(item => item.path && item.path.trim() !== "")
               .map(item => ({
@@ -222,10 +228,12 @@
     });
     // End wavespeed
 </script>
+{#if !imageOnly}
 <h2 class="mb-2 text-2xl font-bold mt-2">{language.otherBots}</h2>
+{/if}
 
 
-{#if submenu !== -1}
+{#if !imageOnly && submenu !== -1}
     <div class="flex w-full rounded-md border border-darkborderc mb-4">
         <button onclick={() => {
             submenu = 0
@@ -239,22 +247,18 @@
         </button>
         <button onclick={() => {
             submenu = 2
-        }} class="p-2 flex-1 border-r border-darkborderc" class:bg-darkbutton={submenu === 2}>
+        }} class="p-2 flex-1" class:bg-darkbutton={submenu === 2}>
             <span>{language.emotionImage}</span>
-        </button>
-        <button onclick={() => {
-            submenu = 3
-        }} class="p-2 flex-1" class:bg-darkbutton={submenu === 3}>
-            <span>{language.imageGeneration}</span>
         </button>
     </div>
 {/if}
 
-{#if submenu === 3 || submenu === -1}
-    <Accordion name={language.imageGeneration} styled disabled={submenu !== -1}>
-        <span class="text-textcolor mt-2">{language.imageGeneration} {language.provider} <Help key="sdProvider"/></span>
+{#if imageOnly}
+    <Accordion name={`${language.imageGeneration} ${language.provider}`} styled disabled>
+        <span class="text-textcolor mt-2">{language.provider} <Help key="sdProvider"/></span>
         <SelectInput className="mt-2 mb-4" bind:value={DBState.db.sdProvider}>
             <OptionInput value="" >None</OptionInput>
+            <OptionInput value="openrouter" >OpenRouter</OptionInput>
             <OptionInput value="webui" >Stable Diffusion WebUI</OptionInput>
             <OptionInput value="novelai" >Novel AI</OptionInput>
             <OptionInput value="dalle" >Dall-E</OptionInput>
@@ -270,6 +274,10 @@
                 <OptionInput value="comfy" >ComfyUI (Legacy)</OptionInput>
             {/if}
         </SelectInput>
+
+        {#if DBState.db.sdProvider === 'openrouter'}
+            <OpenrouterImageSettings />
+        {/if}
 
         {#if DBState.db.sdProvider === 'webui'}
         <span class="text-draculared text-xs mb-2">You must use WebUI with --api flag</span>
@@ -406,7 +414,7 @@
                                 DBState.db.NAIImgConfig.vibe_model_selection = 'v4full';
                             } else if (DBState.db.NAIImgModel.includes('nai-diffusion-4-curated')) {
                                 DBState.db.NAIImgConfig.vibe_model_selection = 'v4curated';
-                            } else if (DBState.db.NAIImgModel.includes('nai-diffusion-4-5-full')) { 
+                            } else if (DBState.db.NAIImgModel.includes('nai-diffusion-4-5-full')) {
                                 DBState.db.NAIImgConfig.vibe_model_selection = 'v4-5full';
                             } else if (DBState.db.NAIImgModel.includes('nai-diffusion-4-5-curated')) {
                                 DBState.db.NAIImgConfig.vibe_model_selection = 'v4-5curated';
@@ -432,21 +440,21 @@
                     }
                 }}>
                     {#if !DBState.db.NAIImgConfig.vibe_data || !DBState.db.NAIImgConfig.vibe_data.thumbnail}
-                        <div class="rounded-md h-20 w-20 shadow-lg bg-textcolor2 cursor-pointer hover:text-green-500 flex items-center justify-center">
+                        <div class="rounded-md h-20 w-20 shadow-lg bg-textcolor2 cursor-pointer hover:text-focus flex items-center justify-center">
                             <span class="text-sm">Upload<br />Vibe</span>
                         </div>
                     {:else}
-                        <img src={DBState.db.NAIImgConfig.vibe_data.thumbnail} alt="Vibe Preview" class="rounded-md h-40 shadow-lg bg-textcolor2 cursor-pointer hover:text-green-500" />
+                        <img src={DBState.db.NAIImgConfig.vibe_data.thumbnail} alt="Vibe Preview" class="rounded-md h-40 shadow-lg bg-textcolor2 cursor-pointer hover:text-focus" />
                     {/if}
                 </button>
 
                 {#if DBState.db.NAIImgConfig.vibe_data}
-                    <button 
+                    <button
                         onclick={() => {
                             DBState.db.NAIImgConfig.vibe_data = undefined;
                             DBState.db.NAIImgConfig.vibe_model_selection = undefined;
                         }}
-                        class="absolute top-2 right-2 bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded-sm"
+                        class="absolute top-2 right-2 bg-danger-500 hover:bg-danger-700 text-textcolor font-bold py-1 px-2 rounded-sm"
                     >
                         Delete
                     </button>
@@ -497,9 +505,9 @@
                 {/if}
             {/if}
 
-            {#if DBState.db.NAIImgConfig.reference_mode === 'character' && 
+            {#if DBState.db.NAIImgConfig.reference_mode === 'character' &&
                 (DBState.db.NAIImgModel === 'nai-diffusion-4-5-full' || DBState.db.NAIImgModel === 'nai-diffusion-4-5-curated')}
-                
+
                 <div class="relative">
                     <button class="mb-2" onclick={async () => {
                         const img = await selectSingleFile([
@@ -511,50 +519,50 @@
                         if(!img){
                             return null
                         }
-                        
+
                         const imageData = img.data;
-                        
+
                         DBState.db.NAIImgConfig.character_base64image = Buffer.from(imageData).toString('base64');
                         const saveId = await saveAsset(imageData)
                         DBState.db.NAIImgConfig.character_image = saveId
                         console.log('Character image set:', DBState.db.NAIImgConfig.character_image)
                     }}>
                         {#if !DBState.db.NAIImgConfig.character_image || DBState.db.NAIImgConfig.character_image === ''}
-                            <div class="rounded-md h-20 w-20 shadow-lg bg-textcolor2 cursor-pointer hover:text-green-500 flex items-center justify-center">
+                            <div class="rounded-md h-20 w-20 shadow-lg bg-textcolor2 cursor-pointer hover:text-focus flex items-center justify-center">
                                 <span class="text-sm">Upload<br />Image</span>
                             </div>
                         {:else}
                             {#await getCharImage(DBState.db.NAIImgConfig.character_image, 'plain')}
-                                <div class="rounded-md h-20 w-20 shadow-lg bg-textcolor2 cursor-pointer hover:text-green-500 flex items-center justify-center">
+                                <div class="rounded-md h-20 w-20 shadow-lg bg-textcolor2 cursor-pointer hover:text-focus flex items-center justify-center">
                                     <span class="text-sm">Uploading<br />Image..</span>
                                 </div>
                             {:then im}
-                                <img src={im} class="rounded-md h-40 shadow-lg bg-textcolor2 cursor-pointer hover:text-green-500" alt="Base Preview"/>
+                                <img src={im} class="rounded-md h-40 shadow-lg bg-textcolor2 cursor-pointer hover:text-focus" alt="Base Preview"/>
                             {/await}
                         {/if}
                     </button>
 
                     {#if DBState.db.NAIImgConfig.character_image && DBState.db.NAIImgConfig.character_image !== ''}
-                        <button 
+                        <button
                             onclick={() => {
                                 DBState.db.NAIImgConfig.character_image = undefined;
                                 DBState.db.NAIImgConfig.character_base64image = undefined;
                             }}
-                            class="absolute top-2 right-2 bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded-sm"
+                            class="absolute top-2 right-2 bg-danger-500 hover:bg-danger-700 text-textcolor font-bold py-1 px-2 rounded-sm"
                         >
                             Delete
                         </button>
                     {/if}
                 </div>
-                
+
                 <span class="text-textcolor2 text-xs mb-2 block">Leave blank to use the character's default image.</span>
 
                 <Check className="mb-4" bind:check={DBState.db.NAIImgConfig.style_aware} name="Style Aware"/>
 
             {/if}
 
-            
-            
+
+
 
             {#if (DBState.db.NAIImgModel === 'nai-diffusion-3' || DBState.db.NAIImgModel === 'nai-diffusion-furry-3' || DBState.db.NAIImgModel === 'nai-diffusion-2')
             && DBState.db.NAIImgConfig.sampler !== 'ddim_v3'}
@@ -565,7 +573,7 @@
                 <Check bind:check={DBState.db.NAIImgConfig.sm_dyn} name='Use DYN'/>
             {/if}
 
-            {#if DBState.db.NAIImgModel === 'nai-diffusion-4-5-full' || DBState.db.NAIImgModel === 'nai-diffusion-4-5-curated' 
+            {#if DBState.db.NAIImgModel === 'nai-diffusion-4-5-full' || DBState.db.NAIImgModel === 'nai-diffusion-4-5-curated'
             || DBState.db.NAIImgModel === 'nai-diffusion-4-full' || DBState.db.NAIImgModel === 'nai-diffusion-4-curated-preview'
             || DBState.db.NAIImgModel === 'nai-diffusion-3' || DBState.db.NAIImgModel === 'nai-diffusion-furry-3'}
                 <Check bind:check={DBState.db.NAIImgConfig.variety_plus} name="Variety+"/>
@@ -579,9 +587,9 @@
             || DBState.db.NAIImgModel === 'nai-diffusion-4-curated-preview'}
                 <Check bind:check={DBState.db.NAIImgConfig.legacy_uc} name='Use legacy uc'/>
             {/if}
-                
+
             <Check className="mt-4 mb-4" bind:check={DBState.db.NAII2I} name="Enable I2I"/>
-            
+
             {#if DBState.db.NAII2I}
                 <div class="relative">
                     <button class="mb-2" onclick={async () => {
@@ -599,27 +607,27 @@
                         DBState.db.NAIImgConfig.image = saveId
                     }}>
                         {#if !DBState.db.NAIImgConfig.image || DBState.db.NAIImgConfig.image === ''}
-                            <div class="rounded-md h-20 w-20 shadow-lg bg-textcolor2 cursor-pointer hover:text-green-500 flex items-center justify-center">
+                            <div class="rounded-md h-20 w-20 shadow-lg bg-textcolor2 cursor-pointer hover:text-focus flex items-center justify-center">
                                 <span class="text-sm">Upload<br />Image</span>
                             </div>
                         {:else}
                             {#await getCharImage(DBState.db.NAIImgConfig.image, 'plain')}
-                                <div class="rounded-md h-20 w-20 shadow-lg bg-textcolor2 cursor-pointer hover:text-green-500 flex items-center justify-center">
+                                <div class="rounded-md h-20 w-20 shadow-lg bg-textcolor2 cursor-pointer hover:text-focus flex items-center justify-center">
                                     <span class="text-sm">Uploading<br />Image..</span>
                                 </div>
                             {:then im}
-                                <img src={im} class="rounded-md h-40 shadow-lg bg-textcolor2 cursor-pointer hover:text-green-500" alt="Base Preview"/>
+                                <img src={im} class="rounded-md h-40 shadow-lg bg-textcolor2 cursor-pointer hover:text-focus" alt="Base Preview"/>
                             {/await}
                         {/if}
                     </button>
 
                     {#if DBState.db.NAIImgConfig.image && DBState.db.NAIImgConfig.image !== ''}
-                        <button 
+                        <button
                             onclick={() => {
                                 DBState.db.NAIImgConfig.image = undefined;
                                 DBState.db.NAIImgConfig.base64image = undefined;
                             }}
-                            class="absolute top-2 right-2 bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded-sm"
+                            class="absolute top-2 right-2 bg-danger-500 hover:bg-danger-700 text-textcolor font-bold py-1 px-2 rounded-sm"
                         >
                             Delete
                         </button>
@@ -637,8 +645,8 @@
             {/if}
         {/if}
 
-         
-        
+
+
         {#if DBState.db.sdProvider === 'dalle'}
             <span class="text-textcolor">OpenAI API Key</span>
             <TextInput size="sm" marginBottom placeholder="sk-..." bind:value={DBState.db.openAIKey}/>
@@ -752,7 +760,7 @@
         {#if DBState.db.sdProvider === 'Imagen'}
             <span class="text-textcolor mt-2">GoogleAI API Key</span>
             <TextInput marginBottom={true} size={"sm"} placeholder="..." hideText={DBState.db.hideApiKey} bind:value={DBState.db.google.accessToken}/>
-            
+
             <span class="text-textcolor">Model</span>
             <SelectInput className="mb-4" bind:value={DBState.db.ImagenModel}>
                 <OptionInput value="imagen-4.0-generate-001" >Imagen 4</OptionInput>
@@ -902,16 +910,16 @@
                             console.log('Character image set:', DBState.db.wavespeedImage.reference_image)
                         }}>
                             {#if !DBState.db.wavespeedImage.reference_image || DBState.db.wavespeedImage.reference_image === ''}
-                                <div class="rounded-md h-20 w-20 shadow-lg bg-textcolor2 cursor-pointer hover:text-green-500 flex items-center justify-center">
+                                <div class="rounded-md h-20 w-20 shadow-lg bg-textcolor2 cursor-pointer hover:text-focus flex items-center justify-center">
                                     <span class="text-sm">Upload<br />Image</span>
                                 </div>
                             {:else}
                                 {#await getCharImage(DBState.db.wavespeedImage.reference_image, 'plain')}
-                                    <div class="rounded-md h-20 w-20 shadow-lg bg-textcolor2 cursor-pointer hover:text-green-500 flex items-center justify-center">
+                                    <div class="rounded-md h-20 w-20 shadow-lg bg-textcolor2 cursor-pointer hover:text-focus flex items-center justify-center">
                                         <span class="text-sm">Uploading<br />Image..</span>
                                     </div>
                                 {:then im}
-                                    <img src={im} class="rounded-md h-40 shadow-lg bg-textcolor2 cursor-pointer hover:text-green-500" alt="Base Preview"/>
+                                    <img src={im} class="rounded-md h-40 shadow-lg bg-textcolor2 cursor-pointer hover:text-focus" alt="Base Preview"/>
                                 {/await}
                             {/if}
                         </button>
@@ -922,7 +930,7 @@
                                     DBState.db.wavespeedImage.reference_image = undefined;
                                     DBState.db.wavespeedImage.reference_base64image = undefined;
                                 }}
-                              class="absolute top-2 right-2 bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded-sm"
+                              class="absolute top-2 right-2 bg-danger-500 hover:bg-danger-700 text-textcolor font-bold py-1 px-2 rounded-sm"
                             >
                                 Delete
                             </button>
@@ -941,7 +949,7 @@
     </Accordion>
 {/if}
 
-{#if submenu === 1 || submenu === -1}
+{#if !imageOnly && (submenu === 1 || submenu === -1)}
 <Accordion name="TTS" styled disabled={submenu !== -1}>
     <CheckInput bind:check={DBState.db.ttsAutoSpeech} name="Auto Speech" className="mt-2"/>
 
@@ -966,7 +974,7 @@
 </Accordion>
 {/if}
 
-{#if submenu === 2 || submenu === -1}
+{#if !imageOnly && (submenu === 2 || submenu === -1)}
 <Accordion name={language.emotionImage} styled disabled={submenu !== -1}>
     <span class="text-textcolor mt-2">{language.emotionMethod}</span>
 
@@ -977,7 +985,7 @@
 </Accordion>
 {/if}
 
-{#if submenu === 0 || submenu === -1}
+{#if !imageOnly && (submenu === 0 || submenu === -1)}
     <Accordion name={language.longTermMemory} styled disabled={submenu !== -1}>
         <span class="text-textcolor mt-4">{language.type}</span>
 
@@ -1065,7 +1073,7 @@
             </select>
 
             <div class="flex items-center mb-8">
-                <button class="mr-2 text-textcolor2 hover:text-green-500 cursor-pointer" onclick={() => {
+                <button class="mr-2 text-textcolor2 hover:text-focus cursor-pointer" onclick={() => {
                     const newPreset = createHypaV3Preset()
                     const presets = DBState.db.hypaV3Presets
 
@@ -1076,7 +1084,7 @@
                     <PlusIcon size={24}/>
                 </button>
 
-                <button class="mr-2 text-textcolor2 hover:text-green-500 cursor-pointer" onclick={async () => {
+                <button class="mr-2 text-textcolor2 hover:text-focus cursor-pointer" onclick={async () => {
                     const presets = DBState.db.hypaV3Presets
 
                     if(presets.length === 0){
@@ -1096,7 +1104,7 @@
                     <PencilIcon size={24}/>
                 </button>
 
-                <button class="mr-2 text-textcolor2 hover:text-green-500 cursor-pointer" onclick={async (e) => {
+                <button class="mr-2 text-textcolor2 hover:text-focus cursor-pointer" onclick={async (e) => {
                     const presets = DBState.db.hypaV3Presets
 
                     if(presets.length <= 1){
@@ -1119,10 +1127,10 @@
 
                 <div class="ml-2 mr-4 w-px h-full bg-darkborderc"></div>
 
-                <button class="mr-2 text-textcolor2 hover:text-green-500 cursor-pointer" onclick={async() => {
+                <button class="mr-2 text-textcolor2 hover:text-focus cursor-pointer" onclick={async() => {
                     try {
                         const presets = DBState.db.hypaV3Presets
-                        
+
                         if(presets.length === 0){
                             alertError("There must be least one preset.")
                             return
@@ -1135,7 +1143,7 @@
                             ver: 1,
                             data: preset
                         }), 'utf-8')
-                        
+
                         await downloadFile(`hypaV3_export_${preset.name}.json`, bytesExport)
                         alertNormal(language.successExport)
                     } catch (error) {
@@ -1145,7 +1153,7 @@
                     <DownloadIcon size={24}/>
                 </button>
 
-                <button class="mr-2 text-textcolor2 hover:text-green-500 cursor-pointer" onclick={async() => {
+                <button class="mr-2 text-textcolor2 hover:text-focus cursor-pointer" onclick={async() => {
                     try {
                         const bytesImport = (await selectSingleFile(['json'])).data
 
@@ -1160,7 +1168,7 @@
                             objImport.data.settings || {}
                         );
                         const presets = DBState.db.hypaV3Presets
-                        
+
                         presets.push(newPreset)
                         DBState.db.hypaV3Presets = presets
                         DBState.db.hypaV3PresetId = DBState.db.hypaV3Presets.length - 1
@@ -1198,7 +1206,7 @@
                 <span class="text-textcolor">{language.hypaV3Settings.maxMemoryTokensRatioLabel}</span>
                 <NumberInput marginBottom disabled size="sm" value={maxMemoryRatio} />
                 {:catch error}
-                <span class="mb-4 text-red-400">{language.hypaV3Settings.maxMemoryTokensRatioError}</span>
+                <span class="mb-4 text-danger-400">{language.hypaV3Settings.maxMemoryTokensRatioError}</span>
                 {/await}
                 <span class="text-textcolor">{language.hypaV3Settings.memoryTokensRatioLabel} <Help key="hypaV3MemoryTokensRatio"/></span>
                 <SliderInput marginBottom min={0} max={1} step={0.01} fixed={2} bind:value={settings.memoryTokensRatio} />
