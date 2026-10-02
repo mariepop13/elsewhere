@@ -23,6 +23,7 @@
   import { isLite } from "src/ts/lite";
     import HotkeySettings from "./Pages/HotkeySettings.svelte";
     import PluginDefinedIcon from "../Others/PluginDefinedIcon.svelte";
+    import SoftwareLicenses from "./Pages/SoftwareLicenses.svelte";
 
     let openLoreList = $state(false)
     let currentSettingsLabel = $derived.by(() => {
@@ -41,6 +42,7 @@
             case 14: return language.modules;
             case 15: return language.hotkey;
             case 16: return language.easyPanel;
+            case 18: return language.softwareLicenses;
             default: return language.settings;
         }
     });
@@ -157,6 +159,17 @@
                     <UserIcon />
                     <span>{language.account} & {language.files}</span>
                 </button>
+                <button
+                    class="settings-nav-item flex gap-2 items-center"
+                    class:settings-nav-item-active={$SettingsMenuIndex === 18}
+                    aria-current={$SettingsMenuIndex === 18 ? 'page' : undefined}
+                    onclick={() => {
+                        $SettingsMenuIndex = 18
+                    }}
+                >
+                    <CodeIcon />
+                    <span>{language.softwareLicenses}</span>
+                </button>
                 <button class="settings-nav-item flex gap-2 items-center"
                         class:settings-nav-item-active={$SettingsMenuIndex === 15}
                         aria-current={$SettingsMenuIndex === 15 ? 'page' : undefined}
@@ -222,7 +235,9 @@
                         <h1>{currentSettingsLabel}</h1>
                     </header>
                     <div class="settings-workspace-body">
-                    {#if $SettingsMenuIndex === 0}
+                    {#if $SettingsMenuIndex === 18}
+                        <SoftwareLicenses />
+                    {:else if $SettingsMenuIndex === 0}
                         <UserSettings />
                     {:else if $SettingsMenuIndex === 1}
                         <BotSettings goPromptTemplate={() => {

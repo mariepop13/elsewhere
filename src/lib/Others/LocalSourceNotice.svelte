@@ -1,5 +1,6 @@
 <script lang="ts">
     import Button from '../UI/GUI/Button.svelte'
+    import SoftwareLicenses from '../Setting/Pages/SoftwareLicenses.svelte'
     let { oncontinue, preview = false }: { oncontinue: () => void; preview?: boolean } = $props()
 </script>
 
@@ -37,6 +38,7 @@
         <p class="text-textcolor2">
             {#if preview}Previous browser data at this address is preserved. You can configure your own provider in Settings → Chat Bot and request real reactions. Its usual charges apply. Social reactions send only your public world, public profiles, posts and comments to the provider you choose.{:else}For this first run, use a loopback Node server. Public or shared hosting needs its own service configuration and review. See the repository's Node server guide.{/if}
         </p>
+        <SoftwareLicenses />
         <Button onclick={oncontinue}>Continue with local setup</Button>
     </section>
 </div>

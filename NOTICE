@@ -1,0 +1,39 @@
+Elsewhere source modification and attribution notice
+Recorded: 2026-10-02
+
+Elsewhere is a modified fork of RisuAI by Kwaroran and its contributors.
+The fork changes the application interface, navigation and onboarding,
+provider integrations and authenticated Node transport, local storage flows,
+and documentation. The code baseline reviewed for this source preparation
+is 15e9311bc6167df3a8485c99fe73537c286e7386 (2026-10-01).
+
+The original project and contributors retain credit for their work.
+Existing copyright, license, permission and warranty notices are preserved.
+The root LICENSE contains GNU General Public License version 3 and carries
+Copyright (C) 2024 Kwaroran. That license continues to apply to the covered
+RisuAI-derived code; this notice does not replace it or grant an exception.
+
+Rpack.js is a third-party component in src/ts/rpack. Its LICENSE describes
+MIT permission only for use within Risuai, and AGPL-3.0 for other applications
+or embedding Risuai in another application. For this Elsewhere source
+distribution, rpack is treated under GNU Affero General Public License
+version 3. No claim is made that the conditional MIT permission extends to
+this renamed fork. The original LICENSE, LICENSE_AGPL and LICENSE_MIT remain
+included, including the MIT notice Copyright (c) 2026 Kwaroran.
+
+The rpack README states that its JavaScript implementation is a rewrite of
+the original Rust implementation with permission from the original author.
+This preserves the recorded provenance; it does not assert a new permission
+from that author. The rpack JavaScript and its 512-byte data table are
+included in the source tree.
+
+GPLv3 and AGPLv3 section 13 permit combining their covered works. Each
+license continues to govern its respective covered part, and the AGPLv3
+network-interaction requirements apply to the combination as described in
+those sections. This does not relicense all project files as AGPL or remove
+other components' license terms.
+
+See docs/source-distribution.md for the source distribution scope, retained
+license paths, corresponding-source requirements and later distribution
+checks. Other third-party notices, including tokenizer licenses, remain
+with their components. No additional permission or warranty is granted.
