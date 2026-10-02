@@ -1,10 +1,11 @@
 <script lang="ts">
     import Button from '../UI/GUI/Button.svelte'
+    import SoftwareLicenses from '../Setting/Pages/SoftwareLicenses.svelte'
     let { oncontinue }: { oncontinue: () => void } = $props()
 </script>
 
 <div
-    class="w-full h-full overflow-y-auto bg-bgcolor text-textcolor flex justify-center items-center p-6"
+    class="w-full h-full overflow-y-auto bg-bgcolor text-textcolor flex justify-center items-start p-6"
 >
     <section
         class="max-w-2xl border border-borderc rounded-lg p-6 space-y-4"
@@ -40,6 +41,7 @@
             hosting needs its own service configuration and review. See the
             repository's Node server guide.
         </p>
+        <SoftwareLicenses />
         <Button onclick={oncontinue}>Continue with local setup</Button>
     </section>
 </div>
