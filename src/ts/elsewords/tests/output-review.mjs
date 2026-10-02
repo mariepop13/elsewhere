@@ -135,7 +135,7 @@ const preserved = applyTranslations(normalizedRoles, macroFields, parseBatchResp
 assert.ok(preserved.data.description.includes('{{char}}')); assert.ok(preserved.data.description.includes('{{user}}'));
 const { buildGenerationPrompt, buildGenerationRecoveryPrompt } = await import('../prompts.js');
 for (const prompt of [buildGenerationPrompt('A librarian'), buildGenerationPrompt('Keep quoted names literally', 'complete', normalizedRoles), buildGenerationRecoveryPrompt('{}', 'A librarian')]) {
- assert.ok(prompt.includes('__ELS_CHAR_PLACEHOLDER__')); assert.ok(prompt.includes('real character name in data.name')); assert.ok(prompt.includes('explicitly asks to keep literally'));
+ assert.ok(!prompt.includes('__ELS_CHAR_PLACEHOLDER__')); assert.ok(!prompt.includes('__ELS_USER_PLACEHOLDER__')); assert.ok(prompt.includes('literal {{char}}')); assert.ok(prompt.includes('literal {{user}}')); assert.ok(prompt.includes('real character name in data.name')); assert.ok(prompt.includes('explicitly asks to keep literally'));
 }
 console.log('Role macros preserved in translation/completion and generated token normalization; names retained.');
 
@@ -153,3 +153,19 @@ const visualBrief = "C'et pas un humain c'est un cucurbitacé";
 const visualPrompt = buildPortraitPrompt(visualBrief);
 assert.ok(visualPrompt.includes(visualBrief)); assert.match(visualPrompt, /instructions describe the desired visual/); assert.match(visualPrompt, /not a caption or text to render/); assert.match(visualPrompt, /Never quote, transcribe, engrave/); assert.match(visualPrompt, /remove or omit any reference lettering/);
 assert.ok(buildPortraitPrompt('Grave exactement BONJOUR sur une plaque').includes('Grave exactement BONJOUR sur une plaque')); assert.match(buildPortraitPrompt('Grave exactement BONJOUR sur une plaque'), /unless the user explicitly requests those exact words/);
+
+// Synthetic provider blocks may themselves mention JSON keys; they are never a partial card.
+const { isThoughtOnlyResponse, buildTranslationRecoveryPrompt } = await import('../prompts.js');
+for (const response of ['<Thoughts>{"spec":"chara_card_v3"} synthetic reasoning only</Thoughts>', '<Thoughts>{"spec":"chara_card_v3"} unfinished synthetic reasoning']) {
+ assert.equal(isThoughtOnlyResponse(response), true);
+ const recovery = buildGenerationRecoveryPrompt(response, "C'est pas un humain c'est une chips");
+ assert.ok(!recovery.includes('synthetic reasoning')); assert.ok(!recovery.includes('Partial card'));
+ assert.match(responseProblemHint(response), /reasoning without a final card/);
+}
+const finalPart = '{"spec":"chara_card_v3","data":{"name":"Chip"}}';
+const mixed = '<Thoughts>synthetic discarded block</Thoughts>\n'+finalPart;
+assert.equal(isThoughtOnlyResponse(mixed), false);
+assert.ok(buildGenerationRecoveryPrompt(mixed, 'A chip').includes(finalPart));
+assert.ok(!buildGenerationRecoveryPrompt(mixed, 'A chip').includes('synthetic discarded block'));
+assert.ok(!buildTranslationRecoveryPrompt(mixed, []).includes('synthetic discarded block'));
+console.log('Unambiguous native role guidance and reasoning-free recovery validated.');
