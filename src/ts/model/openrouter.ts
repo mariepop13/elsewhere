@@ -1,4 +1,5 @@
 import { providerFetch } from "../globalApi.svelte"
+import { getPublicOpenRouterCatalog } from './tokenCapabilities.svelte'
 import { getDatabase } from "../storage/database.svelte"
 import type { ModelGridItem } from "./modelGrid"
 
@@ -29,6 +30,8 @@ export type OpenRouterModelInfo = {
     /** Human-readable weighted-average price string, e.g. "$0.01500/1k" or "Free" */
     priceDisplay: string
     context_length: number
+    alias_target?: string
+    top_provider?: { context_length?: number; max_completion_tokens?: number }
     description: string
     /** Input (prompt) price per 1M tokens in USD */
     promptPrice1M: PriceEntry
@@ -85,15 +88,7 @@ function parseReasoningMetadata(value: unknown): OpenRouterReasoningMetadata | u
 
 export async function getOpenRouterModels(): Promise<OpenRouterModelInfo[]> {
     try {
-        const db = getDatabase()
-        const headers = {
-            "Authorization": "Bearer " + db.openrouterKey,
-            "Content-Type": "application/json"
-        }
-
-        const aim = await providerFetch("https://openrouter.ai/api/v1/models", {
-            headers,
-        }).then((res) => res.json())
+        const aim = { data: await getPublicOpenRouterCatalog() }
 
         return aim.data.map((model: any) => {
             const price = ((Number(model.pricing.prompt) * 3) + Number(model.pricing.completion)) / 4
@@ -123,6 +118,8 @@ export async function getOpenRouterModels(): Promise<OpenRouterModelInfo[]> {
                 price,
                 priceDisplay,
                 context_length: model.context_length,
+                alias_target: model.alias_target,
+                top_provider: model.top_provider,
                 description: model.description ?? '',
                 promptPrice1M: toPrice1M(model.pricing?.prompt),
                 completionPrice1M: toPrice1M(model.pricing?.completion),

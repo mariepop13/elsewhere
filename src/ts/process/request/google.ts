@@ -1,3 +1,4 @@
+import { payloadTokenError } from './tokenBudget';
 import { providerFetch, fetchNative, textifyReadableStream } from "src/ts/globalApi.svelte"
 import { LLMFlags, LLMFormat, type LLMModel } from "src/ts/model/modellist"
 import { getDatabase, setDatabase } from "src/ts/storage/database.svelte"
@@ -567,6 +568,9 @@ export async function requestGoogleCloudVertex(arg:RequestDataArgumentExtended):
     }
 
     body = applyAdditionalParameters(body, headers, getAdditionalParameters(arg.aiModel))
+    const tokenError = await payloadTokenError(arg, body, headers)
+    if (tokenError) return { type: 'fail', result: tokenError, noRetry: true }
+
 
     if(arg.previewBody){
         return {
@@ -1224,7 +1228,9 @@ function wrapToolStream(
                         
                         do {
                             attempt++
-                            resRec = await fetchNative(url, {
+                            const tokenError = await payloadTokenError(arg, body, headers)
+                    if (tokenError) throw new Error(tokenError)
+                    resRec = await fetchNative(url, {
                                 headers: headers,
                                 body: JSON.stringify(body),
                                 method: 'POST',

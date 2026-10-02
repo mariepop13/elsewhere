@@ -2,6 +2,7 @@
     import type { SettingItem, SettingContext } from 'src/ts/setting/types';
     import { UNINITIALIZED, getLabel, getSettingValue, setSettingValue } from 'src/ts/setting/utils';
     import { untrack } from 'svelte';
+    import TokenBudgetInput from '../TokenBudgetInput.svelte';
     import SliderInput from 'src/lib/UI/GUI/SliderInput.svelte';
     import Help from 'src/lib/Others/Help.svelte';
 
@@ -41,6 +42,9 @@
     {getLabel(item)}
     {#if item.helpKey}<Help key={item.helpKey as any}/>{/if}
 </span>
+{#if item.bindKey === 'thinkingTokens'}
+<TokenBudgetInput modelId={ctx.db.aiModel} kind="reasoning" bind:value={localValue}/>
+{:else}
 <SliderInput
     marginBottom={true}
     min={item.options?.min}
@@ -52,3 +56,5 @@
     {customText}
     bind:value={localValue}
 />
+
+{/if}
