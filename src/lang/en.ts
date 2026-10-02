@@ -1,4 +1,13 @@
 export const languageEnglish = {
+    tokenLimitsAdvertised: 'Advertised model limits',
+    tokenLimitsUnknown: 'Unknown',
+    tokenLimitsInputOnly: 'input only',
+    tokenLimitsShared: 'Shared output setting also applies to',
+    tokenLimitsSharedReasoning: 'On models with a shared completion budget, output includes reasoning and visible text. Saved values are preserved when the model changes.',
+    tokenLimitsRouting: 'Provider routes may have different limits. These advertised ceilings do not guarantee that every route accepts the request.',
+    tokenLimitsSource: 'Capability source',
+    tokenLimitsEstimate: 'Input token counts are local estimates. Media costs and exact token counts are determined by the provider.',
+
     formating: {
         main: "Main Prompt",
         jailbreak: "Jailbreak Prompt",

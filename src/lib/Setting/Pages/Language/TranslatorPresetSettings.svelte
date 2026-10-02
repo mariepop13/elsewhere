@@ -1,4 +1,5 @@
 <script lang="ts">
+    import TokenBudgetInput from '../../TokenBudgetInput.svelte';
     import { DownloadIcon, HardDriveUploadIcon, PencilIcon, PlusIcon, TrashIcon } from "@lucide/svelte";
     import Help from "src/lib/Others/Help.svelte";
     import NumberInput from "src/lib/UI/GUI/NumberInput.svelte";
@@ -161,10 +162,8 @@
 {#if DBState.db.translatorPresets?.[DBState.db.translatorPresetId]}
     {@const preset = DBState.db.translatorPresets[DBState.db.translatorPresetId]}
     <span class="text-textcolor mt-4">{language.translationResponseSize}</span>
-    <NumberInput
-        min={0}
-        max={2048}
-        marginBottom={true}
+    <TokenBudgetInput
+        modelId={DBState.db.seperateModelsForAxModels ? DBState.db.seperateModels.translate || DBState.db.subModel : DBState.db.subModel}
         bind:value={() => preset.maxResponse, (value) => {
             preset.maxResponse = value;
             syncCurrentTranslatorPreset();

@@ -1,3 +1,4 @@
+import { payloadTokenError } from '../tokenBudget';
 import { language } from "src/lang"
 import { alertError } from "src/ts/alert"
 import { getDatabase } from "src/ts/storage/database.svelte"
@@ -518,6 +519,8 @@ async function appendResponsesToolOutputs(body:any, calls:ResponseFunctionCallIt
 }
 
 async function requestHTTPResponsesAPI(requestURL:string, body:any, headers:Record<string,string>, arg:RequestDataArgumentExtended, networkOptions:LocalNetworkRequestOptions):Promise<requestDataResponse>{
+    const tokenError = await payloadTokenError(arg, body, headers)
+    if (tokenError) return { type: 'fail', result: tokenError, noRetry: true }
     const db = getDatabase()
     const response = await globalFetch(requestURL, {
         body: toExternalResponsesBody(body),
@@ -761,6 +764,8 @@ function wrapResponsesToolStream(stream:ReadableStream<StreamResponseChunk>, bod
                 let ok = false
                 do{
                     attempt++
+                    const tokenError = await payloadTokenError(arg, body, headers)
+                    if (tokenError) throw new Error(tokenError)
                     resRec = await fetchNative(requestURL, {
                         body: JSON.stringify(toExternalResponsesBody(body)),
                         method: "POST",
@@ -807,6 +812,8 @@ export async function requestOpenAIResponseAPI(arg:RequestDataArgumentExtended):
     if(aiModel === 'reverse_proxy' || aiModel?.startsWith('xcustom:::')){
         body = applyAdditionalParameters(body, headers, getAdditionalParameters(aiModel))
     }
+    const tokenError = await payloadTokenError(arg, body, headers)
+    if (tokenError) return { type: 'fail', result: tokenError, noRetry: true }
     if(!arg.useStreaming){
         body.stream = false
     }

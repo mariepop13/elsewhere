@@ -107,6 +107,7 @@ vi.mock('src/ts/model/modellist', () => ({
 }))
 
 vi.mock('src/ts/tokenizer', () => ({
+    encodeWithTokenizer: async (text: string) => Array.from(text),
     strongBan: vi.fn(),
     tokenizeNum: vi.fn(),
 }))

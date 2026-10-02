@@ -1,3 +1,4 @@
+import { payloadTokenError } from './tokenBudget';
 import { Sha256 } from "@aws-crypto/sha256-js"
 import { HttpRequest } from "@smithy/protocol-http"
 import { SignatureV4 } from "@smithy/signature-v4"
@@ -451,6 +452,8 @@ export async function requestClaude(arg:RequestDataArgumentExtended):Promise<req
             params = applyAdditionalParameters(params, bedrockHeaders, additionalParams)
         }
 
+        const tokenError = await payloadTokenError(arg, params, bedrockHeaders)
+        if (tokenError) return { type: 'fail', result: tokenError, noRetry: true }
         const rq = new HttpRequest({
             method: "POST",
             protocol: "https:",
@@ -585,6 +588,9 @@ export async function requestClaude(arg:RequestDataArgumentExtended):Promise<req
     if(additionalParams.length > 0){
         body = applyAdditionalParameters(body, headers, additionalParams)
     }
+
+    const tokenError = await payloadTokenError(arg, body, headers)
+    if (tokenError) return { type: 'fail', result: tokenError, noRetry: true }
 
     let betas:string[] = []
 
