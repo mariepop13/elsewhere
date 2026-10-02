@@ -1,3 +1,4 @@
+import { publicGoogleText } from './publicText'
 import { providerFetch, fetchNative, textifyReadableStream } from "src/ts/globalApi.svelte"
 import { LLMFlags, LLMFormat, type LLMModel } from "src/ts/model/modellist"
 import { getDatabase, setDatabase } from "src/ts/storage/database.svelte"
@@ -141,7 +142,7 @@ export async function requestGoogleCloudVertex(arg:RequestDataArgumentExtended):
         for (let j=0;j<chat.parts.length;j++){
             
             const part = chat.parts[j]
-            if (part.text && part.text.includes('<tool_call>')){
+            if (!arg.publicOnly && part.text && part.text.includes('<tool_call>')){
                 // Analyze the entire text to sequentially process multiple tool_calls
                 const toolCallMatches = [...part.text.matchAll(/<tool_call>(.*?)<\/tool_call>/g)]
                 if (toolCallMatches.length > 0) {
@@ -523,7 +524,7 @@ export async function requestGoogleCloudVertex(arg:RequestDataArgumentExtended):
     }
 
     
-    if(db.jsonSchemaEnabled || arg.schema){
+    if(!arg.publicOnly && (db.jsonSchemaEnabled || arg.schema)){
         body.generation_config.response_mime_type = "application/json"
         body.generation_config.response_schema = getGeneralJSONSchema(arg.schema, ['$schema','additionalProperties'])
     }    
@@ -566,7 +567,7 @@ export async function requestGoogleCloudVertex(arg:RequestDataArgumentExtended):
         body.tools = undefined
     }
 
-    body = applyAdditionalParameters(body, headers, getAdditionalParameters(arg.aiModel))
+    body = applyAdditionalParameters(body, headers, arg.publicOnly ? [] : getAdditionalParameters(arg.aiModel))
 
     if(arg.previewBody){
         return {
@@ -587,7 +588,7 @@ async function requestGoogle(url:string, body:any, headers:{[key:string]:string}
     const db = getDatabase()
 
     const fallBackGemini = async (originalError:string):Promise<requestDataResponse> => {
-        if(!db.antiServerOverloads){
+        if(arg.publicOnly || !db.antiServerOverloads){
             return {
                 type: 'fail',
                 result: originalError,
@@ -615,6 +616,7 @@ async function requestGoogle(url:string, body:any, headers:{[key:string]:string}
 
     // process the text parts into a single text response
     const processTextResponse = (rDatas: {text: string, thought?: boolean}[]) => {
+        if(arg.publicOnly) return publicGoogleText(rDatas)
         if(arg.extractJson && (db.jsonSchemaEnabled || arg.schema)){
             for(let i=0;i<rDatas.length;i++){
                 const extracted = extractJSON(rDatas[i].text, arg.extractJson)
@@ -687,7 +689,7 @@ async function requestGoogle(url:string, body:any, headers:{[key:string]:string}
         method: 'POST',
         chatId: arg.chatId,
         signal: arg.abortSignal,
-        interceptor: 'gemini_base'
+        interceptor: arg.publicOnly ? undefined : 'gemini_base'
     })
     
 
@@ -762,7 +764,7 @@ async function requestGoogle(url:string, body:any, headers:{[key:string]:string}
             }   
         }
 
-        if(data?.usageMetadata){
+        if(data?.usageMetadata && !arg.publicOnly){
             
             for (const interceptor of bodyIntercepterStore) {
                 try {
@@ -803,6 +805,9 @@ async function requestGoogle(url:string, body:any, headers:{[key:string]:string}
     }
 
     // If there are function calls, handle calls and send next request
+    if(arg.publicOnly && calls.length > 0){
+        return { type: 'fail', result: 'Tool calls are disabled for public requests.' }
+    }
     if(calls.length > 0){
         const chat = body.contents as GeminiChat[]
 

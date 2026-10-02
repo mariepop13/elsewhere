@@ -1,3 +1,4 @@
+import { publicOpenAIText } from '../publicText'
 import { language } from "src/lang"
 import { alertError } from "src/ts/alert";
 import { getDatabase } from "src/ts/storage/database.svelte"
@@ -109,7 +110,7 @@ export async function requestOpenAI(arg:RequestDataArgumentExtended):Promise<req
         const m = formated[i]
         
         // Check if message contains tool calls
-        if(m.content && m.content.includes('<tool_call>')) {
+        if(!arg.publicOnly && m.content && m.content.includes('<tool_call>')) {
             const processedMessages = await processToolCalls(m.content, m)
             formatedChat.push(...processedMessages)
         }
@@ -344,7 +345,7 @@ export async function requestOpenAI(arg:RequestDataArgumentExtended):Promise<req
         }
     }
 
-    db.cipherChat = false
+    if(!arg.publicOnly) db.cipherChat = false
     let body:{
         [key:string]:any
     } = ({
@@ -401,14 +402,14 @@ export async function requestOpenAI(arg:RequestDataArgumentExtended):Promise<req
         body.seed = db.generationSeed
     }
 
-    if((db.jsonSchemaEnabled || arg.schema) && !arg.modelInfo.flags.includes(LLMFlags.noStructuredOutput)){
+    if(!arg.publicOnly && (db.jsonSchemaEnabled || arg.schema) && !arg.modelInfo.flags.includes(LLMFlags.noStructuredOutput)){
         body.response_format = {
             "type": "json_schema",
             "json_schema": getOpenAIJSONSchema(arg.schema)
         }
     }
 
-    if(db.OAIPrediction){
+    if(db.OAIPrediction && !arg.publicOnly){
         body.prediction = {
             type: "content",
             content: db.OAIPrediction
@@ -416,7 +417,7 @@ export async function requestOpenAI(arg:RequestDataArgumentExtended):Promise<req
     }
 
     if(aiModel === 'openrouter'){
-        if(db.openrouterFallback){
+        if(db.openrouterFallback && !arg.publicOnly){
             body.route = "fallback"
         }
         body.transforms = db.openrouterMiddleOut ? ['middle-out'] : []
@@ -456,7 +457,7 @@ export async function requestOpenAI(arg:RequestDataArgumentExtended):Promise<req
             }
         }
 
-        if(db.useInstructPrompt){
+        if(db.useInstructPrompt && !arg.publicOnly){
             delete body.messages
             const prompt = applyChatTemplate(formated)
             body.prompt = prompt
@@ -502,7 +503,7 @@ export async function requestOpenAI(arg:RequestDataArgumentExtended):Promise<req
         })
     }
 
-    if(aiModel === 'reverse_proxy' && db.reverseProxyOobaMode){
+    if(aiModel === 'reverse_proxy' && db.reverseProxyOobaMode && !arg.publicOnly){
         const OobaBodyTemplate = db.reverseProxyOobaArgs
 
         const keys = Object.keys(OobaBodyTemplate)
@@ -591,7 +592,7 @@ export async function requestOpenAI(arg:RequestDataArgumentExtended):Promise<req
         body.n = db.genTime
     }
     
-    body = applyAdditionalParameters(body, headers, getAdditionalParameters(aiModel))
+    body = applyAdditionalParameters(body, headers, arg.publicOnly ? [] : getAdditionalParameters(aiModel))
 
     // Some aux flows are intentionally non-streaming (e.g. memory/translate).
     // If custom Additional Parameters contains stream=true, force non-stream mode back.
@@ -697,7 +698,7 @@ export async function requestHTTPOpenAI(
         headers: headers,
         abortSignal: arg.abortSignal,
         chatId: arg.chatId,
-        interceptor: 'openai_basic',
+        interceptor: arg.publicOnly ? undefined : 'openai_basic',
         networkRoute: networkOptions.networkRoute,
         requestTimeoutMs: networkOptions.requestTimeoutMs
     })
@@ -747,6 +748,20 @@ export async function requestHTTPOpenAI(
 
     const dat = res.data as any
 
+    if (arg.publicOnly) {
+        const status = Number.isInteger(res.status) && res.status >= 200 && res.status <= 599 ? res.status : undefined
+        if (!res.ok) {
+            return { type: 'fail', result: 'Public request failed.', publicDiagnostic: { code: status && status < 300 ? 'invalid_response' : 'request_error', status } }
+        }
+        if (dat?.choices?.[0]?.finish_reason === 'length') {
+            return { type: 'fail', result: 'Public response incomplete.', publicDiagnostic: { code: 'incomplete_response', status } }
+        }
+        const content = dat?.choices?.[0]?.message?.content
+        if ((!dat?.choices?.[0]?.message && typeof dat?.choices?.[0]?.text !== 'string') || (content != null && typeof content !== 'string')) {
+            return { type: 'fail', result: 'Invalid public response.', publicDiagnostic: { code: 'invalid_response', status } }
+        }
+    }
+
     if(res.ok){
         try {
             // Collect all tool_calls from all choices
@@ -764,6 +779,9 @@ export async function requestHTTPOpenAI(
                 dat.choices[0].message.tool_calls = allToolCalls
             }
 
+            if(arg.publicOnly && dat.choices?.[0]?.message?.tool_calls?.length){
+                return { type: 'fail', result: 'Tool calls are disabled for public requests.' }
+            }
             if(dat.choices?.[0]?.message?.tool_calls && dat.choices[0].message.tool_calls.length > 0){
                 const toolCalls = dat.choices[0].message.tool_calls as ToolCall[]
 
@@ -888,14 +906,17 @@ export async function requestHTTPOpenAI(
                 }
             }            
                     
-            const result = processTextResponse(dat) ?? ''
+            const result = arg.publicOnly ? publicOpenAIText(dat.choices[0]) : processTextResponse(dat) ?? ''
             
             return {
                 type: 'success',
                 result: result
             }
             
-        } catch (error) {                    
+        } catch (error) {
+            if (arg.publicOnly) {
+                return { type: 'fail', result: 'Invalid public response.', publicDiagnostic: { code: 'invalid_response', status: Number.isInteger(res.status) && res.status >= 200 && res.status <= 599 ? res.status : undefined } }
+            }
             return {
                 type: 'fail',
                 result: (language.errors.httpError + `${JSON.stringify(dat)}`)

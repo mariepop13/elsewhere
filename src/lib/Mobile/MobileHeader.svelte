@@ -1,9 +1,9 @@
 <script lang="ts">
-    import { ArrowLeft, MenuIcon } from "@lucide/svelte";
+    import { ArrowLeft, MenuIcon, UsersIcon } from "@lucide/svelte";
     import { language } from "src/lang";
     
     import { DBState } from 'src/ts/stores.svelte';
-    import { MobileGUIStack, MobileSearch, selectedCharID, SettingsMenuIndex, MobileSideBar } from "src/ts/stores.svelte";
+    import { socialFeedOpen, MobileGUIStack, MobileSearch, selectedCharID, SettingsMenuIndex, MobileSideBar } from "src/ts/stores.svelte";
 
     let settingsPageTitle = $derived.by(() => {
         switch ($SettingsMenuIndex) {
@@ -45,6 +45,7 @@
             <span class="mobile-header-title font-bold text-lg truncate">{DBState.db.characters[$selectedCharID].name}</span>
         </div>
         <div class="flex-1 flex justify-end">
+            <button class="mobile-header-action" aria-label={language.social.title} onclick={() => socialFeedOpen.set(true)}><UsersIcon /></button>
             <button class="mobile-header-action" aria-label={language.menu} onclick={() => {
                 MobileSideBar.set(1)
             }}>

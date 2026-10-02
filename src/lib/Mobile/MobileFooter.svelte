@@ -1,8 +1,8 @@
 <script lang="ts">
 
-  import { SettingsIcon, HouseIcon, Volume2Icon, Braces, ActivityIcon, BookIcon, SmileIcon, UserIcon } from "@lucide/svelte";
+  import { SettingsIcon, HouseIcon, UsersIcon, Volume2Icon, Braces, ActivityIcon, BookIcon, SmileIcon, UserIcon } from "@lucide/svelte";
   import { language } from "src/lang";
-  import { CharConfigSubMenu, MobileGUIStack, MobileSideBar, selectedCharID } from "src/ts/stores.svelte";
+  import { socialFeedOpen, CharConfigSubMenu, MobileGUIStack, MobileSideBar, selectedCharID } from "src/ts/stores.svelte";
 
 </script>
 {#if $selectedCharID === -1}
@@ -13,6 +13,10 @@
         }}>
             <HouseIcon size={24} />
             <span class="text-xs">{language.character}</span>
+        </button>
+        <button class="mobile-footer-item flex-1 min-w-0 max-w-20 justify-center items-center flex-col gap-1" onclick={() => socialFeedOpen.set(true)}>
+            <UsersIcon size={24} />
+            <span class="text-xs">{language.social.title}</span>
         </button>
         <button class="mobile-footer-item flex-1 min-w-0 max-w-20 justify-center items-center flex-col gap-1" class:mobile-footer-item-active={$MobileGUIStack === 2} aria-current={$MobileGUIStack === 2 ? 'page' : undefined} onclick={() => {
             MobileGUIStack.set(2)

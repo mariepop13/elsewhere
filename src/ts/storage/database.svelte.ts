@@ -1,3 +1,4 @@
+import type { SocialFeedState } from '../social/socialFeed'
 import { get } from 'svelte/store';
 import { checkNullish, decryptBuffer, encryptBuffer, selectSingleFile } from '../util';
 import { changeLanguage, language } from '../../lang';
@@ -846,6 +847,7 @@ export interface RisuPersona {
 }
 
 export interface Database{
+    socialFeed?: SocialFeedState
     characters: (character|groupChat)[],
     apiType: string
     openAIKey: string

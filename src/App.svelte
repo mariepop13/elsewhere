@@ -1,5 +1,7 @@
 <script lang="ts">
     import { DynamicGUI, settingsOpen, sideBarStore, ShowRealmFrameStore, openPresetList, openPersonaList, MobileGUI, CustomGUISettingMenuStore, loadedStore, alertStore, LoadingStatusState, bookmarkListOpen, popupStore, easyPanelStore, popUpEditorStore, loadoutModalStore, irisStore, customSideBarConfigDialogStore } from './ts/stores.svelte';
+    import { socialFeedOpen } from './ts/stores.svelte';
+    import SocialFeed from './lib/Social/SocialFeed.svelte';
     import Sidebar from './lib/SideBars/Sidebar.svelte';
     import { DBState } from './ts/stores.svelte';
     import ChatScreen from './lib/ChatScreens/ChatScreen.svelte';
@@ -41,7 +43,7 @@
 
   
     import LocalSourceNotice from './lib/Others/LocalSourceNotice.svelte';
-    import { privateLocalMode, localNoticeKey } from './ts/firstRun';
+    import { privateSourceMode, privatePreviewMode, localNoticeKey } from './ts/firstRun';
 
     let localNoticeRead = $state(localStorage.getItem(localNoticeKey) === 'acknowledged');
 
@@ -127,14 +129,15 @@
     }
 
 }}>
-    {#if privateLocalMode && !localNoticeRead}
+    {#if privateSourceMode && !localNoticeRead}
         <LocalSourceNotice
+            preview={privatePreviewMode}
             oncontinue={() => {
                 localStorage.setItem(localNoticeKey, 'acknowledged')
                 localNoticeRead = true
             }}
         />
-    {:else if !privateLocalMode && !import.meta.env.VITE_RISU_LEGAL_CONFIGURED}
+    {:else if !privateSourceMode && !import.meta.env.VITE_RISU_LEGAL_CONFIGURED}
         <Legal />
     {:else if aprilFools}
 
@@ -223,6 +226,8 @@
         <WelcomeRisu />
     {:else if $settingsOpen}
         <Settings />
+    {:else if $socialFeedOpen}
+        <SocialFeed />
     {:else if $MobileGUI}
         <div class="w-full h-full flex flex-col">
             <MobileHeader />

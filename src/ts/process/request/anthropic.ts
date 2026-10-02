@@ -1,3 +1,4 @@
+import { publicAnthropicText } from './publicText'
 import { Sha256 } from "@aws-crypto/sha256-js"
 import { HttpRequest } from "@smithy/protocol-http"
 import { SignatureV4 } from "@smithy/signature-v4"
@@ -274,7 +275,7 @@ export async function requestClaude(arg:RequestDataArgumentExtended):Promise<req
         let chat = claudeChat[j]
         for(let i=0;i<chat.content.length;i++){
             let content = chat.content[i]
-            if(content.type === 'text'){
+            if(content.type === 'text' && !arg.publicOnly){
                 content.text = await replaceAsync(content.text,/<tool_call>(.*?)<\/tool_call>/g, async (match:string, p1:string) => {
                     try {
                         const parsed = await decodeToolCall(p1)
@@ -390,7 +391,7 @@ export async function requestClaude(arg:RequestDataArgumentExtended):Promise<req
     }
 
     const bedrock = arg.modelInfo.format === LLMFormat.AWSBedrockClaude
-    const additionalParams = getAdditionalParameters(aiModel)
+    const additionalParams = arg.publicOnly ? [] : getAdditionalParameters(aiModel)
     const hasCustomAnthropicBeta = additionalParams.some(([key]) => {
         return key.startsWith('header::') && key.slice('header::'.length).toLocaleLowerCase() === 'anthropic-beta'
     })
@@ -612,7 +613,7 @@ export async function requestClaude(arg:RequestDataArgumentExtended):Promise<req
         }
     }
 
-    if(db.claudeBatching && !ollamaCloudAnthropic){
+    if(db.claudeBatching && !ollamaCloudAnthropic && !arg.publicOnly){
         if(body.stream !== undefined){
             delete body.stream
         }
@@ -885,7 +886,7 @@ export async function requestClaude(arg:RequestDataArgumentExtended):Promise<req
     }
     
     
-    if(db.claudeRetrivalCaching){
+    if(db.claudeRetrivalCaching && !arg.publicOnly){
         registerClaudeObserver({
             url: replacerURL,
             body: body,
@@ -1056,7 +1057,8 @@ async function requestClaudeHTTP(replacerURL:string, headers:{[key:string]:strin
         headers: headers,
         method: "POST",
         chatId: arg.chatId,
-        interceptor: 'anthropic_http'
+        abortSignal: arg.abortSignal,
+        interceptor: arg.publicOnly ? undefined : 'anthropic_http'
     })
 
     if(!res.ok){
@@ -1087,6 +1089,12 @@ async function requestClaudeHTTP(replacerURL:string, headers:{[key:string]:strin
 
     const hasToolUse = (contents as any[]).some((v) => v.type === 'tool_use')
 
+    if(hasToolUse && arg.publicOnly){
+        return { type: 'fail', result: 'Tool calls are disabled for public requests.' }
+    }
+    if(arg.publicOnly){
+        return { type: 'success', result: publicAnthropicText(contents) }
+    }
     if(hasToolUse){
 
         const messages:Claude3ExtendedChat[] = body.messages

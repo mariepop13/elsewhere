@@ -53,6 +53,8 @@ interface requestDataArgument{
     escape?:boolean
     tools?: MCPTool[]
     rememberToolUsage?: boolean
+    /** Isolated public context: disable transport extensions that can inject private data. */
+    publicOnly?:boolean
     blockPlugins?:boolean
 }
 
@@ -71,6 +73,8 @@ export interface RequestDataArgumentExtended extends requestDataArgument{
 export type requestDataResponse = {
     type: 'success'|'fail'
     result: string
+    /** Safe public-flow metadata, excluding provider bodies and credentials. */
+    publicDiagnostic?: { code: 'request_error' | 'invalid_response' | 'incomplete_response'; status?: number }
     noRetry?: boolean,
     special?: {
         emotion?: string
@@ -348,7 +352,7 @@ export async function requestChatData(arg:requestDataArgument, model:ModelModeEx
     }
 }
 
-export function reformater(formated:OpenAIChat[],modelInfo:LLMModel|LLMFlags[]){
+export function reformater(formated:OpenAIChat[],modelInfo:LLMModel|LLMFlags[], publicOnly = false){
 
     const flags = Array.isArray(modelInfo) ? modelInfo : modelInfo.flags
     
@@ -370,8 +374,8 @@ export function reformater(formated:OpenAIChat[],modelInfo:LLMModel|LLMFlags[]){
 
         for(let i=0;i<formated.length;i++){
             if(formated[i].role === 'system'){
-                formated[i].content = db.systemContentReplacement ? db.systemContentReplacement.replace('{{slot}}', formated[i].content) : `system: ${formated[i].content}`
-                formated[i].role = db.systemRoleReplacement || 'user'
+                formated[i].content = !publicOnly && db.systemContentReplacement ? db.systemContentReplacement.replace('{{slot}}', formated[i].content) : `system: ${formated[i].content}`
+                formated[i].role = publicOnly ? 'user' : db.systemRoleReplacement || 'user'
             }
         }
     }
@@ -481,8 +485,11 @@ export async function requestChatDataMain(arg:requestDataArgument, model:ModelMo
     }
 
     const format = targ.modelInfo.format
+    if(arg.publicOnly && !([LLMFormat.OpenAICompatible, LLMFormat.Anthropic, LLMFormat.GoogleCloud] as LLMFormat[]).includes(format)){
+        return { type: 'fail', result: 'This transport does not support isolated public requests.' }
+    }
 
-    targ.formated = reformater(targ.formated, targ.modelInfo)
+    targ.formated = reformater(targ.formated, targ.modelInfo, !!arg.publicOnly)
 
     switch(format){
         case LLMFormat.OpenAICompatible:

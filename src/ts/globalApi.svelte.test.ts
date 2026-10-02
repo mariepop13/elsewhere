@@ -5,13 +5,14 @@ const mocks = vi.hoisted(() => ({
     db: { usePlainFetch: true, requestLocation: 'fake-location' },
     auth: vi.fn().mockResolvedValue('fake-node-token'),
     tauriFetch: vi.fn(),
+    interceptors: [] as Array<{ callback: ReturnType<typeof vi.fn> }>,
 }))
 
 vi.mock('./platform', () => mocks.platform)
 vi.mock('./storage/database.svelte', () => ({ getDatabase: () => mocks.db }))
 vi.mock('./storage/nodeStorage', () => ({ getNodeServerProxyAuth: mocks.auth }))
 vi.mock('./storage/autoStorage', () => ({ AutoStorage: class {} }))
-vi.mock('./stores.svelte', () => ({ DBState: { db: mocks.db }, bodyIntercepterStore: [] }))
+vi.mock('./stores.svelte', () => ({ DBState: { db: mocks.db }, bodyIntercepterStore: mocks.interceptors }))
 vi.mock('./characterCards', () => ({ hubFetchURL: 'https://sv.risuai.xyz' }))
 vi.mock('streamsaver', () => ({ default: {} }))
 vi.mock('@tauri-apps/plugin-http', () => ({ fetch: mocks.tauriFetch }))
@@ -42,6 +43,7 @@ beforeEach(() => {
     mocks.db.usePlainFetch = true
     mocks.tauriFetch.mockReset()
     mocks.auth.mockClear()
+    mocks.interceptors.length = 0
     vi.stubGlobal('fetch', vi.fn().mockImplementation(() => Promise.resolve(new Response('{"ok":true}', {
         headers: { 'x-elsewhere-proxy': '1', 'content-type': 'application/json' },
     }))))
@@ -52,6 +54,88 @@ afterEach(() => {
 })
 
 describe('provider routing in globalApi', () => {
+    it.each(['node', 'tauri'] as const)(
+        'isolated public requests bypass private interceptors on %s',
+        async (platform) => {
+            mocks.platform.isNodeServer = platform === 'node'
+            mocks.platform.isTauri = platform === 'tauri'
+            const injectPrivateContent = vi.fn(() => ({
+                prompt: 'PRIVATE_PLUGIN_CONTENT',
+            }))
+            mocks.interceptors.push({ callback: injectPrivateContent })
+            mocks.tauriFetch.mockResolvedValue(new Response('{"ok":true}'))
+            const body = {
+                messages: [
+                    { role: 'user', content: 'Public festival announcement' },
+                ],
+            }
+            // Social adapters omit the interceptor argument when publicOnly is set.
+            const result = await globalFetch(
+                'https://fake-provider.example/chat',
+                {
+                    body,
+                    interceptor: undefined,
+                    headers: { Authorization: 'Bearer fake-public-key' },
+                },
+            )
+            expect(result.ok).toBe(true)
+            expect(injectPrivateContent).not.toHaveBeenCalled()
+            const call =
+                platform === 'node'
+                    ? vi.mocked(fetch).mock.calls[0]
+                    : mocks.tauriFetch.mock.calls[0]
+            expect(JSON.parse(String(call[1].body))).toEqual(body)
+            if (platform === 'node') expect(call[0]).toBe('/proxy2')
+            else
+                expect(String(call[0])).toBe(
+                    'https://fake-provider.example/chat',
+                )
+            expect(JSON.stringify(getFetchLogs()[0])).not.toContain(
+                'Public festival announcement',
+            )
+            expect(JSON.stringify(getFetchLogs()[0])).not.toContain(
+                'fake-public-key',
+            )
+        },
+    )
+
+    it('cancels an isolated Node reply while its JSON body is pending', async () => {
+        vi.stubGlobal(
+            'fetch',
+            vi.fn().mockImplementation((_url, request: RequestInit) =>
+                Promise.resolve(
+                    new Response(
+                        new ReadableStream({
+                            start(controller) {
+                                request.signal!.addEventListener('abort', () =>
+                                    controller.error(request.signal!.reason),
+                                )
+                            },
+                        }),
+                        {
+                            headers: {
+                                'x-elsewhere-proxy': '1',
+                                'content-type': 'application/json',
+                            },
+                        },
+                    ),
+                ),
+            ),
+        )
+        const controller = new AbortController()
+        const reply = globalFetch('https://fake-provider.example/chat', {
+            body: { prompt: 'Public announcement' },
+            interceptor: undefined,
+            abortSignal: controller.signal,
+        })
+        await vi.waitFor(() => expect(fetch).toHaveBeenCalledOnce())
+        controller.abort()
+        expect(await reply).toMatchObject({ ok: false })
+        expect(vi.mocked(fetch).mock.calls[0][1]?.signal?.aborted).toBe(true)
+        expect(fetch).toHaveBeenCalledOnce()
+    })
+
+
     it('Node ordinary calls ignore browser-direct overrides and userscript transports', async () => {
         const userscript = vi.fn()
         window.userScriptFetch = userscript

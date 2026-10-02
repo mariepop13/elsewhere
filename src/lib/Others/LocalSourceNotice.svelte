@@ -1,21 +1,20 @@
 <script lang="ts">
     import Button from '../UI/GUI/Button.svelte'
-    let { oncontinue }: { oncontinue: () => void } = $props()
+    let { oncontinue, preview = false }: { oncontinue: () => void; preview?: boolean } = $props()
 </script>
 
 <div
-    class="w-full h-full overflow-y-auto bg-bgcolor text-textcolor flex justify-center items-center p-6"
+    class="local-source-notice bg-bgcolor text-textcolor"
 >
     <section
-        class="max-w-2xl border border-borderc rounded-lg p-6 space-y-4"
+        class="local-source-card border border-borderc rounded-lg space-y-4"
         aria-labelledby="local-source-title"
     >
         <h1 id="local-source-title" class="text-2xl font-semibold">
-            Elsewhere: private local source build
+            {preview ? 'Elsewhere: temporary private preview' : 'Elsewhere: private local source build'}
         </h1>
         <p>
-            You are running the source application on this computer. Elsewhere
-            does not provide a hosted service or an account for this setup.
+            {#if preview}This temporary preview is available only at the authorized private Tailnet address. It will be removed after the test. Use fictional data for this first session.{:else}You are running the source application on this computer. Elsewhere does not provide a hosted service or an account for this setup.{/if}
         </p>
         <p>
             With the Node server, chats, settings, assets, and provider keys are
@@ -36,10 +35,28 @@
             service's terms before using it.
         </p>
         <p class="text-textcolor2">
-            For this first run, use a loopback Node server. Public or shared
-            hosting needs its own service configuration and review. See the
-            repository's Node server guide.
+            {#if preview}Previous browser data at this address is preserved. You can configure your own provider in Settings → Chat Bot and request real reactions. Its usual charges apply. Social reactions send only your public world, public profiles, posts and comments to the provider you choose.{:else}For this first run, use a loopback Node server. Public or shared hosting needs its own service configuration and review. See the repository's Node server guide.{/if}
         </p>
         <Button onclick={oncontinue}>Continue with local setup</Button>
     </section>
 </div>
+
+<style>
+    .local-source-notice {
+        width: 100%;
+        height: 100%;
+        max-height: 100dvh;
+        min-height: 0;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        box-sizing: border-box;
+        padding: max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) max(1rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+    }
+    .local-source-card {
+        width: 100%;
+        max-width: 42rem;
+        margin-inline: auto;
+        padding: clamp(1rem, 3vw, 1.5rem);
+        overflow-wrap: anywhere;
+    }
+</style>
