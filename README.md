@@ -4,6 +4,8 @@
 
 Elsewhere is a cross-platform AI chat application forked from [RisuAI](https://github.com/kwaroran/RisuAI). The original RisuAI project and its contributors retain credit for their work.
 
+**Modification notice (2026-10-02):** Elsewhere modifies RisuAI's interface, integrations and local setup. See [NOTICE](NOTICE) for dated attribution and [source distribution requirements](docs/source-distribution.md) for retained GPLv3 notices and the conservative AGPLv3 choice for rpack. No MIT exception for this fork is assumed.
+
 # Upstream screenshots
 
 These screenshots show the RisuAI interface before Elsewhere's visual changes.
