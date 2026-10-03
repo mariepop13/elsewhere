@@ -213,3 +213,56 @@ describe('plugin image generation', () => {
         expect(JSON.stringify(database)).toBe(before)
     })
 })
+
+describe('reference metadata diagnostics without routing expansion', () => {
+    it.each([
+        [{ architecture: { input_modalities: ['image', 42], output_modalities: ['image'] } }, 'supported'],
+        [{ architecture: { output_modalities: ['image'] }, supported_parameters: { input_references: { type: 'range', min: 0, max: 0 } } }, 'unsupported'],
+        [{ supported_parameters: {} }, 'unknown'],
+        [{ supported_parameters: undefined }, 'unknown'],
+        [{ supported_parameters: { input_references: null } }, 'unknown'],
+        [{ supported_parameters: { input_references: { type: 'range', min: 0 } } }, 'unknown'],
+        [{ architecture: { output_modalities: ['image'] } }, 'unknown'],
+        [{ architecture: { input_modalities: ['text'], output_modalities: ['image'] } }, 'unsupported'],
+        [{ supported_parameters: { input_references: { type: 'range', min: 0, max: 0 } } }, 'unsupported'],
+        [{ supported_parameters: { input_references: { type: 'range', min: 0, max: 4 } } }, 'supported'],
+        [{ supported_parameters: { input_references: { type: 'boolean' } } }, 'supported'],
+    ])('classifies catalog capability %j as %s', async (changes, expected) => {
+        const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({ data: [{ ...model, ...changes }] })))
+        const [actual] = await getOpenRouterImageModels(fetcher as unknown as typeof fetch)
+        expect(actual.referenceSupport).toBe(expected)
+        expect(actual.supportsReferences).toBe(expected === 'supported')
+    })
+    it('Muse-shaped empty parameters remain blocked without claiming model incapability', async () => {
+        const { fetcher, dependencies } = setup({ model: { ...model, supported_parameters: {}, supports_streaming: false } })
+        await expect(generatePluginImage({ prompt: 'Synthetic edit', referenceImageDataUrl: `data:image/png;base64,${png}` }, dependencies)).rejects.toThrow('image-route metadata is missing, incomplete, or inconsistent')
+        expect(fetcher).toHaveBeenCalledTimes(1)
+        expect(fetcher.mock.calls[0][0]).toBe('https://openrouter.ai/api/v1/images/models')
+    })
+    it('reports explicit route denial without declaring the model incapable elsewhere', async () => {
+        const { fetcher, dependencies } = setup({ model: { ...model, supported_parameters: { input_references: { type: 'range', min: 0, max: 0 } } } })
+        await expect(generatePluginImage({ prompt: 'Synthetic edit', referenceImageDataUrl: `data:image/png;base64,${png}` }, dependencies)).rejects.toThrow('This does not establish the model\'s capabilities on other routes')
+        expect(fetcher).toHaveBeenCalledTimes(1)
+    })
+    it.each([false, true])('does not transpose general-provider supports_image_reference:%s into Image API capabilities', async flag => {
+        const { fetcher, dependencies } = setup({ model: { ...model, supported_parameters: {}, endpoints: [{ provider_name: 'Synthetic', supports_image_reference: flag }] } })
+        await expect(generatePluginImage({ prompt: 'Synthetic edit', referenceImageDataUrl: `data:image/png;base64,${png}` }, dependencies)).rejects.toThrow('not confirmed')
+        expect(fetcher).toHaveBeenCalledTimes(1)
+    })
+    it('still allows no-reference generation when only reference capability is unknown', async () => {
+        const { fetcher, dependencies } = setup({ model: { ...model, supported_parameters: {} } })
+        await expect(generatePluginImage({ prompt: 'Synthetic portrait' }, dependencies)).resolves.toBe(`data:image/png;base64,${png}`)
+        expect(JSON.parse(fetcher.mock.calls[1][1].body)).toEqual({ model: model.id, prompt: 'Synthetic portrait' })
+    })
+    it('requests catalog metadata each operation without new endpoint queries or retry', async () => {
+        const fetcher = vi.fn()
+          .mockResolvedValueOnce(new Response(JSON.stringify({ data: [model] })))
+          .mockResolvedValueOnce(new Response(JSON.stringify({ data: [{ b64_json: png }] })))
+          .mockResolvedValueOnce(new Response(JSON.stringify({ data: [{ ...model, supported_parameters: {} }] })))
+        const dependencies = { apiKey: 'synthetic-only', modelId: model.id, requestPermission: async () => true, fetcher: fetcher as unknown as typeof fetch }
+        const input = { prompt: 'Synthetic edit', referenceImageDataUrl: `data:image/png;base64,${png}` }
+        await generatePluginImage(input, dependencies)
+        await expect(generatePluginImage(input, dependencies)).rejects.toThrow('not confirmed')
+        expect(fetcher.mock.calls.map(([url])=>url)).toEqual(['https://openrouter.ai/api/v1/images/models', 'https://openrouter.ai/api/v1/images', 'https://openrouter.ai/api/v1/images/models'])
+    })
+})

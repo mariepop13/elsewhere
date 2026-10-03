@@ -9,6 +9,7 @@ export interface OpenRouterImageModel {
     id: string
     name: string
     supportsReferences: boolean
+    referenceSupport: 'supported' | 'unsupported' | 'unknown'
     capabilities: {
         aspectRatio?: string[]
         resolution?: string[]
@@ -67,10 +68,17 @@ function seedCapability(value: unknown): { min: number, max?: number } | undefin
     return undefined
 }
 
-function referenceSupported(value: unknown): boolean {
+// Model-level image input does not establish support on the dedicated Image API.
+// Missing or contradictory metadata stays unconfirmed and never permits a POST.
+function referenceSupport(architecture: Record<string, unknown> | undefined, value: unknown): OpenRouterImageModel['referenceSupport'] {
     const range = integerRange(value)
-    if (range) return range.max >= 1
-    return !!value && typeof value === 'object' && (value as Record<string, unknown>).type === 'boolean'
+    if (range && range.max < 1) return 'unsupported'
+    const inputs = architecture?.input_modalities
+    if (!Array.isArray(inputs) || !inputs.length) return 'unknown'
+    if (!inputs.includes('image')) return 'unsupported'
+    if (range) return range.max >= 1 ? 'supported' : 'unsupported'
+    if (value && typeof value === 'object' && (value as Record<string, unknown>).type === 'boolean') return 'supported'
+    return 'unknown'
 }
 
 function rasterMime(base64: string): string | undefined {
@@ -125,12 +133,12 @@ export async function getOpenRouterImageModels(fetcher: typeof fetch = fetch): P
         const advertisedFormats = enumValues(parameters?.output_format)
         const outputFormats = advertisedFormats?.filter((format) => rasterFormats.has(format))
         if (advertisedFormats && !outputFormats?.length) return []
+        const references = referenceSupport(architecture, parameters?.input_references)
         return [{
             id: model.id,
             name: model.name,
-            supportsReferences: Array.isArray(architecture?.input_modalities) &&
-                architecture.input_modalities.includes('image') &&
-                referenceSupported(parameters?.input_references),
+            supportsReferences: references === 'supported',
+            referenceSupport: references,
             capabilities: {
                 aspectRatio: enumValues(parameters?.aspect_ratio),
                 resolution: enumValues(parameters?.resolution),
@@ -172,8 +180,11 @@ export async function generateOpenRouterImage(
     const models = await getOpenRouterImageModels(fetcher)
     const model = models.find((item) => item.id === modelId)
     if (!model) throw new Error('The selected OpenRouter model cannot generate images or is unavailable.')
+    if (options.referenceImageDataUrl && model.referenceSupport === 'unknown') {
+        throw new Error('Reference-image support is not confirmed for the selected model on OpenRouter\'s Image API. The model may accept images, but its image-route metadata is missing, incomplete, or inconsistent. Choose an image model with confirmed reference support, or retry after the catalog is updated. No generation request was sent.')
+    }
     if (options.referenceImageDataUrl && !model.supportsReferences) {
-        throw new Error('The selected OpenRouter image model does not support reference images.')
+        throw new Error('OpenRouter\'s Image API metadata does not support reference images for this route. This does not establish the model\'s capabilities on other routes. Choose an image model with confirmed reference support. No generation request was sent.')
     }
 
     const body: Record<string, unknown> = { model: modelId, prompt: options.prompt.trim() }

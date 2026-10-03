@@ -25,6 +25,7 @@ These screenshots show the RisuAI interface before Elsewhere's visual changes.
 - **Multiple API Supports**: Supports OpenAI, Claude, Gemini, DeepInfra, Ooba, OpenRouter... and More!
 - **Emotion Images**: Display the image of the current character, according to his/her expressions!
 - **Group Chats**: Multiple characters in one chat.
+- **Native Elsewords**: Translate, generate and complete character cards with original comparison, editable output, confirmed application, portraits and JSON/PNG exports. See the [native workflow](docs/elsewords-native.md).
 - **Plugins**: Add your features and providers, and simply share.
 - **Regex Script**: Modify model's output by regex, to make a custom GUI and others
 - **Powerful Translators**: Automatically translate the input/output, so you can roleplay without knowing model's language.

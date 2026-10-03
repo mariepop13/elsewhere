@@ -1,4 +1,6 @@
 <script lang="ts">
+    import ElsewordsWorkspace from './lib/Elsewords/ElsewordsWorkspace.svelte';
+    import { elsewordsOpen } from './ts/elsewords/entry';
     import { DynamicGUI, settingsOpen, sideBarStore, ShowRealmFrameStore, openPresetList, openPersonaList, MobileGUI, CustomGUISettingMenuStore, loadedStore, alertStore, LoadingStatusState, bookmarkListOpen, popupStore, easyPanelStore, popUpEditorStore, loadoutModalStore, irisStore, customSideBarConfigDialogStore } from './ts/stores.svelte';
     import { socialFeedOpen } from './ts/stores.svelte';
     import SocialFeed from './lib/Social/SocialFeed.svelte';
@@ -251,6 +253,9 @@
             {/if}
             <ChatScreen />
         {/if}
+    {/if}
+    {#if $elsewordsOpen && $loadedStore && didFirstSetup}
+        <ElsewordsWorkspace />
     {/if}
     {#if $alertStore.type !== 'none'}
         <AlertComp />
