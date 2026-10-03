@@ -18,7 +18,7 @@ export function imageFailureHint(data: unknown): string {
     if (typeof message !== 'string') return 'Review the selected image model and its options in Settings.'
     if (/credit|balance|payment/i.test(message)) return 'The provider reported an account or credit problem.'
     if (/api.?key|authenticat|unauthoriz/i.test(message)) return 'The provider reported an authentication problem. Check the OpenRouter key in Settings.'
-    if (/reference|input_references/i.test(message)) return 'The provider rejected the reference image. Check that the selected model supports references.'
+    if (/reference|input_references/i.test(message)) return 'The provider rejected the reference image on the selected image route. Check that this route confirms reference support in Settings.'
     if (/aspect_ratio|resolution|quality|output_format|seed|parameter/i.test(message)) return 'The provider rejected an image option. Review the selected model and its configured options.'
     if (/no.*endpoint|provider.*unavailable|model.*unavailable|not.*support/i.test(message)) return 'No compatible image provider was available for this model and options.'
     return 'Review the selected image model and its options in Settings.'

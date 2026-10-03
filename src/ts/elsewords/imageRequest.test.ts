@@ -21,3 +21,12 @@ describe('native image transport', () => {
         expect(hint).not.toContain('sk-fake'); expect(hint).not.toContain('private fixture')
     })
 })
+
+it('describes a provider reference rejection as a route failure without echoing its text',async()=>{
+ const transport=vi.fn().mockResolvedValue({ok:false,status:400,data:{error:{message:'unsupported input_references; synthetic-private-key; synthetic-private-prompt'}},headers:{}})
+ const pending=createImageFetcher(transport)('https://openrouter.ai/api/v1/images',{method:'POST',body:'{}'})
+ await expect(pending).rejects.toThrow('selected image route')
+ expect(transport).toHaveBeenCalledTimes(1)
+ const hint=imageFailureHint({error:{message:'unsupported input_references; synthetic-private-key; synthetic-private-prompt'}})
+ expect(hint).not.toContain('synthetic-private');expect(hint).not.toContain('selected model supports')
+})
