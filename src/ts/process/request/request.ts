@@ -58,6 +58,8 @@ interface requestDataArgument{
     tools?: MCPTool[]
     rememberToolUsage?: boolean
     blockPlugins?:boolean
+    /** Card-only work excludes implicit character/persona context in serializers. */
+    isolatedContext?:boolean
 }
 
 export interface RequestDataArgumentExtended extends requestDataArgument{
@@ -443,6 +445,20 @@ export function reformater(formated:OpenAIChat[],modelInfo:LLMModel|LLMFlags[]){
 
 
 export async function requestChatDataMain(arg:requestDataArgument, model:ModelModeExtended, abortSignal:AbortSignal=null):Promise<requestDataResponse> {
+    // Capability lookup is asynchronous: do not dispatch a cancelled request or
+    // combine its original capabilities with a newly selected model/route.
+    const requestIdentity = () => {
+        const current = getDatabase()
+        const selected = arg.staticModel || (current.seperateModelsForAxModels && current.seperateModels[model]) || (model === 'model' ? current.aiModel : current.subModel)
+        return JSON.stringify([selected, current.openrouterRequestModel, current.openrouterProvider,
+            current.customProxyRequestModel, current.customAPIFormat, current.forceReplaceUrl,
+            current.nanogptRequestModel, current.ollamaModel, current.ollamaCloudModel,
+            current.ollamaModelSource, current.ollamaRequestFormat, current.ollamaURL,
+            current.textgenWebUIBlockingURL, current.textgenWebUIStreamURL, current.koboldURL,
+            current.customModels?.map(m => [m.id, m.internalId, m.format, m.url])])
+    }
+    const initialRequestIdentity = requestIdentity()
+    if (abortSignal?.aborted) return { type: 'fail', result: 'The request was cancelled. Previous output was retained.', noRetry: true }
     const db = getDatabase()
     const targ:RequestDataArgumentExtended = arg
 
@@ -489,6 +505,8 @@ export async function requestChatDataMain(arg:requestDataArgument, model:ModelMo
 
     targ.tokenSelection = selectionForModel(targ.modelInfo, db.openrouterRequestModel, db.openrouterProvider)
     targ.tokenCapabilities = await loadTokenCapabilities(targ.tokenSelection)
+    if (abortSignal?.aborted) return { type: 'fail', result: 'The request was cancelled. Previous output was retained.', noRetry: true }
+    if (requestIdentity() !== initialRequestIdentity) return { type: 'fail', result: 'The configured model changed. Start this operation again.', noRetry: true }
     targ.tokenContext = model === 'model' ? db.maxContext : undefined
     const tokenErrors = validateTokenBudget(targ.tokenCapabilities, { context: targ.tokenContext, output: targ.maxTokens, input: targ.inputTokenEstimate,
         reasoning: targ.aiModel === 'openrouter' && db.openrouterReasoning?.enabled !== false ? db.openrouterReasoning?.maxTokens : undefined,
@@ -561,8 +579,8 @@ async function requestNovelAI(arg:RequestDataArgumentExtended):Promise<requestDa
     const temperature = arg.temperature
     const maxTokens = arg.maxTokens
     const biasString = arg.biasString
-    const currentChar = getCurrentCharacter()
-    const prompt = stringlizeNAIChat(formated, currentChar?.name ?? '', arg.continue)
+    const currentChar = arg.isolatedContext ? undefined : getCurrentCharacter()
+    const prompt = stringlizeNAIChat(formated, currentChar?.name ?? '', arg.continue, arg.isolatedContext)
     const abortSignal = arg.abortSignal
     let logit_bias_exp:{
         sequence: number[], bias: number, ensure_sequence_finish: false, generate_once: true
@@ -663,7 +681,7 @@ async function requestNovelAI(arg:RequestDataArgumentExtended):Promise<requestDa
     }
     return {
         type: "success",
-        result: unstringlizeChat(da.data.output, formated, currentChar?.name ?? '')
+        result: arg.isolatedContext ? (da.data.output) : unstringlizeChat(da.data.output, formated, currentChar?.name ?? '')
     }
 }
 
@@ -672,17 +690,17 @@ async function requestOobaLegacy(arg:RequestDataArgumentExtended):Promise<reques
     const db = getDatabase()
     const aiModel = arg.aiModel
     const maxTokens = arg.maxTokens
-    const currentChar = getCurrentCharacter()
+    const currentChar = arg.isolatedContext ? undefined : getCurrentCharacter()
     const useStreaming = arg.useStreaming
     const abortSignal = arg.abortSignal
     let streamUrl = db.textgenWebUIStreamURL.replace(/\/api.*/, "/api/v1/stream")
     let blockingUrl = db.textgenWebUIBlockingURL.replace(/\/api.*/, "/api/v1/generate")
     let bodyTemplate:{[key:string]:any} = {}
-    const prompt = applyChatTemplate(formated)
-    let stopStrings = getStopStrings(false)
+    const prompt = applyChatTemplate(formated, { isolatedContext: arg.isolatedContext })
+    let stopStrings = getStopStrings(false, arg.isolatedContext)
     if(db.localStopStrings){
         stopStrings = db.localStopStrings.map((v) => {
-            return risuChatParser(v.replace(/\\n/g, "\n"))
+            return arg.isolatedContext ? v.replace(/\\n/g, "\n") : risuChatParser(v.replace(/\\n/g, "\n"))
         })
     }
 
@@ -813,7 +831,7 @@ async function requestOobaLegacy(arg:RequestDataArgumentExtended):Promise<reques
 
             return {
                 type: 'success',
-                result: unstringlizeChat(result, formated, currentChar?.name ?? '')
+                result: arg.isolatedContext ? (result) : unstringlizeChat(result, formated, currentChar?.name ?? '')
             }
         } catch (error) {                    
             return {
@@ -836,11 +854,11 @@ async function requestOoba(arg:RequestDataArgumentExtended):Promise<requestDataR
     const aiModel = arg.aiModel
     const maxTokens = arg.maxTokens
     const temperature = arg.temperature
-    const prompt = applyChatTemplate(formated)
-    let stopStrings = getStopStrings(false)
+    const prompt = applyChatTemplate(formated, { isolatedContext: arg.isolatedContext })
+    let stopStrings = getStopStrings(false, arg.isolatedContext)
     if(db.localStopStrings){
         stopStrings = db.localStopStrings.map((v) => {
-            return risuChatParser(v.replace(/\\n/g, "\n"))
+            return arg.isolatedContext ? v.replace(/\\n/g, "\n") : risuChatParser(v.replace(/\\n/g, "\n"))
         })
     }
     let bodyTemplate:Record<string, any> = {
@@ -1014,7 +1032,7 @@ async function requestKobold(arg:RequestDataArgumentExtended):Promise<requestDat
     const maxTokens = arg.maxTokens
     const abortSignal = arg.abortSignal
 
-    const prompt = applyChatTemplate(formated)
+    const prompt = applyChatTemplate(formated, { isolatedContext: arg.isolatedContext })
     const url = new URL(db.koboldURL)
     if(url.pathname.length < 3){
         url.pathname = 'api/v1/generate'
@@ -1086,7 +1104,7 @@ async function requestNovelList(arg:RequestDataArgumentExtended):Promise<request
     const maxTokens = arg.maxTokens
     const temperature = arg.temperature
     const biasString = arg.biasString
-    const currentChar = getCurrentCharacter()
+    const currentChar = arg.isolatedContext ? undefined : getCurrentCharacter()
     const aiModel = arg.aiModel
     const auth_key = db.novellistAPI;
     const api_server_url = 'https://api.tringpt.com/';
@@ -1104,7 +1122,7 @@ async function requestNovelList(arg:RequestDataArgumentExtended):Promise<request
     };
     
     let send_body: Record<string, any> = {
-        text: stringlizeAINChat(formated, currentChar?.name ?? '', arg.continue),
+        text: stringlizeAINChat(formated, currentChar?.name ?? '', arg.continue, arg.isolatedContext),
         length: maxTokens,
         temperature: temperature,
         top_p: db.ainconfig.top_p,
@@ -1158,10 +1176,10 @@ async function requestNovelList(arg:RequestDataArgumentExtended):Promise<request
     }
 
     const result = response.data.data[0];
-    const unstr = unstringlizeAIN(result, formated, currentChar?.name ?? '')
+    if (arg.isolatedContext) return { type: 'success', result: String(result ?? '') }
     return {
-        'type': 'multiline',
-        'result': unstr
+        type: 'multiline',
+        result: unstringlizeAIN(result, formated, currentChar?.name ?? '')
     }
 }
 
@@ -1255,7 +1273,7 @@ async function requestOllama(arg:RequestDataArgumentExtended):Promise<requestDat
         const result = formatThinkingOutput(response.message?.thinking ?? '', response.message?.content ?? '')
         return {
             type: 'success',
-            result: unstringlizeChat(result, formated, arg.currentChar?.name ?? ''),
+            result: arg.isolatedContext ? (result) : unstringlizeChat(result, formated, arg.currentChar?.name ?? ''),
             model: arg.aiModel
         }
     }
@@ -1424,7 +1442,7 @@ async function requestHorde(arg:RequestDataArgumentExtended):Promise<requestData
     const formated = arg.formated
     const db = getDatabase()
     const aiModel = arg.aiModel
-    const currentChar = getCurrentCharacter()
+    const currentChar = arg.isolatedContext ? undefined : getCurrentCharacter()
     const abortSignal = arg.abortSignal
 
     if(arg.previewBody){
@@ -1436,7 +1454,7 @@ async function requestHorde(arg:RequestDataArgumentExtended):Promise<requestData
         }
     }
 
-    const prompt = applyChatTemplate(formated)
+    const prompt = applyChatTemplate(formated, { isolatedContext: arg.isolatedContext })
 
     const realModel = aiModel.split(":::")[1]
 
@@ -1519,7 +1537,7 @@ async function requestHorde(arg:RequestDataArgumentExtended):Promise<requestData
             if(generations && generations.length > 0){
                 return {
                     type: "success",
-                    result: unstringlizeChat(generations[0].text ?? '', formated, currentChar?.name ?? '')
+                    result: arg.isolatedContext ? (generations[0].text ?? '') : unstringlizeChat(generations[0].text ?? '', formated, currentChar?.name ?? '')
                 }
             }
             return {
@@ -1535,11 +1553,11 @@ async function requestWebLLM(arg:RequestDataArgumentExtended):Promise<requestDat
     const formated = arg.formated
     const db = getDatabase()
     const aiModel = arg.aiModel
-    const currentChar = getCurrentCharacter()
+    const currentChar = arg.isolatedContext ? undefined : getCurrentCharacter()
     const maxTokens = arg.maxTokens
     const temperature = arg.temperature
     const realModel = aiModel.split(":::")[1]
-    const prompt = applyChatTemplate(formated)
+    const prompt = applyChatTemplate(formated, { isolatedContext: arg.isolatedContext })
 
     if(arg.previewBody){
         return {
@@ -1565,7 +1583,7 @@ async function requestWebLLM(arg:RequestDataArgumentExtended):Promise<requestDat
     const v = await runTransformers(prompt, realModel, finalParams)
     return {
         type: 'success',
-        result: unstringlizeChat((v.generated_text as string) ?? '', formated, currentChar?.name ?? '')
+        result: arg.isolatedContext ? ((v.generated_text as string) ?? '') : unstringlizeChat((v.generated_text as string) ?? '', formated, currentChar?.name ?? '')
     }
 }
 

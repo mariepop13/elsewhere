@@ -27,9 +27,10 @@ export const templateEffect = {
 export const applyChatTemplate = (messages:OpenAIChat[], arg:{
     type?: string
     custom?: string
+    isolatedContext?: boolean
 } = {}) => {
     const db = getDatabase()
-    const currentChar = getCurrentCharacter()
+    const currentChar = arg.isolatedContext ? undefined : getCurrentCharacter()
     const type = arg.type ?? db.instructChatTemplate
     if(!type){
         throw new Error('Template type is not set')
@@ -94,8 +95,8 @@ export const applyChatTemplate = (messages:OpenAIChat[], arg:{
     return template.render({
         "messages": formatedMessages,
         "add_generation_prompt": true,
-        "risu_char": currentChar.name,
-        "risu_user": getUserName(),
+        "risu_char": currentChar?.name ?? "",
+        "risu_user": arg.isolatedContext ? "" : getUserName(),
         "eos_token": "",
         "bos_token": "",
     })

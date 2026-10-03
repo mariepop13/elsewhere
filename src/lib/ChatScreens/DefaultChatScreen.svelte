@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { openElsewords } from 'src/ts/elsewords/entry';
 
     import Suggestion from './Suggestion.svelte';
     import { CameraIcon, DatabaseIcon, DicesIcon, GlobeIcon, ImagePlusIcon, LanguagesIcon, Laugh, MenuIcon, MicOffIcon, PackageIcon, Plus, RefreshCcwIcon, ReplyIcon, Send, StepForwardIcon, XIcon, BrainIcon, ArrowDown, SparkleIcon } from "@lucide/svelte";
@@ -947,6 +948,8 @@
                             <span class="ml-2">{language.easyPanel}</span>
                         </button>
                     {/if}
+
+                    <button type="button" class="flex items-center cursor-pointer hover:text-textcolor2 transition-colors" onclick={() => { openMenu = false; openElsewords() }}><span aria-hidden="true">✦</span><span class="ml-2">Elsewords</span></button>
 
                     {#each additionalChatMenu as menu}
                         <button type="button" class="flex items-center cursor-pointer hover:text-green-500 transition-colors" onclick={async () => {

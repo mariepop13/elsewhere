@@ -18,6 +18,14 @@ Preserve upstream attribution, original copyrights and license texts. [NOTICE](.
 - Preserve user data, secrets and session plans outside publication. No real paid provider is required for the first run.
 - A draft PR and passing CI do not authorize its merge, a tag, artifact publication or deployment. Those operations require separate authorization.
 
+## Native character workshop
+
+Elsewords becomes a native Elsewhere character workshop with full parity with the merged plugin, rather than a separately maintained product. The chat-menu and Settings entry points share translation, new-character generation, completion, portrait handling and import/export. Original and editable output are reviewed together; one globally validated result is used for confirmed application, creation and downloads, without per-field keep/reject decisions.
+
+Reuse Elsewhere model settings, credentials and authoritative model limits. Supply only user-written instructions and explicitly staged card data, excluding implicit chat/persona context. Retain the eight translation preferences through optional reviewed import; keep the old plugin storage and repository until separately authorized retirement. Drafts and response diagnostics remain session-only.
+
+Promotion requires exact-head automated validation and real application acceptance of comparison/editing, confirmation/conflicts, cancellation, migration, file adapters and mobile/keyboard flows. Format support follows the native guide; exhaustive CCv3 round-trip fidelity, every provider and every platform are not certified by the initial integration. See [Native Elsewords](elsewords-native.md).
+
 ## Later distribution scopes
 
 Desktop packaging and updater publication use the separate [desktop release checklist](releasing.md). No public release version is assigned by this source-only phase.

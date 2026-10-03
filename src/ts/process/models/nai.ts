@@ -2,7 +2,7 @@ import { getDatabase } from "src/ts/storage/database.svelte"
 import { getUserName } from "src/ts/util"
 import type { OpenAIChat } from "../index.svelte"
 
-export function stringlizeNAIChat(formated:OpenAIChat[], char:string, continued: boolean){
+export function stringlizeNAIChat(formated:OpenAIChat[], char:string, continued: boolean, isolatedContext = false){
     const db = getDatabase()
     let seperator = db.NAIsettings.seperator.replaceAll("\\n","\n") || '\n'
     let starter = db.NAIsettings.starter.replaceAll("\\n","\n") || '⁂'
@@ -31,7 +31,7 @@ export function stringlizeNAIChat(formated:OpenAIChat[], char:string, continued:
                 res += '> '
             }
             if(db.NAIappendName){
-                res += getUserName() + ": "
+                res += (isolatedContext ? "User" : getUserName()) + ": "
             }
             res += form.content
             resultString.push(res)
@@ -44,9 +44,9 @@ export function stringlizeNAIChat(formated:OpenAIChat[], char:string, continued:
     let res = resultString.join(seperator)
 
     if(!continued){
-        res += `${seperator}${char}:`
+        res += `${seperator}${isolatedContext ? "Assistant" : char}:`
     }
-    console.log(res)
+    if (!isolatedContext) console.log(res)
     return res
 }
 
