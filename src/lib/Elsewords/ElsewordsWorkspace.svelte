@@ -4,6 +4,7 @@
     import { elsewordsOpen, takeElsewordsSession, suspendElsewordsSession } from '../../ts/elsewords/entry'
     import { reviewLabel } from '../../ts/elsewords/session.svelte'
     import { elsewordsHost } from '../../ts/elsewords/host'
+    import { sizeReviewEditor } from '../../ts/elsewords/reviewEditorSizing'
     import { cardData } from '../../ts/elsewords/cardCore.js'
     import { SettingsMenuIndex, settingsOpen, alertStore } from '../../ts/stores.svelte'
 
@@ -159,8 +160,8 @@
                         <section class="field-review" aria-labelledby={`elsewords-field-${index}`}>
                             <h3 id={`elsewords-field-${index}`}>{reviewLabel(field.path)}</h3>
                             <div class="comparison" class:output-only={field.original === null}>
-                                {#if field.original !== null}<div><strong>Original (read only)</strong><pre>{field.original}</pre></div>{/if}
-                                <label>{s.resultKind === 'translation' ? 'Translation' : 'Generated output'} (editable)<textarea class:compact={field.path.at(-1) === 'name'} aria-label={`Edit ${reviewLabel(field.path)}`} disabled={s.locked} bind:value={field.draft}></textarea></label>
+                                {#if field.original !== null}<div><strong>Original (read only)</strong><pre data-review-original>{field.original}</pre></div>{/if}
+                                <label>{s.resultKind === 'translation' ? 'Translation' : 'Generated output'} (editable)<textarea use:sizeReviewEditor={{ value: field.draft, original: field.original, compact: field.path.at(-1) === 'name', identity: field }} class:compact={field.path.at(-1) === 'name'} aria-label={`Edit ${reviewLabel(field.path)}`} disabled={s.locked} bind:value={field.draft}></textarea></label>
                             </div>
                         </section>
                     {/each}
@@ -222,6 +223,11 @@
     .summary p { display: -webkit-box; -webkit-line-clamp: 4; line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.6; }
     .comparison { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; } .comparison.output-only { grid-template-columns: minmax(0, 1fr); }
     .comparison strong { display: block; color: var(--risu-theme-textcolor2); font-size: .8rem; font-weight: 500; margin-bottom: .5rem; }
+    .comparison > div, .comparison > label { min-width: 0; }
+    .comparison > label { margin-bottom: 0; }
+    .comparison textarea { min-height: 8rem; box-sizing: border-box; overflow-y: auto; }
+    .comparison textarea.compact { min-height: 3.5rem; }
+    .comparison pre { margin: 0; }
     .field-review { border-top: 1px solid var(--risu-theme-darkborderc); padding-top: .9rem; margin-top: 1.25rem; }
     pre, dd, .summary p { white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; }
     pre { background: var(--risu-theme-canvas); border: 1px solid var(--risu-theme-darkborderc); padding: .8rem; border-radius: .6rem; font-size: .85rem; line-height: 1.65; max-height: 32rem; overflow: auto; }
@@ -239,5 +245,5 @@
     .confirmation { max-width: 36rem; max-height: 90dvh; overflow: auto; }
     @media (prefers-reduced-motion: reduce) { button { transition: none; } }
     @media (max-width: 1100px) { .layout { grid-template-columns: minmax(0, 1fr); } .empty-review { min-height: 15rem; } }
-    @media (max-width: 600px) { .comparison, .form-grid { grid-template-columns: minmax(0, 1fr); } .wide { grid-column: auto; } .tabs { width: 100%; } .tabs button { flex: 1; padding-inline: .65rem; } header { gap: .75rem; } .actions button { max-width: 100%; } }
+    @media (max-width: 600px) { .comparison pre { max-height: max(8rem, min(32rem, 60dvh)); } .comparison textarea { max-height: max(8rem, 85dvh); } .comparison, .form-grid { grid-template-columns: minmax(0, 1fr); } .wide { grid-column: auto; } .tabs { width: 100%; } .tabs button { flex: 1; padding-inline: .65rem; } header { gap: .75rem; } .actions button { max-width: 100%; } }
 </style>
