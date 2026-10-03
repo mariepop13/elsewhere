@@ -1,3 +1,4 @@
+import { finalResponseText } from './responseText.js'
 import { clone, cardData, cardForElsewhereExport, cardForElsewhereCreation, cardExportFilename, collectTranslatableFields, createBatches, parseBatchResponse, parseGeneratedCardResponse, applyTranslations, createOutputReview, applyOutputReview, mergeCompletedCard, type Card, type ReviewField } from './cardCore.js'
 import { toTranslatableCard, createConfirmedSave, applyTranslatableCard } from './characterAdapter.js'
 import { buildPortraitPrompt, responseProblemHint, buildTranslationPrompt, buildTranslationRecoveryPrompt, buildGenerationPrompt, buildGenerationRecoveryPrompt } from './prompts.js'
@@ -151,7 +152,8 @@ export class ElsewordsSession {
         this.status = 'Review and edit the result, then confirm before applying it.'
     }
     private diagnostic(label: string, error: unknown, response: string) {
-        this.debug.push({ label, error: message(error), response: response.length > 8000 ? response.slice(0, 8000) + '\n[Response truncated after 8000 characters.]' : response })
+        const finalText = finalResponseText(response)
+        this.debug.push({ label, error: message(error), response: finalText.length > 8000 ? finalText.slice(0, 8000) + '\n[Diagnostic display limited to 8000 characters; not evidence of provider truncation.]' : finalText })
     }
     private async request(prompt: string, identity: string) {
         this.guard(); if (this.host.modelIdentity() !== identity) throw new Error('The configured model changed. Start this operation again.')
@@ -212,7 +214,8 @@ export class ElsewordsSession {
         if (this.locked || !this.reviewBase) return
         try {
             const output = applyOutputReview(this.reviewBase, this.review, { generated: this.resultKind === 'generated' })
-            this.output = output; this.review.forEach(field => { field.translation = field.draft }); this.error = ''; this.status = 'Preview updated. No model request was made.'
+            const normalizedFields = collectTranslatableFields(output, { includeEmpty: true })
+            this.output = output; this.review.forEach((field, index) => { field.draft = normalizedFields[index].text; field.translation = field.draft }); this.error = ''; this.status = 'Preview updated. No model request was made.'
         } catch (error) { this.error = message(error) }
     }
     cancelEdits() { if (!this.locked) { this.review.forEach(field => { field.draft = field.translation }); this.error = ''; this.status = 'Edits cancelled. The last validated preview was retained.' } }

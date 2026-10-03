@@ -1,3 +1,4 @@
+import { finalResponseText } from './responseText.js';
 // Adapted from Marie's Elsewords sources at c634135d; maintained natively in Elsewhere.
 const TEXT_FIELDS = new Set([
   'description', 'personality', 'scenario', 'first_mes', 'firstMes', 'mes_example',
@@ -179,7 +180,7 @@ export function createBatches(fields, maxCharacters = 6000) {
 
 function responseText(raw) {
   if (typeof raw !== 'string') throw new Error('The model response was not text.');
-  return raw.replace(/<(?:thoughts|think)\b[^>]*>[\s\S]*?<\/(?:thoughts|think)>/gi, '').trim();
+  return finalResponseText(raw);
 }
 
 function directJsonValue(raw) {
@@ -284,6 +285,22 @@ export function normalizeGeneratedCardPlaceholders(value) {
     : value;
 }
 
+// Rewriting preserves distinct macro identities per field, not their accidental
+// repetition count. Translation remains occurrence-exact through protected tokens.
+function assertGeneratedMacros(original, candidate, path) {
+  const required = new Set(normalizeGeneratedCardPlaceholders(original).match(/\{\{[^{}]*\}\}/g) || []);
+  const normalized = normalizeGeneratedCardPlaceholders(candidate);
+  if (/\{\{\s*\}\}|\{\{\{|\}\}\}/.test(normalized)) throw new Error(`The generated ${path.join(' › ')} contains a malformed role variable.`);
+  const returned = new Set(normalized.match(/\{\{[^{}]*\}\}/g) || []);
+  if ([...required].some((macro) => !returned.has(macro))) {
+    throw new Error(`Preserve the staged {{…}} variables in ${path.join(' › ')}.`);
+  }
+  const remainder = normalized.replace(/\{\{[^{}]*\}\}/g, '');
+  if (remainder.includes('{{') || remainder.includes('}}')) {
+    throw new Error(`The generated ${path.join(' › ')} contains a malformed role variable.`);
+  }
+}
+
 export function parseGeneratedCardResponse(raw) {
   let card;
   try { card = JSON.parse(extractSingleJsonObject(raw)); }
@@ -292,6 +309,7 @@ export function parseGeneratedCardResponse(raw) {
   let data;
   try { data = cardData(normalized); }
   catch { throw new Error('The generated character response was not a supported character card.'); }
+  for (const field of collectTranslatableFields(normalized, { includeEmpty: true })) assertGeneratedMacros('', field.text, field.path);
   if (/\{\{[^{}]*\}\}/.test(data.name)) throw new Error('The generated character name must be a real name, not a role variable.');
   for (const field of GENERATED_CARD_REQUIRED_FIELDS) {
     if (!isMeaningfulGeneratedText(data[field])) {
@@ -339,12 +357,13 @@ export function applyOutputReview(output, review, { generated = false } = {}) {
       || field.baseline !== expected.text || typeof field.draft !== 'string';
   })) throw new Error('The editable fields do not match the output card.');
   for (const field of review) {
+    if (generated) assertGeneratedMacros(field.baseline, field.draft, field.path);
     const placeholders = (text) => (text.match(/\{\{[^{}]*\}\}/g) || []).sort();
-    if (JSON.stringify(placeholders(field.baseline)) !== JSON.stringify(placeholders(field.draft))) {
+    if (!generated && JSON.stringify(placeholders(field.baseline)) !== JSON.stringify(placeholders(field.draft))) {
       throw new Error(`Preserve the {{…}} variables in ${field.path.join(' › ')}.`);
     }
   }
-  const result = applyTranslations(output, review, review.map((field) => ({ id: field.id, text: field.draft })));
+  const result = applyTranslations(output, review, review.map((field) => ({ id: field.id, text: generated ? normalizeGeneratedCardPlaceholders(field.draft) : field.draft })));
   const data = cardData(result);
   if (generated && /\{\{[^{}]*\}\}/.test(data.name)) throw new Error('The generated character name must be a real name, not a role variable.');
   if (generated) for (const key of GENERATED_CARD_REQUIRED_FIELDS) {
@@ -366,15 +385,10 @@ export function mergeCompletedCard(original, generated) {
   }
   const generatedFields = new Map(collectTranslatableFields(generated, { includeEmpty: true }).map((field) => [JSON.stringify(field.path), field.text]));
   for (const field of collectTranslatableFields(original, { includeEmpty: true })) {
-    const text = generatedFields.get(JSON.stringify(field.path));
+    const value = generatedFields.get(JSON.stringify(field.path));
+    const text = value === undefined ? undefined : normalizeGeneratedCardPlaceholders(value);
     if (text !== undefined) {
-      const originalMacros = field.text.match(/\{\{[^{}]*\}\}/g) || [];
-      const remaining = text.match(/\{\{[^{}]*\}\}/g) || [];
-      for (const macro of originalMacros) {
-        const index = remaining.indexOf(macro);
-        if (index < 0) throw new Error(`Preserve the staged {{…}} variables in ${field.path.join(' › ')}.`);
-        remaining.splice(index, 1);
-      }
+      assertGeneratedMacros(field.text, text, field.path);
       setAtPath(result, field.path, text);
     }
   }
