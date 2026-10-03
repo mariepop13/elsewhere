@@ -1,9 +1,18 @@
 <script lang="ts">
     import { onDestroy, tick, untrack } from 'svelte'
-    import { ArrowLeft, Heart, MessageCircle, Send, Users, X, CircleHelp, ChevronDown, Sparkles } from '@lucide/svelte'
+    import { ArrowLeft, ArrowRight, Home, MessageCircle, Users, Settings, X, ChevronDown, Sparkles, Sun, Moon, Plus } from '@lucide/svelte'
+    import { get } from 'svelte/store'
+    import { changeChar } from 'src/ts/characters'
+    import './socialWorld.css'
+    import TokenBudgetControl from '../Setting/TokenBudgetControl.svelte'
+    import SocialBrand from './SocialBrand.svelte'
+    import SocialMentionInput from './SocialMentionInput.svelte'
+    import SocialPostCard from './SocialPostCard.svelte'
+    import SocialProfileDialog from './SocialProfileDialog.svelte'
+    import { addSocialComment, createSocialQuote, toggleSocialRepost, socialTimeline, ensureSocialHandles, socialTargets, type SocialTarget } from 'src/ts/social/socialInteractions'
     import { language } from 'src/lang'
     import { DBState, socialFeedOpen, settingsOpen, SettingsMenuIndex, MobileGUI, MobileGUIStack, MobileSideBar, selectedCharID } from 'src/ts/stores.svelte'
-    import { createSocialFeed, createSocialPost, socialPersonaAuthor, MAX_CAST, MAX_POST_LENGTH, MAX_PROFILE_LENGTH, SocialGeneration, eligibleSocialActors, type SocialReactionKind } from 'src/ts/social/socialFeed'
+    import { createSocialFeed, createSocialPost, socialPersonaAuthor, MAX_CAST, MAX_POST_LENGTH, MAX_PROFILE_LENGTH, SocialGeneration, eligibleSocialActors } from 'src/ts/social/socialFeed'
     import { generateSocialPublication, generateSocialResponse, socialModelIdentity, socialModelSupported } from 'src/ts/social/socialProvider'
     import SocialRelationships from './SocialRelationships.svelte'
     import SocialAvatar from './SocialAvatar.svelte'
@@ -42,29 +51,77 @@
         status = ''
     }
     onDestroy(() => setupVersion++)
-    let castExpanded = $state(false)
-    let composerExpanded = $state(false)
     let composerInput = $state<HTMLTextAreaElement>()
-    let composerTrigger = $state<HTMLButtonElement>()
-
-    async function openComposer() {
-        composerExpanded = true
-        await tick()
-        composerInput?.focus()
-    }
-    async function closeComposer() {
-        composerExpanded = false
-        await tick()
-        composerTrigger?.focus()
-    }
-    let selectedCard = $state('')
-    let publisherId = $state('')
+    let page = $state<'Feed' | 'Messages' | 'Relationships' | 'Settings'>('Feed')
+    const navigation = [{ name: 'Feed' as const, icon: Home }, { name: 'Messages' as const, icon: MessageCircle }, { name: 'Relationships' as const, icon: Users }, { name: 'Settings' as const, icon: Settings }]
+    let recent = $state(false)
+    let audience = $state<'Public' | 'My circle'>('Public')
+    let profileId = $state('')
+    let quoteOpen = $state(false)
+    let quoteDialog = $state<HTMLDialogElement>()
+    let systemLight = $state(false)
     let authorChoice = $state(-1)
     let personaAuthor = $derived(socialPersonaAuthor(DBState.db.personas, DBState.db.selectedPersona, authorChoice, { name: DBState.db.username, image: DBState.db.userIcon }))
     let author = $derived(authorChoice === -1 && feed.setup ? feed.setup.you : personaAuthor)
+    let targets = $derived(socialTargets(feed, author))
+    let profile = $derived(targets.find(target => target.id === profileId))
+    let timeline = $derived(socialTimeline(feed, !recent))
+    let light = $derived(feed.preferences?.appearance === 'Light' || (feed.preferences?.appearance === 'System' && systemLight))
+    $effect(() => {
+        const authors = targets
+        const current = feed
+        untrack(() => {
+            ensureSocialHandles(current, authors)
+            current.preferences ??= { appearance: 'Dark', compact: false }
+            current.commentDrafts ??= {}
+            for (const post of current.posts) current.commentDrafts[post.id] ??= { text: '' }
+        })
+    })
+    $effect(() => {
+        const query = window.matchMedia('(prefers-color-scheme: light)')
+        const update = () => systemLight = query.matches
+        update(); query.addEventListener('change', update)
+        return () => query.removeEventListener('change', update)
+    })
+    $effect(() => { if (quoteOpen) { if (!quoteDialog?.open) quoteDialog?.showModal() } else if (quoteDialog?.open) quoteDialog.close() })
+    function navigate(next: typeof page) { cancel(); page = next; status = '' }
+    function showProfile(target: SocialTarget) { profileId = target.id }
+    async function openMessage(id: string) {
+        const index = DBState.db.characters.findIndex(character => character.chaId === id && character.type !== 'group')
+        if (index < 0) { status = 'This character is no longer in your library.'; return }
+        cancel()
+        const database = DBState.db, cards = database.characters, version = generationVersion
+        await changeChar(index)
+        if (DBState.db !== database || database.characters !== cards || version !== generationVersion || database.characters[index]?.chaId !== id) return
+        if (get(selectedCharID) !== index) { status = 'Finish the current chat request before opening this conversation.'; return }
+        profileId = ''
+        MobileSideBar.set(0); MobileGUIStack.set(1)
+        socialFeedOpen.set(false)
+    }
+    function beginQuote(id: string) {
+        if (feed.quoteDraft?.postId !== id) feed.quoteDraft = { postId: id, text: '' }
+        quoteOpen = true
+    }
+    function publishQuote(event: SubmitEvent) {
+        event.preventDefault()
+        const draft = feed.quoteDraft, source = feed.posts.find(post => post.id === draft?.postId)
+        if (!source || !draft?.text.trim()) { status = 'The original post is no longer available.'; return }
+        try { cancel(); feed.posts.unshift(createSocialQuote(author, draft.text, source, audience === 'My circle' ? feed.cast.map(actor => actor.characterId) : undefined)); feed.quoteDraft = undefined; quoteOpen = false; status = 'Quote posted.' } catch { status = 'Choose a valid post and at least one character for a circle audience.' }
+    }
+    function comment(id: string, text: string, parentId?: string): boolean {
+        const post = feed.posts.find(post => post.id === id)
+        if (!post) return false
+        try { cancel(); addSocialComment(post, author, text, parentId); status = 'Comment added.'; return true } catch { status = 'Your comment was kept. Check its length and reply target.'; return false }
+    }
+    function removePost(id: string) {
+        cancel(); feed.posts = feed.posts.filter(post => post.id !== id)
+        if (feed.commentDrafts) delete feed.commentDrafts[id]
+        status = 'Post deleted.'
+    }
+    async function sourcePost(id: string) { navigate('Feed'); recent = true; await tick(); document.getElementById(`social-post-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }) }
+    let publisherId = $state('')
     let busyPost = $state('')
     let status = $state('')
-    let deletePost = $state('')
     const generation = new SocialGeneration()
     let generationVersion = 0
     let supported = $derived(socialModelSupported())
@@ -93,22 +150,16 @@
     }
     onDestroy(cancel)
 
-    function addActor() {
-        const card = characters.find(character => character.chaId === selectedCard)
-        if (!card || feed.cast.length >= MAX_CAST || feed.cast.some(actor => actor.characterId === card.chaId)) return
-        cancel()
-        feed.cast.push({ characterId: card.chaId, name: card.name, image: card.image, publicProfile: '' })
-        selectedCard = ''
-    }
-
     function publish(event: SubmitEvent) {
         event.preventDefault()
         if (!feed.draft.trim() || feed.draft.trim().length > MAX_POST_LENGTH) return
-        if (busyPost === 'publication') cancel()
-        feed.posts.unshift(createSocialPost(author, feed.draft))
+        if (audience === 'My circle' && !feed.cast.length) { status = 'Add at least one character to your circle first.'; return }
+        cancel()
+        const post = createSocialPost(author, feed.draft)
+        if (audience === 'My circle') post.visibleToActorIds = feed.cast.map(actor => actor.characterId)
+        feed.posts.unshift(post)
         feed.draft = ''
-        status = ''
-        closeComposer()
+        status = 'Your post is in the world.'
     }
 
     async function react(postId: string) {
@@ -160,254 +211,61 @@
         }
     }
 
-    function reactionSymbol(kind: SocialReactionKind) {
-        return { like: '♡', love: '♥', curious: '✦', none: '↳' }[kind]
-    }
-
-    function reactionLabel(kind: SocialReactionKind) {
-        return { like: copy.likeReaction, love: copy.loveReaction, curious: copy.curiousReaction, none: copy.noneReaction }[kind]
-    }
 </script>
 
-<SocialWorldSetup open={setupOpen} {feed} author={personaAuthor}
-    personas={DBState.db.personas.map((persona, index) => ({ id: persona.id ?? `persona:${index}`, name: persona.name, image: persona.icon }))}
-    characters={characters.map(card => ({ id: card.chaId, name: card.name, image: card.image }))}
-    onclose={closeSetup} onsave={saveSetup} />
-{#if !setupOpen}
-<section class="social-screen flex h-full w-full min-w-0 flex-col bg-bgcolor text-textcolor" aria-label={copy.title}>
-    <header class="social-header">
-        <button class="social-icon" aria-label={copy.back} title={copy.back} onclick={() => socialFeedOpen.set(false)}><ArrowLeft size={22} /></button>
-        <h1 class="min-w-0 grow text-xl font-semibold">{copy.title}</h1>
-        <!-- svelte-ignore a11y_no_noninteractive_element_interactions (Escape bubbles from the native summary and help controls.) -->
-        <details class="social-help" onkeydown={event => { if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); event.currentTarget.open = false; event.currentTarget.querySelector('summary')?.focus() } }}>
-            <summary class="social-icon cursor-pointer" aria-label={copy.help} title={copy.help}><CircleHelp size={21} /></summary>
-            <div class="social-help-content">
-                <h2 class="mb-2 font-semibold">{copy.help}</h2>
-                <p>{copy.privacy}</p>
-                <p>{copy.cost}</p>
-                <p>{copy.outputLimit} {limits?.maxResponse ?? "—"}</p>
-                <p>{copy.providerStorage}</p>
-                <button class="social-button mt-2" onclick={alertRequestLogs}>{copy.requestLogs}</button>
-                <p>{copy.noRequests} {copy.draftKept}</p>
-                {#if !supported}<p>{copy.unsupported}</p>{/if}
-                {#if feed.enabled}<button class="social-button mt-2" onclick={() => { cancel(); feed.enabled = false; status = '' }}>{copy.disable}</button>{/if}
-            </div>
-        </details>
-    </header>
-    <div class="min-h-0 flex-1 overflow-y-auto">
-        <div class="mx-auto flex w-full max-w-2xl items-center justify-between gap-3 px-4 pt-4 sm:px-6"><span class="min-w-0 break-words font-semibold">{feed.setup?.title ?? 'Your social world'}</span><button class="social-button" onclick={openSetup}>{feed.setup ? 'Edit world setup' : 'Set up a world'}</button></div>
-        <div class="mx-auto flex w-full max-w-2xl flex-wrap items-center justify-between gap-2 px-4 pt-4 sm:px-6">
-            <p class="min-w-0 break-words text-sm text-textcolor2">{copy.model}: {modelName}</p>
-            <button class="social-button" onclick={openModelSettings}>{copy.modelSettings}</button>
-        </div>
-        {#if !feed.enabled}
-            <div class="mx-auto flex max-w-xl flex-col items-start gap-5 px-5 py-12 sm:py-20">
-                <Users size={36} />
-                <h2 class="text-3xl font-semibold leading-tight">{copy.intro}</h2>
-                <p class="text-textcolor2">{copy.optIn}</p>
-                <p class="text-sm leading-relaxed text-textcolor2">{copy.privacy}</p>
-                <p class="text-sm leading-relaxed text-textcolor2">{copy.cost}</p>
-                <button class="social-button social-primary" onclick={() => feed.enabled = true}>{copy.enable}</button>
-            </div>
-        {:else}
-            <div class="social-column mx-auto w-full max-w-2xl px-4 pb-10 pt-5 sm:px-6 sm:pt-8">
-                <details class="universe-panel mb-5" bind:open={castExpanded}>
-                    <summary class="universe-summary">
-                        <div class="flex min-w-0 grow items-center gap-3">
-                            <div class="flex shrink-0 -space-x-2">
-                                {#each feed.cast as actor (actor.characterId)}<SocialAvatar name={actor.name} image={actor.image} size={38} />{/each}
-                                {#if !feed.cast.length}<Users size={24} />{/if}
-                            </div>
-                            <div class="min-w-0">
-                                <span class="block font-semibold">{copy.universe}</span>
-                                <span class="block truncate text-xs text-textcolor2">{feed.cast.length ? feed.cast.map(actor => actor.name).join(', ') : copy.emptyCast}</span>
-                            </div>
-                        </div>
-                        <ChevronDown size={18} class={castExpanded ? 'rotate-180' : ''} />
-                    </summary>
-                    <div class="universe-fields">
-                        <label class="flex flex-col gap-2 text-sm">
-                            <span>{copy.world}</span>
-                            <textarea class="social-input" rows="2" maxlength={MAX_PROFILE_LENGTH} placeholder={copy.worldHint} bind:value={feed.publicWorld} oninput={cancel}></textarea>
-                        </label>
-                        {#if characters.length === 0}<p class="text-sm text-textcolor2">{copy.emptyLibrary}</p>{/if}
-                        {#if feed.cast.length < MAX_CAST && characters.length > 0}
-                            <label class="flex flex-col gap-2 text-sm">
-                                <span>{copy.select} <span class="text-textcolor2">({feed.cast.length}/{MAX_CAST})</span></span>
-                                <select class="social-input" bind:value={selectedCard} onchange={addActor}>
-                                    <option value="">{copy.choose}</option>
-                                    {#each characters.filter(character => !feed.cast.some(actor => actor.characterId === character.chaId)) as character (character.chaId)}<option value={character.chaId}>{character.name}</option>{/each}
-                                </select>
-                            </label>
-                        {/if}
-                        {#each feed.cast as actor (actor.characterId)}
-                            <div class="universe-actor">
-                                <div class="mb-3 flex items-center gap-3">
-                                    <SocialAvatar name={actor.name} image={actor.image} size={48} />
-                                    <span class="min-w-0 grow break-words font-medium">{actor.name}</span>
-                                    <button class="social-icon" aria-label={`${copy.remove} ${actor.name}`} onclick={() => { cancel(); feed.cast = feed.cast.filter(value => value.characterId !== actor.characterId) }}><X size={18} /></button>
-                                </div>
-                                {#if !characters.some(character => character.chaId === actor.characterId)}<p class="mb-2 text-xs text-textcolor2">{copy.missing}</p>{/if}
-                                <label class="flex flex-col gap-2 text-sm">
-                                    <span>{copy.publicProfile}</span>
-                                    <textarea class="social-input" rows="3" maxlength={MAX_PROFILE_LENGTH} placeholder={copy.profileHint} bind:value={actor.publicProfile} oninput={cancel}></textarea>
-                                </label>
-                            </div>
+<section class="social-world" class:ew-light={light} class:ew-compact={feed.preferences?.compact} aria-label="Elsewhere social world">
+    <SocialWorldSetup open={setupOpen} {feed} author={personaAuthor}
+        personas={DBState.db.personas.map((persona, index) => ({ id: persona.id ?? `persona:${index}`, name: persona.name, image: persona.icon }))}
+        characters={characters.map(card => ({ id: card.chaId, name: card.name, image: card.image }))}
+        onclose={closeSetup} onsave={saveSetup} />
+    {#if !setupOpen}
+        <aside class="ew-sidebar" aria-label="World navigation">
+            <SocialBrand />
+            <button class="ew-world-picker" onclick={openSetup}><span>{feed.setup?.title || 'Your social world'}</span><ChevronDown size={13} /></button>
+            <button class="ew-new-world" onclick={openSetup}>＋ {feed.setup ? 'Edit world setup' : 'Set up a world'}</button>
+            <nav class="ew-navigation">{#each navigation as item}<button aria-current={page === item.name ? 'page' : undefined} onclick={() => navigate(item.name)}><item.icon size={19} />{item.name}</button>{/each}</nav>
+            <div class="ew-sidebar-note"><Sparkles size={20} /><p>Another life.<br />Little moments that<br />feel real.</p><small>Your story unfolds here.</small></div>
+            <button class="ew-sidebar-person" onclick={() => profileId = author.id}><SocialAvatar name={author.name} image={author.image} size={42} /><span><strong>{author.name}</strong><small>Your place in the world</small></span></button>
+        </aside>
+        <div class="ew-main">
+            <header class="ew-topbar"><SocialBrand /><div class="ew-breadcrumb"><span>Your world</span><span>/</span><span>{feed.setup?.title || 'Your social world'}</span></div><div class="ew-top-controls"><small>● Optional social mode</small><button class="ew-icon" aria-label={light ? 'Switch to dark appearance' : 'Switch to light appearance'} onclick={() => { (feed.preferences ??= {}).appearance = light ? 'Dark' : 'Light' }}>{#if light}<Moon size={18} />{:else}<Sun size={18} />{/if}</button><button class="ew-icon" aria-label="Return to Elsewhere" title="Return to Elsewhere" onclick={() => socialFeedOpen.set(false)}><ArrowLeft size={18} /></button></div></header>
+            <div class="ew-scroll"><div class="ew-page">
+                <div class="ew-page-heading"><div><span class="ew-eyebrow">{page === 'Feed' ? 'ANOTHER LIFE, LITTLE MOMENTS' : 'YOUR WORLD, YOUR PEOPLE'}</span><h1>{page === 'Feed' ? 'A little place to belong.' : page === 'Messages' ? 'A conversation away.' : page === 'Relationships' ? 'The people along the way.' : 'Make yourself at home.'}</h1><p>{page === 'Feed' ? 'Familiar faces, fresh stories, and a little everyday life.' : page === 'Messages' ? 'Your existing Elsewhere conversations, with your familiar faces.' : page === 'Relationships' ? 'Visible memories of your public story, one thread at a time.' : 'Your world. Your pace. Your choices.'}</p></div><div class="ew-date"><span>{new Date().toLocaleDateString('en', { weekday: 'long' })}</span>{new Date().toLocaleDateString('en', { month: 'long', day: '2-digit' })}</div></div>
+                <p role="status" class="ew-status">{status}</p>
+                {#if !feed.enabled}
+                    <div class="ew-panel ew-empty"><Users size={34} /><h2>Step into another life.</h2><p>An optional fictional social world, built around your own personas and characters. Your existing conversations stay separate.</p><p>Nothing is generated automatically. Inviting character posts or reactions uses your selected provider and can cost tokens.</p><button class="ew-button ew-primary" onclick={() => feed.enabled = true}>Enable social mode</button><button class="ew-button" onclick={openSetup}>Set up your world</button></div>
+                {:else if page === 'Feed'}
+                    <div class="ew-columns"><div class="ew-feed-column">
+                        <div class="ew-tabs" aria-label="Feed order"><button aria-pressed={!recent} onclick={() => recent = false}>For you</button><button aria-pressed={recent} onclick={() => recent = true}>Recent</button><small>{recent ? 'All public history' : 'Life around your current circle'}</small></div>
+                        <form class="ew-composer" onsubmit={publish}><div class="ew-composer-body"><button class="ew-avatar-button" aria-label="Your profile" onclick={() => profileId = author.id}><SocialAvatar name={author.name} image={author.image} size={42} /></button><SocialMentionInput bind:value={feed.draft} bind:input={composerInput} {targets} label="Write a post" placeholder={`What's new in your world, ${author.name}? Try @someone`} maxlength={MAX_POST_LENGTH} rows={2} /></div><div class="ew-composer-footer"><select aria-label="Post audience" bind:value={audience}><option>Public</option><option>My circle</option></select><select aria-label="Post as" bind:value={authorChoice}><option value={-1}>{feed.setup?.you.name ?? DBState.db.username}</option>{#each DBState.db.personas as persona, index}<option value={index}>{persona.name}</option>{/each}</select><small>{feed.draft.length}/{MAX_POST_LENGTH}</small><button class="ew-button ew-primary" type="submit" disabled={!feed.draft.trim()}>Post <ArrowRight size={15} /></button></div></form>
+                        {#if feed.quoteDraft}<button class="ew-button" onclick={() => quoteOpen = true}>Resume quote draft</button>{/if}
+                        {#if !timeline.length}<div class="ew-empty"><h2>A story waiting to happen.</h2><p>Share a first moment, or invite a character to publish. Your world starts with your choices.</p><button class="ew-button" onclick={openSetup}>{feed.setup ? 'Edit world setup' : 'Set up your world'}</button></div>{/if}
+                        {#each timeline as entry (entry.id)}
+                            {#if entry.post}
+                                <SocialPostCard post={entry.post} repost={entry.repost} {targets} you={author} reposted={!!feed.reposts?.some(repost => repost.postId === entry.post?.id && repost.author.id === author.id)} repostCount={feed.reposts?.filter(repost => repost.postId === entry.post?.id).length ?? 0}
+                                    draft={feed.commentDrafts?.[entry.post.id] ?? { text: '' }} busy={busyPost === entry.post.id} canGenerate={!busyPost && profilesReady && supported && !!limits} eligible={eligibleSocialActors(feed, entry.post).length} maxResponse={limits?.maxResponse}
+                                    onprofile={showProfile} onrepost={() => { if (entry.post) status = toggleSocialRepost(feed, entry.post.id, author) ? 'Reposted to your feed.' : 'Repost removed.' }} onquote={() => entry.post && beginQuote(entry.post.id)}
+                                    oncomment={(text, parentId) => entry.post ? comment(entry.post.id, text, parentId) : false} onreact={() => entry.post && react(entry.post.id)} oncancel={() => { cancel(); status = copy.cancelled }} ondelete={() => entry.post && removePost(entry.post.id)} />
+                            {:else}<article class="ew-post"><p class="ew-repost-note">{entry.repost?.author.name} reposted</p><p class="ew-muted">The original post is no longer available.</p><button class="ew-button" onclick={() => feed.reposts = feed.reposts?.filter(repost => repost.id !== entry.repost?.id)}>Remove repost</button></article>{/if}
                         {/each}
-                    </div>
-                </details>
-                <SocialRelationships {feed} />
-                <details class="universe-panel mb-5">
-                    <summary class="universe-summary flex-wrap gap-2"><span class="font-semibold">{copy.generationSettings}</span><span class="text-xs text-textcolor2">{language.maxContextSize}: {feed.maxContext ?? '—'} · {language.maxResponseSize}: {feed.maxResponse ?? '—'}</span></summary>
-                    <div class="universe-fields">
-                        <p class="text-sm text-textcolor2">{copy.commonLimits}</p>
-                        <p class="text-sm text-textcolor2">{copy.automaticLanguage}</p>
-                        <label class="flex flex-col gap-2 text-sm"><span id="social-context-label">{language.maxContextSize}</span><input aria-labelledby="social-context-label" aria-describedby="social-context-help" class="social-input" type="number" min={SOCIAL_CONTEXT_MIN} max={SOCIAL_CONTEXT_MAX} step="1" bind:value={feed.maxContext} oninput={cancel} /><span id="social-context-help" class="text-xs text-textcolor2">{SOCIAL_CONTEXT_MIN}–{SOCIAL_CONTEXT_MAX} {copy.tokens}. {copy.contextEstimate}</span></label>
-                        <label class="flex flex-col gap-2 text-sm"><span id="social-response-label">{language.maxResponseSize}</span><input aria-labelledby="social-response-label" aria-describedby="social-response-help" class="social-input" type="number" min={SOCIAL_RESPONSE_MIN} max={SOCIAL_RESPONSE_MAX} step="1" bind:value={feed.maxResponse} oninput={cancel} /><span id="social-response-help" class="text-xs text-textcolor2">{SOCIAL_RESPONSE_MIN}–{SOCIAL_RESPONSE_MAX} {copy.tokens}. {copy.reasoningBudget}</span></label>
-                        <p class="text-xs text-textcolor2">{copy.initialLimits}</p>
-                        {#if !limits}<p role="status" class="text-sm text-draculared">{copy.invalidLimits}</p>{/if}
-                        <p class="text-xs text-textcolor2">{copy.batchMaximum}: {limits ? limits.maxResponse * Math.min(feed.cast.length, MAX_CAST) : '—'} {copy.tokens} ({Math.min(feed.cast.length, MAX_CAST)} {copy.castMembers}). {copy.budgetCost}</p>
-                    </div>
-                </details>
-                <div class="social-composer mb-5">
-                    <h2 class="mb-2 font-semibold">{copy.characterPublication}</h2>
-                    <p class="mb-3 text-sm text-textcolor2">{copy.characterPublicationHint}</p>
-                    <label class="flex flex-col gap-2 text-sm">
-                        <span id="social-publication-author-label">{copy.publicationAuthor}</span>
-                        <select aria-labelledby="social-publication-author-label" class="social-input" bind:value={publisherId} onchange={cancel}>
-                            <option value="">{copy.choose}</option>
-                            {#each feed.cast as actor (actor.characterId)}<option value={actor.characterId}>{actor.name}</option>{/each}
-                        </select>
-                    </label>
-                    <div class="mt-3 flex flex-wrap items-center gap-2">
-                        {#if busyPost === 'publication'}
-                            <span class="text-sm text-textcolor2">{copy.generatingPublication}</span>
-                            <button class="social-button" onclick={() => { cancel(); status = copy.cancelled }}>{copy.cancel}</button>
-                        {:else}
-                            <button class="social-button social-primary flex items-center gap-2" disabled={!!busyPost || !selectedPublisher?.publicProfile.trim() || !supported || !limits} onclick={publishCharacter}><Sparkles size={17} />{copy.generatePublication}</button>
-                        {/if}
-                    </div>
-                    <p class="mt-2 text-xs text-textcolor2">{copy.publicationMaximum}: {limits?.maxResponse ?? '—'} {copy.tokens}. {copy.budgetCost}</p>
-                </div>
-                <!-- svelte-ignore a11y_no_noninteractive_element_interactions (Escape bubbles from the composer controls.) -->
-                <form class="social-composer mb-5" onsubmit={publish} onkeydown={event => { if (event.key === 'Escape' && composerExpanded) { event.preventDefault(); event.stopPropagation(); closeComposer() } }}>
-                    {#if !composerExpanded}
-                        <div class="flex items-center gap-3">
-                            <SocialAvatar name={author.name} image={author.image} size={44} />
-                            <button type="button" class="composer-trigger" bind:this={composerTrigger} aria-expanded="false" onclick={openComposer}>{feed.draft.trim() ? copy.resumeDraft : copy.whatsNew}</button>
-                        </div>
-                    {:else}
-                        <div class="mb-3 flex items-center gap-3">
-                            <SocialAvatar name={author.name} image={author.image} size={44} />
-                            <label class="flex min-w-0 grow flex-col gap-1 text-xs text-textcolor2">
-                                <span>{copy.as}</span>
-                                <select class="social-author-select" bind:value={authorChoice}>
-                                    <option value={-1}>{feed.setup?.you.name ?? DBState.db.username} ({copy.currentPersona})</option>
-                                    {#each DBState.db.personas as persona, index}<option value={index}>{persona.name}</option>{/each}
-                                </select>
-                            </label>
-                            <button type="button" class="social-icon" aria-label={copy.closeComposer} title={copy.draftKept} onclick={closeComposer}><X size={18} /></button>
-                        </div>
-                        <textarea id="social-post-input" aria-label={copy.write} class="composer-input" rows="3" placeholder={copy.whatsNew} maxlength={MAX_POST_LENGTH} bind:this={composerInput} bind:value={feed.draft}></textarea>
-                        <div class="mt-3 flex items-center justify-between gap-2">
-                            <span class="text-xs text-textcolor2">{feed.draft.length}/{MAX_POST_LENGTH}</span>
-                            <button type="submit" class="social-button social-primary flex items-center gap-2" disabled={!feed.draft.trim()}><Send size={16} />{copy.publish}</button>
-                        </div>
-                    {/if}
-                </form>
-                <p class="mb-3 text-xs text-textcolor2">{copy.selectiveReactions}</p>
-                <p role="status" class="text-sm text-textcolor2" class:mb-4={!!status}>{status}</p>
-                {#if feed.posts.length === 0}
-                    <div class="px-4 py-10 text-center">
-                        <h2 class="text-xl font-medium">{copy.emptyFeed}</h2>
-                        <p class="mt-2 text-textcolor2">{copy.emptyHint}</p>
-                    </div>
+                        <div class="ew-panel"><h2 class="ew-post-name">Invite a character post</h2><p class="ew-muted" style="font-size:12px;margin:8px 0">On your request only, using the public world and visible feed.</p><div class="ew-actions"><select aria-label="Publication author" bind:value={publisherId} onchange={cancel}><option value="">Choose a character</option>{#each feed.cast as actor (actor.characterId)}<option value={actor.characterId}>{actor.name}</option>{/each}</select>{#if busyPost === 'publication'}<button class="ew-button" onclick={() => { cancel(); status = copy.cancelled }}>Cancel</button>{:else}<button class="ew-button" disabled={!!busyPost || !selectedPublisher?.publicProfile.trim() || !supported || !limits} onclick={publishCharacter}><Sparkles size={15} />Invite a post</button>{/if}</div><p class="ew-context-note">Up to {limits?.maxResponse ?? '—'} tokens. {copy.budgetCost}</p>{#if !profilesReady}<button class="ew-neighbor-link" onclick={openSetup}>Add public character profiles <ArrowRight size={15} /></button>{/if}{#if !supported}<p class="ew-context-note">{copy.unsupported}</p>{/if}</div>
+                    </div><aside class="ew-context-column" aria-label="Your world">
+                        <div class="ew-world-card"><span class="ew-eyebrow">YOUR LITTLE CORNER OF THE WORLD</span><svg viewBox="0 0 260 130" role="img" aria-label="An imaginary neighborhood"><path d="M0 112 Q65 94 130 107 T260 109 V127 H0Z" fill="currentColor" opacity=".2"/><path d="M100 113 V63 L127 43 L153 63 V113Z" fill="currentColor" opacity=".25"/><path d="M77 113 V79 H102 V113 M151 113 V76 H181 V113" fill="currentColor" opacity=".35"/><path d="M117 111 V92 H135 V111 M113 65 H122 V76 H113Z M133 65 H142 V76 H133Z M33 109 V79 M221 109 V78" fill="currentColor" opacity=".65"/><circle cx="33" cy="65" r="20" fill="currentColor" opacity=".15"/><circle cx="221" cy="61" r="22" fill="currentColor" opacity=".15"/><path d="M189 18 L192 26 L200 29 L192 32 L189 40 L186 32 L178 29 L186 26Z" fill="currentColor" opacity=".6"/></svg><h2>{feed.setup?.title || 'Your social world'}</h2><p>{feed.publicWorld ? feed.publicWorld.slice(0, 160) : 'Ordinary days make the best stories.'}</p><footer>● {feed.cast.length} {feed.cast.length === 1 ? 'neighbor' : 'neighbors'} in your circle</footer></div>
+                        <div class="ew-panel ew-neighbors"><h2>Familiar faces</h2>{#each feed.cast as actor (actor.characterId)}<button class="ew-neighbor" onclick={() => profileId = `character:${actor.characterId}`}><SocialAvatar name={actor.name} image={actor.image} size={36} /><span><strong>{actor.name}</strong><small>{actor.publicProfile || 'Add a public profile'}</small></span><ArrowRight size={14} /></button>{/each}{#if !feed.cast.length}<p class="ew-muted">Choose a few familiar faces to begin.</p>{/if}<button class="ew-neighbor-link" onclick={() => navigate('Relationships')}>Explore my relationships <ArrowRight size={14} /></button></div><p class="ew-context-note">A fictional world. A story that feels like you.<br />No automatic generation. Private chats stay private.</p>
+                    </aside></div>
+                {:else if page === 'Messages'}
+                    <div class="ew-message-list">{#each feed.cast as actor (actor.characterId)}<button onclick={() => openMessage(actor.characterId)}><SocialAvatar name={actor.name} image={actor.image} size={48} /><span class="ew-grow"><strong>{actor.name}</strong><small>Open your Elsewhere conversation</small></span><ArrowRight size={18} /></button>{/each}{#if !feed.cast.length}<div class="ew-empty"><h2>A few familiar faces first.</h2><p>Add characters from your library to open their existing conversations here.</p><button class="ew-button" onclick={openSetup}>Choose your cast</button></div>{/if}<p class="ew-context-note">Messages use the native chat and its provider settings. They are separate from public reactions and relationship evidence.</p></div>
+                {:else if page === 'Relationships'}
+                    <div class="ew-settings"><SocialRelationships {feed} initialExpanded={true} onpost={sourcePost} /><div class="ew-panel"><h2>Starting relationships & knowledge</h2><p>Facts you explicitly choose for this world. Public facts can guide character reactions. Private and paused notes stay out of public generation.</p>{#each feed.cast as actor (actor.characterId)}<div class="ew-settings"><button class="ew-neighbor" onclick={() => profileId = `character:${actor.characterId}`}><SocialAvatar name={actor.name} image={actor.image} size={36} /><strong>{actor.name}</strong></button><label>Starting facts<textarea rows="3" maxlength={MAX_PROFILE_LENGTH} bind:value={actor.startingFacts} oninput={cancel} placeholder="Only facts you choose to add…"></textarea></label><label>Use in this social world<select value={actor.startingFactsVisibility ?? 'public'} onchange={event => { cancel(); actor.startingFactsVisibility = event.currentTarget.value as 'public' | 'private' | 'paused' }}><option value="public">Public</option><option value="private">Private note</option><option value="paused">Paused</option></select></label><button class="ew-button" onclick={() => { cancel(); actor.startingFacts = ''; actor.startingFactsVisibility = 'public' }}>Remove starting facts</button></div>{/each}{#if !feed.cast.length}<button class="ew-button" onclick={openSetup}>Choose your cast</button>{/if}</div></div>
+                {:else}
+                    <div class="ew-settings"><div class="ew-panel"><h2>Your world</h2><p>Setup uses your existing character cards and personas without changing them.</p><button class="ew-button" onclick={openSetup}>{feed.setup ? 'Edit world setup' : 'Set up a world'}</button></div><div class="ew-panel"><h2>Appearance</h2><label>Theme<select value={feed.preferences?.appearance ?? 'Dark'} onchange={event => { (feed.preferences ??= {}).appearance = event.currentTarget.value as 'Dark' | 'Light' | 'System' }}><option>Dark</option><option>Light</option><option>System</option></select></label><label class="ew-switch"><input type="checkbox" checked={!!feed.preferences?.compact} onchange={event => { (feed.preferences ??= {}).compact = event.currentTarget.checked }} />Compact feed</label></div>
+                    <div class="ew-panel"><h2>Generation, at your pace</h2><p>{copy.cost} {copy.automaticLanguage}</p><p>{copy.model}: {modelName}</p><button class="ew-button" onclick={openModelSettings}>Model settings</button><h3>Maximum context size</h3><TokenBudgetControl bind:value={() => feed.maxContext ?? SOCIAL_CONTEXT_MIN, value => { cancel(); feed.maxContext = value }} minimum={SOCIAL_CONTEXT_MIN} maximum={SOCIAL_CONTEXT_MAX} label="Maximum context size" tokensText="tokens" unknownText="" invalidText="Enter a whole number within these limits." fixedText="" disabledText="Disabled" /><h3>Maximum response size</h3><TokenBudgetControl bind:value={() => feed.maxResponse ?? SOCIAL_RESPONSE_MIN, value => { cancel(); feed.maxResponse = value }} minimum={SOCIAL_RESPONSE_MIN} maximum={SOCIAL_RESPONSE_MAX} label="Maximum response size" tokensText="tokens" unknownText="" invalidText="Enter a whole number within these limits." fixedText="" disabledText="Disabled" /><p>{copy.contextEstimate} {copy.reasoningBudget}</p>{#if !limits}<p role="status">{copy.invalidLimits}</p>{/if}<p>Reactions: Manual. Every invitation is an explicit request.</p></div>
+                    <div class="ew-panel"><h2>Public and private</h2><p>{copy.privacy}</p><p>{copy.providerStorage}</p><button class="ew-button" onclick={alertRequestLogs}>{copy.requestLogs}</button><p>{copy.draftKept}</p><button class="ew-button" onclick={() => { cancel(); feed.enabled = false }}>Disable social mode</button></div></div>
                 {/if}
-                {#each feed.posts as post (post.id)}
-                    <article id={`social-post-${post.id}`} class="social-post mb-5">
-                        <div class="flex items-center gap-3">
-                            <SocialAvatar name={post.author.name} image={post.author.image} size={48} />
-                            <div class="min-w-0 grow">
-                                <h2 class="break-words font-semibold">{post.author.name}</h2>
-                                <time class="text-xs text-textcolor2" datetime={new Date(post.createdAt).toISOString()}>{new Date(post.createdAt).toLocaleString()}</time>
-                            </div>
-                            <button class="social-icon text-textcolor2" aria-label={copy.delete} onclick={() => deletePost = post.id}><X size={17} /></button>
-                        </div>
-                        <p class="post-content whitespace-pre-wrap break-words">{post.text}</p>
-                        {#if deletePost === post.id}
-                            <div class="mb-3 flex flex-wrap items-center gap-2 rounded bg-textcolor/5 p-3" role="group" aria-label={copy.confirmDelete}>
-                                <p class="w-full text-sm">{copy.confirmDelete}</p>
-                                <button class="social-button" onclick={() => { if (busyPost === post.id) cancel(); feed.posts = feed.posts.filter(value => value.id !== post.id); deletePost = '' }}>{copy.delete}</button>
-                                <button class="social-button" onclick={() => deletePost = ''}>{copy.keep}</button>
-                            </div>
-                        {/if}
-                        <div class="post-actions">
-                            <button class="social-button flex items-center gap-2" aria-pressed={post.liked} onclick={() => post.liked = !post.liked}><Heart size={18} fill={post.liked ? 'currentColor' : 'none'} />{post.liked ? copy.unlike : copy.like}</button>
-                            {#if busyPost === post.id}
-                                <span class="text-sm text-textcolor2">{copy.generating}</span>
-                                <button class="social-button" onclick={() => { cancel(); status = copy.cancelled }}>{copy.cancel}</button>
-                            {:else if feed.cast.length && !eligibleSocialActors(feed, post).length && profilesReady}
-                                <div class="flex flex-wrap gap-2" aria-label={copy.allReacted}>
-                                    <span class="text-xs text-textcolor2">{copy.allReacted}</span>
-                                    {#each post.responses.filter(response => response.reaction !== 'none') as response (response.id)}
-                                        <span class="reaction-chip" title={`${response.actor.name}: ${reactionLabel(response.reaction)}`}><span aria-hidden="true">{reactionSymbol(response.reaction)}</span>{response.actor.name}</span>
-                                    {/each}
-                                </div>
-                            {:else}
-                                <button class="social-button flex items-center gap-2" disabled={!!busyPost || !profilesReady || !supported || !limits} onclick={() => react(post.id)}><Sparkles size={17} />{copy.generate}</button>
-                            {/if}
-                        </div>
-                        {#if eligibleSocialActors(feed, post).length && limits}<p class="mt-2 text-xs text-textcolor2">{copy.batchMaximum}: {limits.maxResponse * eligibleSocialActors(feed, post).length} {copy.tokens} ({eligibleSocialActors(feed, post).length} × {limits.maxResponse}). {copy.budgetCost}</p>{/if}
-                        {#if !profilesReady}<button class="mt-2 text-left text-xs text-textcolor2 underline underline-offset-4" onclick={() => castExpanded = true}>{copy.ready}</button>{/if}
-                        {#if !supported}<p class="mt-2 text-xs text-textcolor2">{copy.unsupported}</p>{/if}
-                        {#if post.responses.length}
-                            <div class="post-comments">
-                                {#each post.responses as response (response.id)}
-                                    <div class="flex gap-3" aria-label={copy.response}>
-                                        <SocialAvatar name={response.actor.name} image={response.actor.image} size={36} />
-                                        <div class="min-w-0 grow">
-                                            <p class="mb-1 flex flex-wrap items-center gap-2 text-sm font-semibold">{response.actor.name}<span class="reaction-symbol" title={reactionLabel(response.reaction)} aria-label={reactionLabel(response.reaction)}>{reactionSymbol(response.reaction)}</span></p>
-                                            {#if response.comment}<p class="whitespace-pre-wrap break-words text-sm leading-relaxed">{response.comment}</p>{/if}
-                                        </div>
-                                    </div>
-                                {/each}
-                            </div>
-                        {/if}
-                    </article>
-                {/each}
-            </div>
-        {/if}
-    </div>
+            </div></div>
+        </div>
+        <nav class="ew-mobile-nav" aria-label="Social navigation">{#each navigation as item}<button aria-current={page === item.name ? 'page' : undefined} onclick={() => navigate(item.name)}><item.icon size={20} />{item.name}</button>{/each}<button onclick={openSetup}><Plus size={20} />World</button></nav>
+        <SocialProfileDialog target={profile} {feed} onclose={() => { profileId = ''; cancel() }} onmessage={openMessage} onrelationships={() => { profileId = ''; navigate('Relationships') }} />
+        <dialog class="ew-profile-dialog" aria-labelledby="social-quote-heading" bind:this={quoteDialog} oncancel={() => quoteOpen = false} onclose={() => quoteOpen = false} onkeydown={event => { if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); quoteOpen = false } }}><div class="ew-profile-content"><div class="ew-actions"><h2 id="social-quote-heading" class="ew-grow">Quote a moment.</h2><button class="ew-icon" aria-label="Close quote composer" onclick={() => quoteOpen = false}><X size={20} /></button></div>{#if feed.quoteDraft}<form onsubmit={publishQuote}><p role="status" class="ew-status">{status}</p><p class="ew-context-note">Closing keeps your draft. Restricted posts keep their original audience.</p><SocialMentionInput bind:value={feed.quoteDraft.text} {targets} label="Write a quote post" placeholder="Add your own words…" maxlength={MAX_POST_LENGTH} /><div class="ew-quote-card"><p>{feed.posts.find(post => post.id === feed.quoteDraft?.postId)?.text ?? 'Original post unavailable'}</p></div><button class="ew-button ew-primary" type="submit" disabled={!feed.quoteDraft.text.trim()}>Post quote <ArrowRight size={15} /></button></form>{/if}</div></dialog>
+    {/if}
 </section>
-{/if}
-
-<style>
-    .social-header { display: flex; flex: none; align-items: center; gap: .75rem; padding: .65rem 1rem; background: var(--risu-theme-surface-elevated); border-bottom: 1px solid color-mix(in srgb, var(--risu-theme-textcolor) 10%, transparent); position: relative; z-index: 2; }
-    .social-help summary { list-style: none; }
-    .social-help summary::-webkit-details-marker { display: none; }
-    .social-help-content { position: absolute; right: 1rem; top: calc(100% + .5rem); width: min(24rem, calc(100vw - 2rem)); padding: 1.25rem; border-radius: .75rem; background: var(--risu-theme-surface-elevated); box-shadow: 0 8px 32px color-mix(in srgb, var(--risu-theme-textcolor) 15%, transparent); border: 1px solid color-mix(in srgb, var(--risu-theme-textcolor) 15%, transparent); font-size: .875rem; line-height: 1.6; max-height: calc(100dvh - 6rem); overflow-y: auto; }
-    .social-help-content p + p { margin-top: .8rem; }
-    .universe-panel, .social-composer, .social-post { background: var(--risu-theme-surface-elevated); border-radius: .75rem; border: 1px solid color-mix(in srgb, var(--risu-theme-textcolor) 9%, transparent); }
-    .universe-summary { display: flex; align-items: center; gap: .75rem; padding: 1rem; cursor: pointer; list-style: none; }
-    .universe-summary::-webkit-details-marker { display: none; }
-    .universe-fields { display: flex; flex-direction: column; gap: 1.25rem; padding: 0 1rem 1rem; }
-    .universe-actor { border-top: 1px solid color-mix(in srgb, var(--risu-theme-textcolor) 10%, transparent); padding-top: 1rem; }
-    .social-composer { padding: 1rem; }
-    .composer-trigger { min-width: 0; flex: 1; text-align: left; padding: .75rem 1rem; border-radius: 1.5rem; background: var(--risu-theme-surface-subtle); color: var(--risu-theme-textcolor2); min-height: 2.75rem; }
-    .composer-input { width: 100%; resize: vertical; min-height: 6rem; padding: .5rem 0; background: transparent; font-size: 1.05rem; line-height: 1.6; }
-    .social-author-select { width: 100%; min-width: 0; background: var(--risu-theme-surface-elevated); color: var(--risu-theme-textcolor); font-size: .875rem; min-height: 2rem; }
-    .social-input { width: 100%; min-width: 0; border: 1px solid color-mix(in srgb, var(--risu-theme-textcolor) 20%, transparent); border-radius: .375rem; padding: .65rem; color: var(--risu-theme-textcolor); background: var(--risu-theme-bgcolor); }
-    .social-post { padding: 1.25rem; }
-    .post-content { margin: 1rem 0; font-size: 1.05rem; line-height: 1.65; }
-    .post-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; padding-top: .5rem; border-top: 1px solid color-mix(in srgb, var(--risu-theme-textcolor) 8%, transparent); }
-    .post-comments { display: flex; flex-direction: column; gap: 1.1rem; margin-top: .75rem; padding-top: 1rem; border-top: 1px solid color-mix(in srgb, var(--risu-theme-textcolor) 8%, transparent); }
-    .reaction-chip { display: inline-flex; align-items: center; gap: .4rem; padding: .3rem .6rem; font-size: .75rem; border-radius: 1rem; background: var(--risu-theme-surface-subtle); }
-    .reaction-symbol { color: var(--risu-theme-textcolor2); font-size: .9rem; }
-    .social-button { min-height: 2.75rem; padding: .55rem .7rem; border-radius: .5rem; }
-    .social-primary { background: var(--risu-theme-selected); padding-inline: 1rem; }
-    .social-icon { display: inline-flex; min-width: 2.75rem; min-height: 2.75rem; align-items: center; justify-content: center; border-radius: .5rem; flex: none; }
-    .social-button:hover, .social-icon:hover, .composer-trigger:hover { background-color: var(--risu-theme-surface-subtle); }
-    .social-button:disabled { opacity: .5; cursor: not-allowed; }
-    .social-screen :is(button, textarea, select, summary):focus-visible { outline: 2px solid var(--risu-theme-focus); outline-offset: 3px; }
-    @media (max-width: 360px) { .social-column { padding-inline: .75rem; } .social-post { padding: 1rem; } .post-actions { gap: .25rem; } }
-</style>

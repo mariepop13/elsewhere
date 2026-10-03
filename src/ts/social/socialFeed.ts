@@ -1,3 +1,4 @@
+import { canActorSeeSocialPost, publicSocialPostText, socialPublicComments, type SocialComment, type SocialQuote, type SocialRepost, type SocialCommentDraft, type SocialPreferences } from './socialInteractions'
 import { publicSocialWorld, publicSocialActor, type SocialWorldSetup } from './socialSetup'
 import { buildPublicRelationshipContext, type PublicRelationshipContext } from './socialRelations'
 import { buildPublicLanguageContext, type PublicLanguageContext } from './socialLanguage'
@@ -17,6 +18,7 @@ export interface SocialActor {
     publicProfile: string
     /** Explicit public starting facts, never imported private memories. */
     startingFacts?: string
+    startingFactsVisibility?: 'public' | 'private' | 'paused'
 }
 
 export interface SocialAuthor {
@@ -59,6 +61,9 @@ export interface SocialPost {
     responses: SocialResponse[]
     /** Actors that explicitly declined; no fabricated public response. */
     consideredActorIds?: string[]
+    comments?: SocialComment[]
+    quote?: SocialQuote
+    visibleToActorIds?: string[]
 }
 
 export interface SocialFeedState {
@@ -69,6 +74,11 @@ export interface SocialFeedState {
     posts: SocialPost[]
     draft: string
     setup?: SocialWorldSetup
+    reposts?: SocialRepost[]
+    handles?: Record<string, string>
+    commentDrafts?: Record<string, SocialCommentDraft>
+    quoteDraft?: { postId: string; text: string }
+    preferences?: SocialPreferences
     maxContext?: number
     maxResponse?: number
 }
@@ -119,16 +129,15 @@ export function buildPublicContext(
     interfaceLanguage = 'en',
 ): PublicReactionContext {
     // Project an allowlist, never spread cards, personas, chats or database fields.
+    if (!canActorSeeSocialPost(post, actor.characterId)) throw new Error('Post outside character audience')
+    const visibleState = { ...state, posts: state.posts.filter(value => canActorSeeSocialPost(value, actor.characterId)) }
     return {
         actor: publicSocialActor(actor),
         publicWorld: publicSocialWorld(state),
-        language: buildPublicLanguageContext(state, interfaceLanguage),
-        relationships: buildPublicRelationshipContext(state, actor, post.author),
-        post: { author: post.author.name, text: post.text },
-        comments: post.responses.map((response) => ({
-            author: response.actor.name,
-            comment: response.comment,
-        })),
+        language: buildPublicLanguageContext(visibleState, interfaceLanguage),
+        relationships: buildPublicRelationshipContext(visibleState, actor, post.author),
+        post: { author: post.author.name, text: publicSocialPostText(post) },
+        comments: socialPublicComments(post),
     }
 }
 
@@ -169,7 +178,7 @@ export type SocialGenerator = (
 ) => Promise<string>
 
 export function eligibleSocialActors(state: SocialFeedState, post: SocialPost): SocialActor[] {
-    return state.cast.slice(0, MAX_CAST).filter(actor => actor.publicProfile.trim() &&
+    return state.cast.slice(0, MAX_CAST).filter(actor => canActorSeeSocialPost(post, actor.characterId) && actor.publicProfile.trim() &&
         actor.characterId !== post.author.characterId &&
         !post.consideredActorIds?.includes(actor.characterId) &&
         !post.responses.some(response => response.actor.characterId === actor.characterId))
@@ -184,14 +193,15 @@ export interface PublicPublicationContext {
 }
 
 export function buildPublicPublicationContext(state: SocialFeedState, actor: SocialActor, interfaceLanguage = 'en'): PublicPublicationContext {
+    state = { ...state, posts: state.posts.filter(post => canActorSeeSocialPost(post, actor.characterId)) }
     return {
         actor: publicSocialActor(actor),
         publicWorld: publicSocialWorld(state),
         language: buildPublicLanguageContext(state, interfaceLanguage),
         relationships: buildPublicRelationshipContext(state, actor),
         recentPosts: state.posts.slice(0, 8).map(post => ({
-            author: post.author.name, text: post.text,
-            comments: post.responses.map(response => ({ author: response.actor.name, comment: response.comment })),
+            author: post.author.name, text: publicSocialPostText(post),
+            comments: socialPublicComments(post),
         })),
     }
 }
@@ -238,6 +248,7 @@ export class SocialGeneration {
         const controller = new AbortController()
         this.active = controller
         const contexts = actors.map(actor => buildPublicContext(state, post, actor, interfaceLanguage))
+        const audienceSnapshot = JSON.stringify(post.visibleToActorIds)
         const snapshot = JSON.stringify({
             world: state.publicWorld,
             actors: state.cast,
@@ -254,6 +265,7 @@ export class SocialGeneration {
             isCurrent() &&
             state.enabled &&
             state.posts.includes(post) &&
+            audienceSnapshot === JSON.stringify(post.visibleToActorIds) &&
             snapshot ===
                 JSON.stringify({
                     world: state.publicWorld,

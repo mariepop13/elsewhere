@@ -38,19 +38,25 @@ const authorParticipant = (author: SocialAuthor): PublicParticipant => ({
 })
 const familiarity = (threads: number): PublicFamiliarity => threads >= 4 ? 'familiar' : threads >= 2 ? 'acquainted' : 'first_contact'
 
-/** Existing saved public responses are the only event source. No mutable affinity ledger. */
+/** Saved public comments and responses are evidence, never an invented affinity ledger. */
 export function derivePublicRelationships(state: SocialFeedState): PublicRelationship[] {
     const pairs = new Map<string, PublicRelationship>()
     const seen = new Set<string>()
     for (const post of state.posts) {
         if (!post.author?.id) continue
         const to = authorParticipant(post.author)
-        for (const response of post.responses) {
-            if (!response.actor?.characterId || !reactionKinds.includes(response.reaction) || typeof response.comment !== 'string') continue
-            if (response.reaction === 'none' && !response.comment.trim()) continue
-            const from: PublicParticipant = { id: characterParticipantId(response.actor.characterId), name: response.actor.name, kind: 'character' }
+        const events: { id: string; createdAt: number; from: PublicParticipant; to: PublicParticipant; reaction: SocialReactionKind; comment: string }[] = post.responses.filter(response => response.actor?.characterId && reactionKinds.includes(response.reaction) && typeof response.comment === 'string' && (response.reaction !== 'none' || response.comment.trim()))
+            .map(response => ({ id: response.id, createdAt: response.createdAt, from: { id: characterParticipantId(response.actor.characterId), name: response.actor.name, kind: 'character' as const }, to, reaction: response.reaction, comment: response.comment }))
+        for (const comment of post.comments ?? []) {
+            const parent = post.comments?.find(value => value.id === comment.parentId)
+            const response = post.responses.find(value => value.id === comment.parentId)
+            const target = parent ? authorParticipant(parent.author) : response ? { id: characterParticipantId(response.actor.characterId), name: response.actor.name, kind: 'character' as const } : to
+            events.push({ id: comment.id, createdAt: comment.createdAt, from: authorParticipant(comment.author), to: target, reaction: 'none', comment: comment.text })
+        }
+        for (const event of events) {
+            const { from, to } = event
             if (from.id === to.id) continue
-            const eventId = JSON.stringify([post.id, response.id])
+            const eventId = JSON.stringify([post.id, event.id])
             if (seen.has(eventId)) continue
             seen.add(eventId)
             const participants = [from, to].sort((a, b) => a.id.localeCompare(b.id)) as [PublicParticipant, PublicParticipant]
@@ -60,8 +66,8 @@ export function derivePublicRelationships(state: SocialFeedState): PublicRelatio
                 pair = { id: pairId, participants, familiarity: 'first_contact', publicThreadCount: 0, interactions: [] }
                 pairs.set(pairId, pair)
             }
-            pair.interactions.push({ id: eventId, postId: post.id, createdAt: response.createdAt, from, to,
-                post: post.text, reaction: response.reaction, comment: response.comment })
+            pair.interactions.push({ id: eventId, postId: post.id, createdAt: event.createdAt, from, to,
+                post: post.text, reaction: event.reaction, comment: event.comment })
         }
     }
     for (const pair of pairs.values()) {

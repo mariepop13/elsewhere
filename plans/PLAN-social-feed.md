@@ -335,3 +335,20 @@ Delivery gate: types/tests/build and real app browser acceptance must pass befor
 - Forward the independent social context budget through the shared request layer, exclude private OpenRouter reasoning settings, and add fixture regressions for safe model-budget diagnostics, output ceilings and final measured context.
 - Independent review finds the private reasoning projection; the guard fixes it and the final targeted review identifies no remaining consequential defect.
 - Validate focused handler/provider/token tests (53 pass), full tests (552 pass, 3 skipped, 52 files) and types (0 errors, 0 warnings) sequentially. Verify all 10 setup/photo source files remain byte-identical to the snapshot and no tracked file is deleted. No local heavy production build under current RAM pressure; transfer the final exact source candidate for a cloud build. Existing 8443 and other previews are not refreshed by this merge.
+
+### Full social interface candidate
+
+- Guard baseline committed as ae2307be before UI work, reviewed tree0795924c2d69efb4ec25588b89917a64b6cf0df4.
+- Full-width native branded social shell, scoped green dark/light/system appearance, responsive sidebar/mobile navigation and current-world setup.
+- Real persisted profiles/mentions, comments/replies, canonical reposts, bounded quotes and fictional circle scopes; real native chat entry; public relationship evidence and explicit public/private/paused starting notes.
+- Preserve native cards/personas/chats/settings/auth and exclude private sources from generation. No auto-AI, push, UI commit or deployment.
+- Focused social134 tests passed; global suite572 passed and3 skipped across54 files; Svelte types0errors0warnings. Exact cloud production build plus desktop/mobile acceptance remain pending. Do not treat implementation as visual acceptance until the fixture browser QA completes.
+- Detailed working plan/reference inventory and isolated QA artifacts: /home/marie/Documents/Codex/2026-09-30/task-3/social-redesign.
+
+
+### Actual production fixture QA and corrective rebuild
+
+- Verified the cloud candidate 6a828cf223d6495154a4dff0889dee7af00393dd: archive SHA256 and all394 production-file hashes. Eleven actual-app scenario groups explored in a disposable browser at1579/390/320px, zero real network/provider calls and no automatic generation. Auth/storage/model transport used synthetic intercepted fixtures; no live user data.
+- Actual QA exposed three defects: global Escape interception prevented profile/quote dialog closure; first comments/reposts mutated a newly allocated raw array outside Svelte reactivity; component CSS displayed a duplicate desktop header brand. Corrected all three. Added three real Svelte-mounted reactive storage regressions. Independent read-only review found no further defect.
+- Corrected source checks:575 passed,3 skipped across55files; Svelte0errors0warnings. Prior build exploration continued only with explicit fixture preallocation/button-close workarounds. This is partial QA, not acceptance of corrected source.
+- Required next gate: exact corrected cloud build, then repeat browser QA without workarounds and publish final capture/feature evidence. No deployment, push or new UI commit. Physical touch, OS chooser and Tauri remain untested.

@@ -1,6 +1,7 @@
 <script lang="ts">
     import { onDestroy, tick, untrack } from 'svelte'
     import { ArrowLeft, X, ImagePlus } from '@lucide/svelte'
+    import SocialBrand from './SocialBrand.svelte'
     import SocialAvatar from './SocialAvatar.svelte'
     import { MAX_CAST, MAX_PROFILE_LENGTH, type SocialAuthor, type SocialFeedState } from 'src/ts/social/socialFeed'
     import { createSocialSetupDraft, validateSocialSetup, type SocialSetupDraft } from 'src/ts/social/socialSetup'
@@ -114,7 +115,7 @@
 
 {#if open}
     <section class="setup-shell" aria-label="World setup">
-        <header class="setup-header"><span class="setup-logo">Elsewhere</span><button disabled={saving} onclick={onclose}><ArrowLeft size={18} />Return to feed</button></header>
+        <header class="setup-header"><SocialBrand /><button disabled={saving} onclick={onclose}><ArrowLeft size={18} />Return to feed</button></header>
         <div class="setup-layout">
             <aside class="setup-sidebar">
                 <h2>A place.<br />A few familiar faces.</h2>
@@ -132,7 +133,7 @@
                     {#if step === 0}
                         <label>World name <span aria-hidden="true">*</span><input maxlength="80" required bind:value={draft.title} placeholder="A city of floating gardens" /></label>
                         <label>Public world context<textarea rows="4" maxlength={MAX_PROFILE_LENGTH} bind:value={draft.publicWorld} placeholder="The place, its atmosphere, and what everyone can know." ></textarea></label>
-                        <p class="setup-note">This updates your current social world. Existing posts, cards and private chats are kept.</p>
+                        <label>Time &amp; era<input maxlength="400" bind:value={draft.era} placeholder="A modern city, a distant future…" /></label><label>Key places<textarea rows="2" maxlength="400" bind:value={draft.places} placeholder="The places where everyday life happens." ></textarea></label><label>Overall mood<select bind:value={draft.mood}><option value="">Choose a mood</option><option>Cozy &amp; playful</option><option>Mysterious</option><option>Dramatic</option><option>Adventurous</option></select></label><p class="setup-note">This updates your current social world. Existing posts, cards and private chats are kept.</p>
                     {:else if step === 1}
                         <label>Use a persona<select value={draft.you.id} onchange={selectPersona}><option value={draft.you.id}>{draft.you.name} (current social identity)</option>{#each personas.filter(persona => persona.id !== draft.you.id) as persona}<option value={persona.id}>{persona.name}</option>{/each}</select></label>
                         <div class="photo-row">{@render portrait(76)}<div><input class="photo-input" aria-label="Choose profile photo" bind:this={fileInput} type="file" accept="image/png,image/jpeg,image/webp" onchange={choosePhoto} /><button class="setup-secondary" type="button" onclick={() => fileInput?.click()}><ImagePlus size={17} />{photoUrl || draft.you.image ? 'Change photo' : 'Choose photo'}</button>{#if photoUrl || draft.you.image}<button class="setup-secondary" type="button" onclick={removePhoto}>Remove photo</button>{/if}</div></div>
@@ -149,11 +150,11 @@
                     {:else if step === 3}
                         <label>Opening event<textarea rows="4" maxlength={MAX_PROFILE_LENGTH} bind:value={draft.startingSituation} placeholder="It is opening night at the garden festival. Everyone is arriving." ></textarea></label>
                         <p class="setup-note">Optional public context for future posts. Saving it does not create a post or call AI.</p>
-                        <details bind:open={advanced}><summary>Relationships & starting knowledge <span>Optional</span></summary><p class="setup-note">Only public starting facts. This does not invent private memories or add relationship scores.</p>{#each draft.cast as actor (actor.characterId)}<div class="starting-person"><button type="button" class="starting-toggle" aria-expanded={expandedPerson === actor.characterId} onclick={() => expandedPerson = expandedPerson === actor.characterId ? '' : actor.characterId}><SocialAvatar name={actor.name} image={actor.image} size={32} /><span><strong>{actor.name}</strong><small>{actor.startingFacts || 'No starting facts added'}</small></span><span>Edit</span></button>{#if expandedPerson === actor.characterId}<label>Public relationships and knowledge<textarea rows="3" maxlength={MAX_PROFILE_LENGTH} bind:value={actor.startingFacts} placeholder="How they know you, and what they already know publicly." ></textarea></label>{/if}</div>{/each}{#if !draft.cast.length}<p class="setup-note">Choose characters in Cast to add starting facts.</p>{/if}</details>
+                        <details bind:open={advanced}><summary>Relationships & starting knowledge <span>Optional</span></summary><p class="setup-note">Only public starting facts. This does not invent private memories or add relationship scores.</p>{#each draft.cast as actor (actor.characterId)}<div class="starting-person"><button type="button" class="starting-toggle" aria-expanded={expandedPerson === actor.characterId} onclick={() => expandedPerson = expandedPerson === actor.characterId ? '' : actor.characterId}><SocialAvatar name={actor.name} image={actor.image} size={32} /><span><strong>{actor.name}</strong><small>{actor.startingFactsVisibility === 'private' ? 'Private note' : actor.startingFactsVisibility === 'paused' ? 'Paused note' : actor.startingFacts || 'No starting facts added'}</small></span><span>Edit</span></button>{#if expandedPerson === actor.characterId}<label>Starting relationships and knowledge<textarea rows="3" maxlength={MAX_PROFILE_LENGTH} bind:value={actor.startingFacts} placeholder="How they know you, and what they already know publicly." ></textarea></label><label>Visibility<select value={actor.startingFactsVisibility ?? 'public'} onchange={event => actor.startingFactsVisibility = event.currentTarget.value as 'public' | 'private' | 'paused'}><option value="public">Public</option><option value="private">Private note</option><option value="paused">Paused</option></select></label>{/if}</div>{/each}{#if !draft.cast.length}<p class="setup-note">Choose characters in Cast to add starting facts.</p>{/if}</details>
                     {:else}
-                        <div class="review-row"><div><h2>{draft.title}</h2><p>{draft.publicWorld || 'No additional world context.'}</p></div><button type="button" onclick={() => go(0)}>Edit world</button></div>
+                        <div class="review-row"><div><h2>{draft.title}</h2><p>{draft.publicWorld || 'No additional world context.'}</p>{#if draft.era}<p>{draft.era}</p>{/if}{#if draft.places}<p>{draft.places}</p>{/if}{#if draft.mood}<p>{draft.mood}</p>{/if}</div><button type="button" onclick={() => go(0)}>Edit world</button></div>
                         <div class="review-row">{@render portrait()}<div><h2>{draft.you.name}</h2><p>{draft.you.publicProfile || 'No additional public profile.'}</p></div><button type="button" onclick={() => go(1)}>Edit you</button></div>
-                        <div class="review-row"><div><h2>Your cast</h2>{#each draft.cast as actor}<p><strong>{actor.name}</strong>: {actor.publicProfile}</p>{#if actor.startingFacts}<p>{actor.startingFacts}</p>{/if}{/each}{#if !draft.cast.length}<p>Starting on your own.</p>{/if}</div><button type="button" onclick={() => go(2)}>Edit cast</button></div>
+                        <div class="review-row"><div><h2>Your cast</h2>{#each draft.cast as actor}<p><strong>{actor.name}</strong>: {actor.publicProfile}</p>{#if actor.startingFacts}<p>{actor.startingFactsVisibility === 'private' ? 'Private note (excluded from public generation)' : actor.startingFactsVisibility === 'paused' ? 'Paused (excluded from public generation)' : actor.startingFacts}</p>{/if}{/each}{#if !draft.cast.length}<p>Starting on your own.</p>{/if}</div><button type="button" onclick={() => go(2)}>Edit cast</button></div>
                         <div class="review-row"><div><h2>Opening moment</h2><p>{draft.startingSituation || 'No opening event set.'}</p></div><button type="button" onclick={() => go(3)}>Edit situation</button></div>
                         <p class="setup-note">Save and open your current feed. Existing posts remain. No generation and no model cost. Character posts and reactions remain separate, explicit actions in the feed, using your selected model and normal provider charges.</p>
                     {/if}
@@ -168,14 +169,13 @@
 {/if}
 
 <style>
-    .setup-shell { height:100%; overflow:auto; background:var(--risu-theme-bgcolor); color:var(--risu-theme-textcolor); text-align:left; }
+    .setup-shell { width: 100%; min-width: 0; flex: 1; align-self: stretch; height:100%; overflow:auto; background:var(--risu-theme-bgcolor); color:var(--risu-theme-textcolor); text-align:left; }
     .setup-header { min-height:72px; padding:12px 32px; display:flex; align-items:center; justify-content:space-between; gap:16px; border-bottom:1px solid var(--risu-theme-borderc); background:var(--risu-theme-surface-elevated); }
-    .setup-logo { font-size:21px; font-weight:750; letter-spacing:-.7px; }
     button { cursor:pointer; min-height:44px; padding:10px 14px; border-radius:7px; }
     button:disabled { opacity:.5; cursor:not-allowed; }
     .setup-header button { display:flex; align-items:center; gap:8px; }
-    .setup-layout { display:grid; grid-template-columns:250px minmax(0,1fr); max-width:1300px; margin:auto; min-height:calc(100% - 72px); }
-    .setup-sidebar { padding:40px 24px; border-right:1px solid var(--risu-theme-borderc); background:var(--risu-theme-surface-elevated); }
+    .setup-layout { display:grid; grid-template-columns:310px minmax(0,1fr); width:100%; margin:auto; min-height:calc(100% - 72px); }
+    .setup-sidebar { padding:40px 24px; border-right:1px solid var(--risu-theme-borderc); background:var(--risu-theme-darkbg); }
     .setup-sidebar h2 { font-size:25px; font-weight:600; line-height:1.4; }
     .setup-sidebar p { margin-top:18px; color:var(--risu-theme-textcolor2); font-size:13px; }
     nav { display:grid; gap:12px; margin-top:32px; }
@@ -197,7 +197,7 @@
     .photo-input { position:absolute; width:1px; height:1px; opacity:0; overflow:hidden; }
     .profile-photo { border-radius:50%; object-fit:cover; flex:none; }
     .setup-secondary { display:inline-flex; align-items:center; justify-content:center; gap:8px; border:1px solid var(--risu-theme-borderc); }
-    .setup-primary { background:var(--risu-theme-selected); font-weight:600; }
+    .setup-primary { background:var(--risu-theme-action-primary); color:var(--risu-theme-bgcolor); font-weight:600; }
     .persona-preview,.cast-header { display:flex; align-items:center; gap:14px; min-width:0; }
     .persona-preview p { margin-top:6px; font-size:13px; white-space:pre-wrap; overflow-wrap:anywhere; }
     .cast-card { border-top:1px solid var(--risu-theme-borderc); padding-top:18px; }

@@ -1,14 +1,15 @@
 <script lang="ts">
+    import { untrack } from 'svelte'
     import { Users, ChevronDown } from '@lucide/svelte'
     import { language } from 'src/lang'
     import { derivePublicRelationships, type PublicFamiliarity } from 'src/ts/social/socialRelations'
     import type { SocialFeedState, SocialReactionKind } from 'src/ts/social/socialFeed'
     import SocialAvatar from './SocialAvatar.svelte'
 
-    let { feed }: { feed: SocialFeedState } = $props()
+    let { feed, initialExpanded = false, onpost }: { feed: SocialFeedState; initialExpanded?: boolean; onpost?: (id: string) => void } = $props()
     let copy = $derived(language.social)
     let relationships = $derived(derivePublicRelationships(feed))
-    let expanded = $state(false)
+    let expanded = $state(untrack(() => initialExpanded))
     let visiblePairs = $state(6)
     let visibleEvents = $state<Record<string, number>>({})
     const stageLabel = (stage: PublicFamiliarity) => ({ first_contact: copy.firstContact, acquainted: copy.acquainted, familiar: copy.familiar })[stage]
@@ -41,7 +42,7 @@
                                     <time class="text-xs text-textcolor2" datetime={new Date(event.createdAt).toISOString()}>{new Date(event.createdAt).toLocaleString()}</time>
                                     <p class="mt-1 whitespace-pre-wrap break-words text-xs text-textcolor2">{event.post.slice(0, 240)}{event.post.length > 240 ? '…' : ''}</p>
                                     {#if event.comment}<p class="mt-1 whitespace-pre-wrap break-words text-sm">{event.comment}</p>{/if}
-                                    <button class="mt-2 text-left text-xs underline underline-offset-4" onclick={() => document.getElementById(`social-post-${event.postId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })}>{copy.sourcePost}</button>
+                                    <button class="mt-2 text-left text-xs underline underline-offset-4" onclick={() => onpost ? onpost(event.postId) : document.getElementById(`social-post-${event.postId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })}>{copy.sourcePost}</button>
                                 </div>
                             </li>
                         {/each}
