@@ -49,7 +49,12 @@
         const inertBefore = siblings.map(el => el.inert)
         siblings.forEach(el => { el.inert = true })
         panel.querySelector<HTMLButtonElement>('#elsewords-tab-translate')?.focus()
-        return () => { siblings.forEach((el, i) => { el.inert = inertBefore[i] }); if (returnFocus?.isConnected) returnFocus.focus() }
+        // Disabling a focused request button can move focus to BODY during generation.
+        const escapedPanel = (event: KeyboardEvent) => {
+            if (event.key === 'Escape' && !panel.contains(event.target as Node)) keydown(event)
+        }
+        document.addEventListener('keydown', escapedPanel, true)
+        return () => { document.removeEventListener('keydown', escapedPanel, true); siblings.forEach((el, i) => { el.inert = inertBefore[i] }); if (returnFocus?.isConnected) returnFocus.focus() }
     })
     onDestroy(() => { if (!suspended) s.close() })
 </script>
