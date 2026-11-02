@@ -352,3 +352,28 @@ Delivery gate: types/tests/build and real app browser acceptance must pass befor
 - Actual QA exposed three defects: global Escape interception prevented profile/quote dialog closure; first comments/reposts mutated a newly allocated raw array outside Svelte reactivity; component CSS displayed a duplicate desktop header brand. Corrected all three. Added three real Svelte-mounted reactive storage regressions. Independent read-only review found no further defect.
 - Corrected source checks:575 passed,3 skipped across55files; Svelte0errors0warnings. Prior build exploration continued only with explicit fixture preallocation/button-close workarounds. This is partial QA, not acceptance of corrected source.
 - Required next gate: exact corrected cloud build, then repeat browser QA without workarounds and publish final capture/feature evidence. No deployment, push or new UI commit. Physical touch, OS chooser and Tauri remain untested.
+
+
+## Authorized unified world workspace (2026-10-03)
+
+- Base: merged develop including native Elsewords, HEAD 8d4296034cd5981a12a4570825ce8b4fb1549d79. Work remains on feature/social-feed in the isolated social-feed worktree. No commit, push or deployment authorized for this iteration.
+- Common responsive world shell: World, Messages, Relationships, Library, Settings. World remains opt-in and classic Elsewhere remains accessible. Prototype source is a visual reference, not a backend or fabricated data source.
+- Private messages reuse one native chat component and provider pipeline. Keep panels mounted across world navigation and native settings; persist per-story composer drafts, attachments and scroll privately in the existing database. Preserve native histories, persona bindings, card import/export, plugins and Elsewords.
+- Read-state metadata observes native stable message IDs globally, baselines existing/imported stories, ignores own messages/comments/incomplete streaming, counts unread conversations, marks only an actually visible conversation read, and retains restoration tombstones.
+- Groups reuse native membership, participation, order and image storage. No greeting insertion or automatic inference on edits or empty-story creation.
+- Knowledge: public projection contains only explicit social facts; private metadata links exact native story IDs to native memory/lorebook/card/settings editors. Missing Hypa V3 summaries must not open its unsafe native modal. No private content enters public prompts or relationship evidence.
+- Fast workers supplied disjoint candidate files with verified manifests. Primary owns integration and final validation. Pending gates: sequential complete types/tests, independent consequential review, exact cloud build, real desktop/mobile browser flows with synthetic local transport, persistence, cancellation and error coverage. No live provider or key use.
+
+
+### Exact unified production QA and save-identity correction
+
+- Cloud built candidate dc4cc0f0fda217d83f476170007be41c8ded30bc;725source files unchanged,394dist hashes verified. Tests652pass3skip, types0/0, build pass. No preview activation.
+- Disposable actual-app fixture flows passed public Lyra post/reaction/profile/native DM/World continuity, public/private drafts and feed scroll, hidden native request return/stop/cancel, per-story persona/composer, unread-conversation accounting, empty HypaV3 guard/native settings, group array edits/order/photo/storage error, and cold-storage new-story hydration. All transports synthetic, no provider cost.
+- Replacement-save regression with identical character/story IDs and social disabled exposed an old composer overwriting the replacement private draft. This is a delivery blocker in that build.
+- Corrective source binds WorldPrivateConversation to its instance database and keys SocialFeed by database identity. Independent targeted review found no additional defect. New sequential types/full tests, exact cloud rebuild and the failing regression plus mobile/workshop acceptance are required. The previous exec-server disconnected before validation completed; new checks start only after confirming no old worktree validator remains.
+
+## Private viewport continuity correction
+
+Exact648231e8 QA exposed private scroll reset/drift across World navigation. Add explicit visible lifecycle through the existing unique native chat, guarded per-save/per-conversation viewport capture and reactivation restoration; preserve negative reverse-column positions and stable message anchors when hidden incoming messages change layout. Ignore hidden/programmatic scroll writes and invalidate delayed restores on database/story/disposal changes. Gate delayed native auto-scroll in the world presentation so a hidden/previous viewport cannot steal the reader position; classic remains unscoped. Add focused ownership/negative/anchor/bottom/retry/story tests, then serialized types/full tests and cloud exact build. Browser regression covers World→same Jun, story/group switch, identical-ID save replacement, hidden new messages and mobile reload. No local production build/deployment.
+
+Exact24a96cc3 browser QA passes strict scroll, hidden message anchor and story/group isolation. Extra already-scheduled-autoscroll test exposed inconsistent new-message indicator: native100px latest-message heuristic can clear it while world viewport remains anchored away from bottom. Align world-only bottom detection to reverse-column scrollTop≈0 across controller/native Chats/DefaultChatScreen; preserve classic heuristic. New exact source/build and strengthened QA required.

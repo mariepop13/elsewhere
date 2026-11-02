@@ -1,6 +1,6 @@
 /* Scoped palette and layout for the optional social mode. Native app themes remain independent. */
 .social-world {
- --risu-theme-textcolor:#dce8e4;--risu-theme-textcolor2:#a5bab2;--risu-theme-bgcolor:#101a1b;--risu-theme-canvas:#101a1b;--risu-theme-surface-elevated:#192729;--risu-theme-surface-subtle:#203530;--risu-theme-action-primary:#8acdbd;--risu-theme-selected:#263e39;--risu-theme-borderc:#30423f;--risu-theme-darkborderc:#30423f;--risu-theme-focus:#8acdbd;--risu-theme-darkbg:#142223;--risu-theme-darkbutton:#263e39;
+ --risu-theme-textcolor:#e8eee6;--risu-theme-textcolor2:#9dada6;--risu-theme-bgcolor:#101c1c;--risu-theme-canvas:#101c1c;--risu-theme-surface-elevated:#192a28;--risu-theme-surface-subtle:#203631;--risu-theme-action-primary:#a8d9bf;--risu-theme-selected:#263e39;--risu-theme-borderc:#2c403b;--risu-theme-darkborderc:#2c403b;--risu-theme-focus:#a8d9bf;--risu-theme-darkbg:#132121;--risu-theme-darkbutton:#263e39;
  --color-textcolor:var(--risu-theme-textcolor);--color-textcolor2:var(--risu-theme-textcolor2);--color-bgcolor:var(--risu-theme-bgcolor);--color-darkbg:var(--risu-theme-darkbg);--color-darkbutton:var(--risu-theme-darkbutton);--color-selected:var(--risu-theme-selected);--color-borderc:var(--risu-theme-borderc);--color-darkborderc:var(--risu-theme-darkborderc);
  flex:1;align-self:stretch;width:100%;min-width:0;height:100%;min-height:0;display:flex;background:var(--risu-theme-bgcolor);color:var(--risu-theme-textcolor);font-size:14px;line-height:1.6;overflow:hidden;
 }

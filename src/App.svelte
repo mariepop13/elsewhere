@@ -1,7 +1,10 @@
 <script lang="ts">
+    import { untrack } from 'svelte';
+    import { worldNavigation } from './ts/social/worldNavigation.svelte';
+    import { createWorldMessageReadState, reconcileWorldMessages } from './ts/social/worldMessages';
     import ElsewordsWorkspace from './lib/Elsewords/ElsewordsWorkspace.svelte';
     import { elsewordsOpen } from './ts/elsewords/entry';
-    import { DynamicGUI, settingsOpen, sideBarStore, ShowRealmFrameStore, openPresetList, openPersonaList, MobileGUI, CustomGUISettingMenuStore, loadedStore, alertStore, LoadingStatusState, bookmarkListOpen, popupStore, easyPanelStore, popUpEditorStore, loadoutModalStore, irisStore, customSideBarConfigDialogStore } from './ts/stores.svelte';
+    import { DynamicGUI, selectedCharID, settingsOpen, sideBarStore, ShowRealmFrameStore, openPresetList, openPersonaList, MobileGUI, CustomGUISettingMenuStore, loadedStore, alertStore, LoadingStatusState, bookmarkListOpen, popupStore, easyPanelStore, popUpEditorStore, loadoutModalStore, irisStore, customSideBarConfigDialogStore } from './ts/stores.svelte';
     import { socialFeedOpen } from './ts/stores.svelte';
     import SocialFeed from './lib/Social/SocialFeed.svelte';
     import Sidebar from './lib/SideBars/Sidebar.svelte';
@@ -50,6 +53,30 @@
     let localNoticeRead = $state(localStorage.getItem(localNoticeKey) === 'acknowledged');
 
     let didFirstSetup: boolean  = $derived(DBState.db?.didFirstSetup)
+    let observedWorldDatabase: typeof DBState.db | undefined;
+    // Observe native arrivals globally, including while the world or message list is hidden.
+    $effect(() => {
+        if (!$loadedStore) return;
+        const db = DBState.db;
+        if (observedWorldDatabase && observedWorldDatabase !== db) untrack(() => {
+            worldNavigation.conversation = undefined;
+            worldNavigation.conversationOpen = false;
+            worldNavigation.page = 'Feed';
+        });
+        observedWorldDatabase = db;
+        if (!db.socialFeed?.enabled) return;
+        const activeCard = db.characters[$selectedCharID];
+        const activeChat = activeCard?.chats[activeCard.chatPage];
+        const exactConversation = worldNavigation.conversation && activeCard?.chaId === worldNavigation.conversation.characterId && activeChat?.id === worldNavigation.conversation.chatId;
+        const visible = exactConversation && $socialFeedOpen && !$settingsOpen && worldNavigation.page === 'Messages' && worldNavigation.conversationOpen && !worldNavigation.conversationObscured
+            ? worldNavigation.conversation : undefined;
+        const previous = untrack(() => db.worldWorkspace?.messageReadState ?? createWorldMessageReadState());
+        const next = reconcileWorldMessages(db, previous, visible);
+        if (next !== previous) untrack(() => {
+            db.worldWorkspace ??= {};
+            db.worldWorkspace.messageReadState = next;
+        });
+    });
     let gridOpen = $state(false)
     let aprilFools = $state(new Date().getMonth() === 3 && new Date().getDate() === 1)
     let aprilFoolsPage = $state(0)
@@ -226,10 +253,10 @@
         <CustomGUISettingMenu />
     {:else if !didFirstSetup}
         <WelcomeRisu />
+    {:else if $socialFeedOpen}
+        {#key DBState.db}<SocialFeed />{/key}
     {:else if $settingsOpen}
         <Settings />
-    {:else if $socialFeedOpen}
-        <SocialFeed />
     {:else if $MobileGUI}
         <div class="w-full h-full flex flex-col">
             <MobileHeader />
@@ -276,7 +303,11 @@
         <BookmarkList />
     {/if}
     {#if $hypaV3ModalOpen}
-        <HypaV3Modal />
+        {#if DBState.db.characters[$selectedCharID]?.chats[DBState.db.characters[$selectedCharID].chatPage]?.hypaV3Data}
+            <HypaV3Modal />
+        {:else}
+            <div class="fixed inset-0 z-50 flex items-center justify-center bg-darkbg/90 p-4" role="dialog" aria-modal="true" aria-label="Conversation memory"><div class="rounded-xl border border-borderc bg-bgcolor p-6 text-textcolor"><p>No Hypa V3 summaries saved in this story yet.</p><button class="mt-4 rounded-lg border border-borderc px-4 py-2" onclick={() => hypaV3ModalOpen.set(false)}>Close memory</button></div></div>
+        {/if}
     {/if}
     <SavePopupIconComp />
     {#if $hypaV3ProgressStore.open}

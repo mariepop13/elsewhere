@@ -13,7 +13,7 @@ import { get } from "svelte/store";
 import { setDatabase, defaultSdDataFunc, getDatabase } from "./storage/database.svelte";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { checkElsewhereUpdate } from "./update";
-import { MobileGUI, botMakerMode, selectedCharID, loadedStore, DBState, LoadingStatusState } from "./stores.svelte";
+import { MobileGUI, botMakerMode, selectedCharID, loadedStore, socialFeedOpen, DBState, LoadingStatusState } from "./stores.svelte";
 import { loadPlugins } from "./plugins/plugins.svelte";
 import { alertError, alertMd, alertTOS, waitAlert, alertConfirm } from "./alert";
 import { characterURLImport } from "./characterCards";
@@ -202,6 +202,7 @@ export async function loadData() {
             await makeColdData()
             loadedStore.set(true)
             selectedCharID.set(-1)
+            socialFeedOpen.set(Boolean(db.socialFeed?.enabled && db.worldWorkspace?.defaultHome !== 'classic'))
             startObserveDom()
             assignIds()
             registerModelDynamic()
