@@ -12,7 +12,7 @@ vi.mock('../../ts/elsewords/entry', async () => {
 vi.mock('../../ts/elsewords/host', () => ({ elsewordsHost: {} }))
 vi.mock('../../ts/stores.svelte', async () => {
     const { writable } = await import('svelte/store')
-    return { SettingsMenuIndex: writable(0), settingsOpen: writable(false), alertStore: writable({ type: 'none' }) }
+    return { SettingsMenuIndex: writable(0), settingsOpen: writable(false), alertStore: writable({ type: 'none' }), socialFeedOpen: writable(false), DBState: { db: { socialFeed: { preferences: { appearance: 'Dark' } } } } }
 })
 let component: ReturnType<typeof mount> | undefined
 let host: { request: ReturnType<typeof vi.fn>; setCharacter: ReturnType<typeof vi.fn> }

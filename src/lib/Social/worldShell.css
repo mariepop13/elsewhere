@@ -1,37 +1,7 @@
-/* The unified shell owns its palette locally; native themes outside it are unchanged. */
+@import './worldPalette.css';
+
+/* Native palette values stay inherited so user themes also apply here. */
 .world-shell {
-    --risu-theme-textcolor: #e8eee6;
-    --risu-theme-textcolor2: #9dada6;
-    --risu-theme-bgcolor: #101c1c;
-    --risu-theme-canvas: #101c1c;
-    --risu-theme-surface-elevated: #192a28;
-    --risu-theme-surface-subtle: #203631;
-    --risu-theme-action-primary: #a8d9bf;
-    --risu-theme-selected: #263e39;
-    --risu-theme-borderc: #2c403b;
-    --risu-theme-darkborderc: #2c403b;
-    --risu-theme-focus: #a8d9bf;
-    --risu-theme-darkbg: #132121;
-    --risu-theme-darkbutton: #263e39;
-    --color-textcolor: var(--risu-theme-textcolor);
-    --color-textcolor2: var(--risu-theme-textcolor2);
-    --color-bgcolor: var(--risu-theme-canvas);
-    --color-darkbg: var(--risu-theme-surface-elevated);
-    --color-darkbutton: var(--risu-theme-surface-subtle);
-    --color-selected: var(--risu-theme-selected);
-    --color-borderc: var(--risu-theme-action-primary);
-    --color-darkborderc: var(--risu-theme-darkborderc);
-    --color-canvas: var(--risu-theme-canvas);
-    --color-surface-elevated: var(--risu-theme-surface-elevated);
-    --color-surface-subtle: var(--risu-theme-surface-subtle);
-    --color-action-primary: var(--risu-theme-action-primary);
-    --color-focus: var(--risu-theme-focus);
-    --world-canvas: var(--risu-theme-canvas);
-    --world-text: var(--risu-theme-textcolor);
-    --world-muted: var(--risu-theme-textcolor2);
-    --world-panel: var(--risu-theme-surface-elevated);
-    --world-line: var(--risu-theme-darkborderc);
-    --world-mint: var(--risu-theme-focus);
     display: flex;
     flex-direction: column;
     flex: 1;
@@ -46,21 +16,6 @@
     font-size: 14px;
     line-height: 1.5;
 }
-.world-shell.world-shell-light {
-    --risu-theme-textcolor: #203c46;
-    --risu-theme-textcolor2: #687f82;
-    --risu-theme-bgcolor: #f6f8f6;
-    --risu-theme-canvas: #f6f8f6;
-    --risu-theme-surface-elevated: #ffffff;
-    --risu-theme-surface-subtle: #e5f3f1;
-    --risu-theme-action-primary: #207b82;
-    --risu-theme-selected: #dbece7;
-    --risu-theme-borderc: #dce7e4;
-    --risu-theme-darkborderc: #dce7e4;
-    --risu-theme-focus: #207b82;
-    --risu-theme-darkbg: #edf2ee;
-    --risu-theme-darkbutton: #dbece7;
-}
 .world-shell :is(.world-shell-header, .world-shell-sidebar, .world-shell-bottomnav) button:focus-visible {
     outline: 2px solid var(--risu-theme-focus);
     outline-offset: 3px;
@@ -72,7 +27,7 @@
     min-height: 76px;
     flex: none;
     padding: 16px 28px;
-    border-bottom: 1px solid var(--risu-theme-borderc);
+    border-bottom: 1px solid var(--ew-native-line);
     background: var(--risu-theme-darkbg);
 }
 .world-shell .world-shell-brand { width: 191px; flex: none; }
@@ -91,7 +46,7 @@
 .world-shell .world-shell-mobile-action { display: none; }
 .world-shell .world-shell-header-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; flex: none; }
 .world-shell .world-shell-icon { display: grid; place-items: center; width: 40px; min-height: 40px; border-radius: 10px; color: var(--risu-theme-textcolor2); }
-.world-shell .world-shell-private { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border: 1px solid var(--risu-theme-borderc); border-radius: 20px; font-size: 11px; color: var(--risu-theme-action-primary); }
+.world-shell .world-shell-private { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border: 1px solid var(--ew-native-line); border-radius: 20px; font-size: 11px; color: var(--world-accent-text); }
 .world-shell .world-shell-body { display: flex; flex: 1; min-height: 0; min-width: 0; }
 .world-shell .world-shell-sidebar {
     display: flex;
@@ -101,7 +56,7 @@
     width: 247px;
     padding: 28px 24px 22px;
     overflow-y: auto;
-    border-right: 1px solid var(--risu-theme-borderc);
+    border-right: 1px solid var(--ew-native-line);
     background: var(--risu-theme-darkbg);
 }
 .world-shell .world-shell-world-picker { display: flex; align-items: center; gap: 9px; padding: 12px; border-radius: 10px; background: var(--risu-theme-surface-subtle); font-size: 12px; font-weight: 600; text-align: left; }
@@ -111,11 +66,11 @@
 .world-shell .world-shell-setup { align-self: flex-start; margin-top: -7px; padding: 4px 12px; font-size: 11px; color: var(--risu-theme-textcolor2); }
 .world-shell .world-shell-navigation { display: flex; flex-direction: column; gap: 7px; }
 .world-shell .world-shell-navigation button { display: flex; align-items: center; gap: 13px; min-height: 46px; padding: 10px 14px; border-radius: 10px; text-align: left; color: var(--risu-theme-textcolor2); }
-.world-shell .world-shell-navigation button[aria-current="page"] { color: var(--risu-theme-action-primary); background: var(--risu-theme-selected); font-weight: 600; }
-.world-shell .world-shell-note { margin-top: auto; padding: 24px 12px; color: var(--risu-theme-action-primary); }
+.world-shell .world-shell-navigation button[aria-current="page"] { color: var(--world-accent-text); background: var(--risu-theme-selected); font-weight: 600; }
+.world-shell .world-shell-note { margin-top: auto; padding: 24px 12px; color: var(--world-accent-text); }
 .world-shell .world-shell-note p { margin: 16px 0 12px; font-size: 19px; line-height: 1.6; font-weight: 500; }
 .world-shell .world-shell-note small { color: var(--risu-theme-textcolor2); font-size: 11px; }
-.world-shell .world-shell-person { display: flex; align-items: center; gap: 11px; padding-top: 19px; border-top: 1px solid var(--risu-theme-borderc); text-align: left; }
+.world-shell .world-shell-person { display: flex; align-items: center; gap: 11px; padding-top: 19px; border-top: 1px solid var(--ew-native-line); text-align: left; }
 .world-shell .world-shell-person > span { min-width: 0; }
 .world-shell .world-shell-person :is(strong, small) { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .world-shell .world-shell-person strong { font-size: 12px; }
@@ -126,7 +81,7 @@
 .world-shell.world-shell-compact .world-shell-navigation button { min-height: 40px; padding-block: 7px; }
 @media (hover: hover) {
     .world-shell :is(.world-shell-icon, .world-shell-navigation button):hover { color: var(--risu-theme-textcolor); background: var(--risu-theme-selected); }
-    .world-shell :is(.world-shell-breadcrumbs button, .world-shell-setup):hover { color: var(--risu-theme-action-primary); }
+    .world-shell :is(.world-shell-breadcrumbs button, .world-shell-setup):hover { color: var(--world-accent-text); }
 }
 @media (max-width: 1050px) {
     .world-shell .world-shell-sidebar { width: 210px; padding-inline: 16px; }
@@ -140,21 +95,41 @@
     .world-shell .world-shell-brand .ew-brand { font-size: 1rem; gap: 0.3rem; }
     .world-shell .world-shell-brand .ew-brand img { width: 22px; height: 22px; }
     .world-shell .world-shell-breadcrumbs { order: 3; flex-basis: 100%; font-size: 11px; }
-    .world-shell .world-shell-mobile-action { display: grid; place-items: center; flex: none; width: 32px; min-height: 32px; border-radius: 8px; }
-    .world-shell .world-shell-mobile-setup { margin-left: auto; }
+    .world-shell .world-shell-mobile-action { display: grid; place-items: center; flex: none; min-width: 44px; min-height: 44px; gap: 6px; border-radius: 8px; }
+    .world-shell .world-shell-mobile-setup { margin-left: auto; display: flex; padding-inline: 8px; }
     .world-shell .world-shell-private { font-size: 0; gap: 0; padding: 8px; }
     .world-shell .world-shell-private svg { width: 14px; height: 14px; }
     .world-shell .world-shell-header-actions { gap: 4px; }
     .world-shell .world-shell-icon { width: 36px; min-height: 40px; }
-    .world-shell .world-shell-bottomnav { display: flex; flex: none; gap: 2px; padding: 7px max(4px, env(safe-area-inset-right)) max(7px, env(safe-area-inset-bottom)) max(4px, env(safe-area-inset-left)); border-top: 1px solid var(--risu-theme-borderc); background: var(--risu-theme-darkbg); }
+    .world-shell .world-shell-bottomnav { display: flex; flex: none; gap: 2px; padding: 7px max(4px, env(safe-area-inset-right)) max(7px, env(safe-area-inset-bottom)) max(4px, env(safe-area-inset-left)); border-top: 1px solid var(--ew-native-line); background: var(--risu-theme-darkbg); }
     .world-shell .world-shell-bottomnav button { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; min-width: 0; min-height: 48px; gap: 4px; border-radius: 9px; color: var(--risu-theme-textcolor2); font-size: 10px; }
-    .world-shell .world-shell-bottomnav button[aria-current="page"] { color: var(--risu-theme-action-primary); background: var(--risu-theme-selected); }
+    .world-shell .world-shell-bottomnav button[aria-current="page"] { color: var(--world-accent-text); background: var(--risu-theme-selected); }
 }
 @media (max-width: 360px) {
     .world-shell .world-shell-header { padding-inline: 10px; }
     .world-shell .world-shell-bottomnav button { font-size: 9px; }
 }
 
-.world-shell .world-unread{margin-left:auto;border-radius:999px;padding:2px 7px;background:var(--world-mint);color:var(--world-canvas);font-size:11px;line-height:1.5}
+.world-shell .world-unread{margin-left:auto;border-radius:999px;padding:2px 7px;background:var(--world-action-fill);color:var(--world-on-action);font-size:11px;line-height:1.5}
 .world-shell .world-shell-bottomnav .world-unread{position:absolute;top:4px;right:8px}
 .world-shell .world-shell-bottomnav button{position:relative}
+
+/* Original menu grid and glow, scoped to the existing World layout. */
+.world-shell .world-shell-content {
+    background:
+        linear-gradient(90deg, color-mix(in srgb, var(--risu-theme-focus) 5%, transparent) 1px, transparent 1px),
+        linear-gradient(color-mix(in srgb, var(--risu-theme-focus) 5%, transparent) 1px, transparent 1px),
+        radial-gradient(circle at 82% 7%, color-mix(in srgb, var(--risu-theme-action-primary) 17%, transparent), transparent 34%),
+        var(--risu-theme-canvas);
+    background-size: 40px 40px, 40px 40px, auto, auto;
+}
+
+.world-shell .world-shell-header {
+    background: linear-gradient(115deg, color-mix(in srgb, var(--risu-theme-darkbg) 92%, var(--risu-theme-action-primary)), var(--risu-theme-darkbg));
+    box-shadow: 0 0 35px color-mix(in srgb, var(--risu-theme-focus) 9%, transparent);
+}
+
+.world-shell .world-shell-navigation button[aria-current="page"],
+.world-shell .world-shell-bottomnav button[aria-current="page"] {
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--risu-theme-focus) 35%, transparent);
+}

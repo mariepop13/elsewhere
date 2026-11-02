@@ -1,4 +1,6 @@
 <script lang="ts">
+    import '../UI/nativeWorkspace.css'
+    import SocialBrand from '../Social/SocialBrand.svelte'
     import { onMount, onDestroy, tick } from 'svelte'
     import { get } from 'svelte/store'
     import { elsewordsOpen, takeElsewordsSession, suspendElsewordsSession } from '../../ts/elsewords/entry'
@@ -6,9 +8,11 @@
     import { elsewordsHost } from '../../ts/elsewords/host'
     import { sizeReviewEditor } from '../../ts/elsewords/reviewEditorSizing'
     import { cardData } from '../../ts/elsewords/cardCore.js'
-    import { SettingsMenuIndex, settingsOpen, alertStore } from '../../ts/stores.svelte'
+    import { SettingsMenuIndex, settingsOpen, alertStore, DBState, socialFeedOpen } from '../../ts/stores.svelte'
 
     const s = takeElsewordsSession(elsewordsHost, localStorage)
+    let systemLight = $state(false)
+    let light = $derived($socialFeedOpen && (DBState.db.socialFeed?.preferences?.appearance === 'Light' || (DBState.db.socialFeed?.preferences?.appearance === 'System' && systemLight)))
     let suspended = false
     const targets = ['English', 'French', 'Spanish', 'German', 'Italian', 'Portuguese', 'Japanese', 'Korean', 'Chinese (Simplified)', 'Arabic', 'Russian', 'Other']
     const preferenceLabels = { sourceMode: 'Source language mode', sourceLanguage: 'Manual source language', target: 'Target language', customTarget: 'Custom target language', style: 'Translation style', instructions: 'Additional instructions', tone: 'Preserve original tone', names: 'Translate descriptive names' }
@@ -43,6 +47,10 @@
         previousConfirmation = confirmation
     })
     onMount(() => {
+        const appearanceQuery = window.matchMedia('(prefers-color-scheme: light)')
+        const updateAppearance = () => { systemLight = appearanceQuery.matches }
+        updateAppearance()
+        appearanceQuery.addEventListener('change', updateAppearance)
         returnFocus = document.activeElement as HTMLElement
         // Isolate the native modal while keeping later host permission alerts operable.
         const siblings = [...panel.parentElement.children].filter(el => el !== panel && el instanceof HTMLElement) as HTMLElement[]
@@ -54,7 +62,7 @@
             if (event.key === 'Escape' && !panel.contains(event.target as Node)) keydown(event)
         }
         document.addEventListener('keydown', escapedPanel, true)
-        return () => { document.removeEventListener('keydown', escapedPanel, true); siblings.forEach((el, i) => { el.inert = inertBefore[i] }); if (returnFocus?.isConnected) returnFocus.focus() }
+        return () => { appearanceQuery.removeEventListener('change', updateAppearance); document.removeEventListener('keydown', escapedPanel, true); siblings.forEach((el, i) => { el.inert = inertBefore[i] }); if (returnFocus?.isConnected) returnFocus.focus() }
     })
     onDestroy(() => { if (!suspended) s.close() })
 </script>
@@ -73,10 +81,11 @@
 {/snippet}
 
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-<div bind:this={panel} class="elsewords-workspace fixed inset-0 z-50 bg-bgcolor text-textcolor" role="dialog" aria-modal="true" aria-labelledby="elsewords-title" tabindex="-1" onkeydown={keydown}>
+<div bind:this={panel} class="elsewords-workspace fixed inset-0 z-50 bg-bgcolor text-textcolor" class:ew-light={light} role="dialog" aria-modal="true" aria-labelledby="elsewords-title" tabindex="-1" onkeydown={keydown}>
     <div class="workspace-content" inert={Boolean(s.confirmation)}>
+        <div class="workspace-brand"><SocialBrand /><span class="eyebrow">Character workshop</span></div>
         <header>
-            <div><p class="eyebrow">Character workshop</p><h1 id="elsewords-title">Elsewords</h1><p class="header-description">Translate or create a card, then refine the whole result before saving.</p></div>
+            <div><h1 id="elsewords-title">Elsewords</h1><p class="header-description">Translate or create a card, then refine the whole result before saving.</p></div>
             <button aria-label="Close Elsewords" disabled={s.busy === 'save'} onclick={close}>Close</button>
         </header>
         <div class="tabs" role="tablist" aria-label="Character card tools">
@@ -191,39 +200,40 @@
 </div>
 
 <style>
-    .elsewords-workspace { overflow-y: auto; overscroll-behavior: contain; background: var(--risu-theme-canvas); }
+    .elsewords-workspace { overflow-y: auto; overscroll-behavior: contain; background: var(--ew-native-backdrop); background-size: 40px 40px, 40px 40px, auto, auto; }
     .workspace-content { max-width: 1480px; margin: auto; padding: clamp(1rem, 3vw, 2.5rem); }
+    .workspace-brand { display: flex; align-items: center; flex-wrap: wrap; gap: .75rem 1.25rem; padding-bottom: 1.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--ew-native-line); }
     header { display: flex; justify-content: space-between; align-items: flex-start; gap: 1.5rem; padding-bottom: 1.25rem; }
-    .eyebrow { color: var(--risu-theme-textcolor2); font-size: .75rem; letter-spacing: .08em; text-transform: uppercase; font-weight: 650; margin: 0 0 .4rem; }
+    .eyebrow { color: var(--risu-theme-textcolor2); font-size: .75rem; letter-spacing: .08em; font-weight: 650; margin: 0; }
     h1 { font-size: clamp(1.6rem, 3vw, 2rem); font-weight: 700; line-height: 1.15; letter-spacing: -.02em; }
     h2 { font-size: 1.15rem; font-weight: 650; line-height: 1.4; margin: 0; }
     h3 { font-weight: 650; margin: .75rem 0; }
     .header-description { color: var(--risu-theme-textcolor2); margin-top: .6rem; max-width: 42rem; line-height: 1.6; }
     .muted { color: var(--risu-theme-textcolor2); font-size: .875rem; margin: .65rem 0; line-height: 1.55; }
-    .tabs { display: flex; flex-wrap: wrap; gap: .4rem; margin: 0 0 1.5rem; padding: .35rem; width: fit-content; max-width: 100%; border: 1px solid var(--risu-theme-darkborderc); border-radius: .85rem; background: var(--risu-theme-surface-subtle); }
+    .tabs { display: flex; flex-wrap: wrap; gap: .4rem; margin: 0 0 1.5rem; padding: .35rem; width: fit-content; max-width: 100%; border: 1px solid var(--ew-native-line); border-radius: .85rem; background: var(--risu-theme-surface-subtle); }
     .tabs button { border-color: transparent; background: transparent; padding-inline: 1.3rem; }
-    .tabs button[aria-selected='true'] { background: var(--risu-theme-action-primary); border-color: var(--risu-theme-action-primary); }
+    .tabs button[aria-selected='true'] { background: var(--world-action-fill); border-color: var(--risu-theme-action-primary); color: var(--world-on-action); }
     .actions { display: flex; flex-wrap: wrap; gap: .55rem; margin: 1rem 0; }
     .layout { display: grid; grid-template-columns: minmax(320px, .8fr) minmax(0, 1.5fr); gap: 1.5rem; align-items: start; }
-    .card { background: var(--risu-theme-surface-elevated); border: 1px solid var(--risu-theme-darkborderc); border-radius: 1rem; padding: clamp(1rem, 2vw, 1.5rem); min-width: 0; }
+    .card { background: var(--risu-theme-surface-elevated); border: 1px solid var(--ew-native-line); border-radius: 1rem; padding: clamp(1rem, 2vw, 1.5rem); min-width: 0; }
     .step-heading { display: flex; gap: .75rem; align-items: flex-start; margin: .25rem 0 1rem; }
-    .step-heading:not(:first-child) { border-top: 1px solid var(--risu-theme-darkborderc); margin-top: 1.5rem; padding-top: 1.5rem; }
+    .step-heading:not(:first-child) { border-top: 1px solid var(--ew-native-line); margin-top: 1.5rem; padding-top: 1.5rem; }
     .step-heading .muted { margin: .35rem 0 0; }
     .step-number { display: grid; place-items: center; width: 1.85rem; height: 1.85rem; flex-shrink: 0; border-radius: .6rem; background: var(--risu-theme-surface-subtle); color: var(--risu-theme-textcolor2); font-size: .85rem; font-weight: 650; }
     label { display: flex; flex-direction: column; gap: .5rem; margin-bottom: .9rem; font-size: .9rem; font-weight: 500; }
-    input, select, textarea { background: var(--risu-theme-canvas); color: inherit; border: 1px solid var(--risu-theme-darkborderc); border-radius: .6rem; padding: .7rem .8rem; min-width: 0; max-width: 100%; width: 100%; font-weight: 400; }
+    input, select, textarea { background: var(--risu-theme-canvas); color: inherit; border: 1px solid var(--ew-native-line); border-radius: .6rem; padding: .7rem .8rem; min-width: 0; max-width: 100%; width: 100%; font-weight: 400; }
     textarea { min-height: 7rem; resize: vertical; line-height: 1.65; }
     textarea.compact { min-height: 3.5rem; }
-    .check { flex-direction: row; align-items: center; font-weight: 400; gap: .6rem; } .check input { width: auto; }
-    fieldset { border: 1px solid var(--risu-theme-darkborderc); padding: .9rem; border-radius: .65rem; margin: 1rem 0; }
-    button { background: var(--risu-theme-surface-subtle); color: inherit; border: 1px solid var(--risu-theme-darkborderc); border-radius: .6rem; padding: .65rem .9rem; cursor: pointer; font-size: .875rem; font-weight: 550; line-height: 1.4; transition: background .15s, border-color .15s; }
+    .check { flex-direction: row; align-items: center; font-weight: 400; gap: .6rem; } .check input { width: auto; min-height: auto; accent-color: var(--risu-theme-action-primary); }
+    fieldset { border: 1px solid var(--ew-native-line); padding: .9rem; border-radius: .65rem; margin: 1rem 0; }
+    button { background: var(--risu-theme-surface-subtle); color: inherit; border: 1px solid var(--ew-native-line); border-radius: .6rem; padding: .65rem .9rem; min-height: 44px; cursor: pointer; font-size: .875rem; font-weight: 550; line-height: 1.4; transition: background .15s, border-color .15s; }
     button:hover:not(:disabled) { border-color: var(--risu-theme-focus); }
-    button.primary { background: var(--risu-theme-action-primary); border-color: var(--risu-theme-action-primary); }
+    button.primary { background: var(--world-action-fill); border-color: var(--risu-theme-action-primary); color: var(--world-on-action); }
     button:disabled, input:disabled, textarea:disabled, select:disabled { opacity: .5; cursor: default; }
     button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, summary:focus-visible { outline: 2px solid var(--risu-theme-focus); outline-offset: 3px; }
     .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .8rem; } .wide { grid-column: 1 / -1; }
     .review-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; margin-bottom: 1.25rem; }
-    .state-badge { border: 1px solid var(--risu-theme-darkborderc); border-radius: 2rem; padding: .35rem .6rem; color: var(--risu-theme-textcolor2); font-size: .75rem; }
+    .state-badge { border: 1px solid var(--ew-native-line); border-radius: 2rem; padding: .35rem .6rem; color: var(--risu-theme-textcolor2); font-size: .75rem; }
     .summary { border-left: 3px solid var(--risu-theme-action-primary); padding-left: 1rem; }
     .summary p { display: -webkit-box; -webkit-line-clamp: 4; line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.6; }
     .comparison { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; } .comparison.output-only { grid-template-columns: minmax(0, 1fr); }
@@ -233,21 +243,21 @@
     .comparison textarea { min-height: 8rem; box-sizing: border-box; overflow-y: auto; }
     .comparison textarea.compact { min-height: 3.5rem; }
     .comparison pre { margin: 0; }
-    .field-review { border-top: 1px solid var(--risu-theme-darkborderc); padding-top: .9rem; margin-top: 1.25rem; }
+    .field-review { border-top: 1px solid var(--ew-native-line); padding-top: .9rem; margin-top: 1.25rem; }
     pre, dd, .summary p { white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; }
-    pre { background: var(--risu-theme-canvas); border: 1px solid var(--risu-theme-darkborderc); padding: .8rem; border-radius: .6rem; font-size: .85rem; line-height: 1.65; max-height: 32rem; overflow: auto; }
+    pre { background: var(--risu-theme-canvas); border: 1px solid var(--ew-native-line); padding: .8rem; border-radius: .6rem; font-size: .85rem; line-height: 1.65; max-height: 32rem; overflow: auto; }
     .empty-review { min-height: 24rem; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 2rem 1rem; }
     .empty-review p { max-width: 30rem; line-height: 1.65; }
-    .empty-mark { display: grid; place-items: center; width: 4rem; height: 4rem; border: 1px solid var(--risu-theme-darkborderc); background: var(--risu-theme-surface-subtle); border-radius: 1rem; color: var(--risu-theme-textcolor2); font-size: 1.5rem; margin-bottom: .5rem; }
+    .empty-mark { display: grid; place-items: center; width: 4rem; height: 4rem; border: 1px solid var(--ew-native-line); background: var(--risu-theme-surface-subtle); border-radius: 1rem; color: var(--risu-theme-textcolor2); font-size: 1.5rem; margin-bottom: .5rem; }
     details { margin: 1rem 0; } summary { cursor: pointer; font-size: .9rem; font-weight: 550; padding-block: .4rem; }
-    .generation-progress { display: grid; gap: .35rem; padding: .85rem; border: 1px solid var(--risu-theme-darkborderc); border-radius: .65rem; background: var(--risu-theme-canvas); }
-    .status-panel { border: 1px solid var(--risu-theme-darkborderc); border-radius: .65rem; background: var(--risu-theme-canvas); padding: .85rem; font-size: .9rem; line-height: 1.6; overflow-wrap: anywhere; }
+    .generation-progress { display: grid; gap: .35rem; padding: .85rem; border: 1px solid var(--ew-native-line); border-radius: .65rem; background: var(--risu-theme-canvas); }
+    .status-panel { border: 1px solid var(--ew-native-line); border-radius: .65rem; background: var(--risu-theme-canvas); padding: .85rem; font-size: .9rem; line-height: 1.6; overflow-wrap: anywhere; }
     .error { color: var(--risu-theme-danger-500); }
-    .portrait, .migration { border-top: 1px solid var(--risu-theme-darkborderc); margin-top: 1.5rem; padding-top: .75rem; }
+    .portrait, .migration { border-top: 1px solid var(--ew-native-line); margin-top: 1.5rem; padding-top: .75rem; }
     img { max-width: 100%; max-height: 20rem; object-fit: contain; border-radius: .65rem; margin-block: .5rem; }
     dt { font-weight: 650; margin-top: .6rem; } dd { margin: .25rem 0 .75rem; }
-    .confirmation-shade { position: fixed; inset: 0; background: #0008; display: flex; align-items: center; justify-content: center; padding: 1rem; }
-    .confirmation { max-width: 36rem; max-height: 90dvh; overflow: auto; }
+    .confirmation-shade { position: fixed; inset: 0; background: var(--risu-theme-overlay); display: flex; align-items: center; justify-content: center; padding: 1rem; }
+    .confirmation { width: min(100%, 36rem); max-height: 90dvh; overflow: auto; box-shadow: 0 0 35px color-mix(in srgb, var(--risu-theme-focus) 12%, transparent); }
     @media (prefers-reduced-motion: reduce) { button { transition: none; } }
     @media (max-width: 1100px) { .layout { grid-template-columns: minmax(0, 1fr); } .empty-review { min-height: 15rem; } }
     @media (max-width: 600px) { .comparison pre { max-height: max(8rem, min(32rem, 60dvh)); } .comparison textarea { max-height: max(8rem, 85dvh); } .comparison, .form-grid { grid-template-columns: minmax(0, 1fr); } .wide { grid-column: auto; } .tabs { width: 100%; } .tabs button { flex: 1; padding-inline: .65rem; } header { gap: .75rem; } .actions button { max-width: 100%; } }

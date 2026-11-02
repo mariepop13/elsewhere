@@ -1,0 +1,153 @@
+@import '../Social/worldPalette.css';
+
+/* Shared native screens inherit the user's existing Elsewhere theme and font. */
+:where(.elsewords-workspace, .settings-shell) {
+    --ew-native-backdrop:
+        linear-gradient(90deg, color-mix(in srgb, var(--risu-theme-focus) 5%, transparent) 1px, transparent 1px),
+        linear-gradient(color-mix(in srgb, var(--risu-theme-focus) 5%, transparent) 1px, transparent 1px),
+        radial-gradient(circle at 82% 7%, color-mix(in srgb, var(--risu-theme-action-primary) 17%, transparent), transparent 34%),
+        var(--risu-theme-canvas);
+    font-family: var(--risu-font-family);
+    color: var(--risu-theme-textcolor);
+}
+
+.elsewords-workspace {
+    background-size: 40px 40px, 40px 40px, auto, auto;
+}
+
+.elsewords-workspace .workspace-brand,
+.settings-shell .settings-index-heading {
+    color: var(--risu-theme-textcolor);
+    box-shadow: 0 16px 28px -24px color-mix(in srgb, var(--risu-theme-focus) 35%, transparent);
+}
+
+.elsewords-workspace .card {
+    border-top-color: color-mix(in srgb, var(--risu-theme-focus) 55%, var(--risu-theme-canvas));
+}
+
+.elsewords-workspace :is(input:not([type='checkbox']):not([type='range']):not([type='color']), select, textarea),
+.settings-shell :is(input:not([type='checkbox']):not([type='range']):not([type='color']), select, textarea) {
+    box-sizing: border-box;
+    min-width: 0;
+    max-width: 100%;
+    min-height: 44px;
+    background-color: var(--risu-theme-canvas);
+    border-color: var(--ew-native-line);
+    border-radius: 8px;
+    color: var(--risu-theme-textcolor);
+    font: inherit;
+    padding: 10px 12px;
+}
+
+:where(.elsewords-workspace, .settings-shell) select option {
+    background: var(--risu-theme-canvas);
+    color: var(--risu-theme-textcolor);
+}
+
+:where(.elsewords-workspace, .settings-shell) :is(button, input, select, textarea, summary):focus-visible {
+    outline: 2px solid var(--risu-theme-focus);
+    outline-offset: 3px;
+}
+
+.settings-shell .settings-workspace-header {
+    padding-inline-end: 48px;
+}
+
+.settings-shell .settings-content {
+    background-image:
+        linear-gradient(90deg, color-mix(in srgb, var(--risu-theme-focus) 3%, transparent) 1px, transparent 1px),
+        linear-gradient(color-mix(in srgb, var(--risu-theme-focus) 3%, transparent) 1px, transparent 1px);
+    background-size: 40px 40px;
+}
+
+.settings-shell .settings-field {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+    min-width: 0;
+    padding-block: 16px;
+    border-bottom: 1px solid var(--ew-native-line);
+    line-height: 1.6;
+}
+
+.settings-shell .settings-field > span {
+    display: block;
+    margin: 0;
+    font-size: 14px;
+    font-weight: 550;
+    overflow-wrap: anywhere;
+}
+
+.settings-shell .settings-field > :is(input, select, textarea) {
+    width: 100%;
+    margin: 0;
+}
+
+.settings-shell .settings-field[data-setting-type='number'] > input {
+    max-width: 18rem;
+}
+
+.settings-shell .settings-field[data-setting-type='header'],
+.settings-shell .settings-field[data-setting-type='custom'],
+.settings-shell .settings-field[data-setting-type='accordion'] {
+    border-bottom: 0;
+}
+
+.settings-shell .settings-field[data-setting-type='header'] {
+    padding-block: 12px 4px;
+}
+
+.settings-shell .settings-field[data-setting-type='header'] > span {
+    font-size: 13px;
+    font-weight: 400;
+}
+
+.settings-shell button:not(.help) {
+    min-height: 44px;
+    border-color: var(--ew-native-line);
+}
+
+.settings-shell button.bg-action-primary,
+.settings-shell button.bg-borderc {
+    background: var(--world-action-fill);
+    border-color: var(--risu-theme-action-primary);
+    color: var(--world-on-action);
+}
+
+.settings-shell .help {
+    min-width: 24px;
+    min-height: 24px;
+    margin-inline-start: 4px;
+    justify-content: center;
+    color: var(--world-accent-text);
+}
+
+.settings-shell .settings-index-list .settings-nav-item {
+    border-left: 0;
+    border: 1px solid transparent;
+    border-radius: 10px;
+}
+
+.settings-shell .settings-index-list .settings-nav-item-active {
+    border-color: color-mix(in srgb, var(--risu-theme-focus) 45%, transparent);
+    box-shadow: inset 3px 0 var(--risu-theme-focus);
+    background: var(--risu-theme-selected);
+}
+
+@media (max-width: 699px) {
+    .settings-shell .settings-field {
+        padding-block: 14px;
+    }
+    .settings-shell .settings-field[data-setting-type='number'] > input {
+        max-width: 100%;
+    }
+    .elsewords-workspace .workspace-content {
+        padding-bottom: max(24px, env(safe-area-inset-bottom));
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    :where(.elsewords-workspace, .settings-shell) :is(button, input, select, textarea) {
+        transition: none;
+    }
+}

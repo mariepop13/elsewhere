@@ -1,0 +1,58 @@
+/* Reuse native theme tokens; the original Social screen inherited these too.
+   The grid, halo and header glow come from UI/MainMenu.svelte. */
+.social-world,
+.world-shell,
+.elsewords-workspace,
+.settings-shell {
+    --risu-theme-canvas: var(--risu-theme-bgcolor);
+    --risu-theme-surface-elevated: var(--risu-theme-darkbg);
+    --risu-theme-surface-subtle: var(--risu-theme-darkbutton);
+    --risu-theme-action-primary: var(--risu-theme-borderc);
+    --risu-theme-focus: var(--risu-theme-action-primary);
+    --risu-theme-ambient: var(--risu-theme-draculared);
+    --color-textcolor: var(--risu-theme-textcolor);
+    --color-textcolor2: var(--risu-theme-textcolor2);
+    --color-bgcolor: var(--risu-theme-canvas);
+    --color-darkbg: var(--risu-theme-surface-elevated);
+    --color-darkbutton: var(--risu-theme-surface-subtle);
+    --color-selected: var(--risu-theme-selected);
+    --color-borderc: var(--risu-theme-action-primary);
+    --color-darkborderc: var(--risu-theme-darkborderc);
+    --color-canvas: var(--risu-theme-canvas);
+    --color-surface-elevated: var(--risu-theme-surface-elevated);
+    --color-surface-subtle: var(--risu-theme-surface-subtle);
+    --color-action-primary: var(--risu-theme-action-primary);
+    --color-focus: var(--risu-theme-focus);
+    --world-accent-text: color-mix(in srgb, var(--risu-theme-action-primary) 70%, var(--risu-theme-textcolor));
+    --world-action-fill: color-mix(in srgb, var(--risu-theme-action-primary) 92%, var(--risu-theme-canvas));
+    --world-on-action: var(--risu-theme-on-action, var(--risu-theme-textcolor));
+    --ew-native-line: color-mix(in srgb, var(--risu-theme-darkborderc) 35%, var(--risu-theme-canvas));
+    --world-canvas: var(--risu-theme-canvas);
+    --world-text: var(--risu-theme-textcolor);
+    --world-muted: var(--risu-theme-textcolor2);
+    --world-panel: var(--risu-theme-surface-elevated);
+    --world-line: var(--ew-native-line);
+    --world-mint: var(--risu-theme-focus);
+}
+
+/* The explicit light appearance uses the existing native light preset from
+   gui/colorscheme.ts. Dark appearance inherits the user's native palette. */
+.social-world.ew-light,
+.world-shell.world-shell-light,
+.elsewords-workspace.ew-light {
+    --world-on-action: var(--risu-theme-bgcolor);
+    --risu-theme-bgcolor: #ffffff;
+    --risu-theme-darkbg: #f0f0f0;
+    --risu-theme-borderc: #0f172a;
+    --risu-theme-selected: #e0e0e0;
+    --risu-theme-draculared: #ff5555;
+    --risu-theme-textcolor: #0f172a;
+    --risu-theme-textcolor2: #64748b;
+    --risu-theme-darkborderc: #d1d5db;
+    --risu-theme-darkbutton: #e5e7eb;
+}
+
+.social-world.ew-light .settings-shell,
+.world-shell.world-shell-light .settings-shell {
+    --world-on-action: var(--risu-theme-bgcolor);
+}

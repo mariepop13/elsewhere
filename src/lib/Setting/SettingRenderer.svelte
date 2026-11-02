@@ -4,7 +4,7 @@
     import { DBState } from 'src/ts/stores.svelte';
     import { getModelInfo } from 'src/ts/model/modellist';
     import { settingRegistry } from 'src/ts/setting/settingRegistry';
-    import { checkCondition } from 'src/ts/setting/utils';
+    import { checkCondition, getLabel } from 'src/ts/setting/utils';
 
     interface Props {
         items: SettingItem[];
@@ -32,7 +32,11 @@
     {#if checkCondition(item, ctx)}
         {@const Component = settingRegistry[item.type]}
         {#if Component}
-            <Component {item} {ctx} />
+            <div class="settings-field" data-setting-id={item.id} data-setting-type={item.type}
+                role={['header', 'custom', 'accordion'].includes(item.type) ? undefined : 'group'}
+                aria-label={['header', 'custom', 'accordion'].includes(item.type) ? undefined : getLabel(item)}>
+                <Component {item} {ctx} />
+            </div>
         {:else}
             <div class="text-draculared text-xs mt-2">Unknown setting type: {item.type}</div>
         {/if}

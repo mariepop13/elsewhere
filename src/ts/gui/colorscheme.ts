@@ -1,3 +1,4 @@
+import { actionInk, type ThemeRgb } from './themeContrast';
 import { get, writable } from "svelte/store";
 import { getDatabase, setDatabase } from "../storage/database.svelte";
 import { downloadFile } from "../globalApi.svelte";
@@ -282,6 +283,26 @@ export function updateColorScheme(){
         document.documentElement.style.setProperty("--risu-theme-darkborderc", colorScheme.darkBorderc);
         document.documentElement.style.setProperty("--risu-theme-darkbutton", colorScheme.darkbutton);
         ColorSchemeTypeStore.set(colorScheme.type)
+        // Resolve CSS colors in the browser without attaching an element or
+        // changing saved palettes, then choose readable ink for accent buttons.
+        const readColor = (value: string): ThemeRgb => {
+            const match = /^#([a-f\d]{3}|[a-f\d]{6})$/i.exec(value.trim())
+            if (match) {
+                const hex = match[1].length === 3 ? [...match[1]].map(channel => channel + channel).join('') : match[1]
+                return [parseInt(hex.slice(0, 2), 16), parseInt(hex.slice(2, 4), 16), parseInt(hex.slice(4, 6), 16)]
+            }
+            const colorCanvas = document.createElement('canvas')
+            colorCanvas.width = colorCanvas.height = 1
+            const colorContext = colorCanvas.getContext('2d', { willReadFrequently: true })
+            if (!colorContext) throw new Error('CSS color resolution unavailable')
+            colorContext.fillStyle = value
+            colorContext.fillRect(0, 0, 1, 1)
+            const data = colorContext.getImageData(0, 0, 1, 1).data
+            return [data[0], data[1], data[2]]
+        }
+        const ink = actionInk(readColor(colorScheme.borderc), readColor(colorScheme.bgcolor), readColor(colorScheme.textcolor))
+        const inkColors = { text: colorScheme.textcolor, canvas: colorScheme.bgcolor, black: '#000000', white: '#ffffff' }
+        document.documentElement.style.setProperty('--risu-theme-on-action', inkColors[ink])
     } catch (error) {}
 }
 
