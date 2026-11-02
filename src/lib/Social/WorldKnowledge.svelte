@@ -1,7 +1,6 @@
 <script lang="ts">
     import { DBState } from 'src/ts/stores.svelte'
     import { projectPublicWorldKnowledge, resolveNativeKnowledge, type OpenNativeKnowledgeTool, type WorldKnowledgeScope } from 'src/ts/social/worldKnowledge'
-    import SocialRelationships from './SocialRelationships.svelte'
 
     let { scope, characterId, chatId, onOpenNativeTool, onOpenModelSettings, onOpenPost }: {
         scope: WorldKnowledgeScope
@@ -16,7 +15,7 @@
     const buttonClass = 'rounded-lg border border-textcolor/15 bg-textcolor/5 px-4 py-2 text-left text-sm hover:bg-textcolor/10 disabled:opacity-50'
 </script>
 
-<section class="space-y-5 text-textcolor" aria-label={scope === 'public' ? 'Public knowledge and relationships' : 'Private memory and knowledge'}>
+<section class="space-y-5 text-textcolor" aria-label={scope === 'public' ? 'Public world knowledge' : 'Private memory and knowledge'}>
     <div>
         <h2 class="text-xl font-semibold">{scope === 'public' ? 'World knowledge' : 'Memory & knowledge'}</h2>
         <p class="mt-2 text-sm text-textcolor2">{scope === 'public' ? 'Public · Only profiles and facts explicitly added to this social world appear here.' : 'Private · Native conversation memory and lorebooks stay separate from the public feed.'}</p>
@@ -39,9 +38,6 @@
                 </div>
             </div>
         {/each}
-        {#if DBState.db.socialFeed}
-            <SocialRelationships feed={DBState.db.socialFeed} initialExpanded={true} onpost={onOpenPost} />
-        {/if}
     {:else if scope === 'private'}
         {#if native}
             <div class="space-y-4 rounded-xl border border-textcolor/10 p-4">

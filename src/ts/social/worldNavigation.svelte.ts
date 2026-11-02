@@ -1,6 +1,6 @@
 import type { WorldMessageReadState } from './worldMessages'
 
-export type WorldPage = 'Feed' | 'Messages' | 'Relationships' | 'Library' | 'Settings'
+export type WorldPage = 'Feed' | 'Messages' | 'Library' | 'Settings'
 export interface WorldConversation { characterId: string; chatId?: string }
 export interface WorldConversationHeading { characterId: string; name: string; image?: string }
 export type NativeWorldTool = 'memory' | 'lorebook' | 'character' | 'settings'
@@ -17,6 +17,8 @@ export interface WorldChatDraft {
     loadPages?: number
 }
 export interface WorldWorkspacePreferences {
+    /** Private versioned relationship slot, preserved opaquely when unavailable. */
+    relationshipWorkspace?: unknown
     defaultHome?: 'world' | 'classic'
     messageReadState?: WorldMessageReadState
     drafts?: Record<string, WorldChatDraft>

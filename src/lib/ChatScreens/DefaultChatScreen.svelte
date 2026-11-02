@@ -853,6 +853,7 @@
             {/if}
             
             <Chats
+                presentation={workspace ? 'world' : 'native'}
                 bind:this={chatsInstance}
                 viewportActive={workspace ? workspaceVisible : undefined}
                 messages={currentChat}
@@ -869,6 +870,7 @@
             {#if DBState.db.characters[$selectedCharID].chats[DBState.db.characters[$selectedCharID].chatPage].message.length <= loadPages}
                 {#if DBState.db.characters[$selectedCharID].type !== 'group' }
                     <Chat
+                        presentation={workspace ? 'world' : 'native'}
                         character={createSimpleCharacter(DBState.db.characters[$selectedCharID])}
                         name={DBState.db.characters[$selectedCharID].name}
                         message={DBState.db.characters[$selectedCharID].chats[DBState.db.characters[$selectedCharID].chatPage].fmIndex === -1 ? DBState.db.characters[$selectedCharID].firstMessage :

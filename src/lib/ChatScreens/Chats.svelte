@@ -17,6 +17,7 @@
     };
 
     let {
+        presentation = 'native',
         messages,
         viewportActive,
         currentCharacter,
@@ -28,6 +29,7 @@
         userIconPortrait,
         hasNewUnreadMessage = $bindable(false)
     }:{
+        presentation?: 'native' | 'world'
         viewportActive?: boolean
         messages: Message[]
         currentCharacter: character|groupChat
@@ -109,7 +111,7 @@
             const reloadPointer = reloadPointerMap[i] ?? 0;
             const activeStreamingMessage = i === activeStreamingIndex && message.role === 'char';
             const hashMessageData = activeStreamingMessage ? '' : message.data;
-            let hashd = hashMessageData + (message.chatId ?? '') + i.toString() + messageLargePortrait.toString() + message.disabled?.toString() + reloadPointer.toString()
+            let hashd = presentation + hashMessageData + (message.chatId ?? '') + i.toString() + messageLargePortrait.toString() + message.disabled?.toString() + reloadPointer.toString()
                 + (message.saying ?? '') + (message.name ?? '') + (groupSpeaker?.name ?? '') + (groupSpeaker?.image ?? '');
             const currentHash = hashCode(hashd);
             currentHashes.add(currentHash);
@@ -121,6 +123,7 @@
                 const inst = mount(Chat, {
                     target: b,
                     props: {
+                        presentation,
                         message: message.data,
                         isLastMemory: false,
                         idx: i,

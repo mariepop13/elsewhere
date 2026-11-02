@@ -202,7 +202,7 @@ export async function loadData() {
             await makeColdData()
             loadedStore.set(true)
             selectedCharID.set(-1)
-            socialFeedOpen.set(Boolean(db.socialFeed?.enabled && db.worldWorkspace?.defaultHome !== 'classic'))
+            socialFeedOpen.set(true)
             startObserveDom()
             assignIds()
             registerModelDynamic()

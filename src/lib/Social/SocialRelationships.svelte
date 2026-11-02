@@ -2,13 +2,14 @@
     import { untrack } from 'svelte'
     import { Users, ChevronDown } from '@lucide/svelte'
     import { language } from 'src/lang'
-    import { derivePublicRelationships, type PublicFamiliarity } from 'src/ts/social/socialRelations'
+    import { type PublicFamiliarity } from 'src/ts/social/socialRelations'
     import type { SocialFeedState, SocialReactionKind } from 'src/ts/social/socialFeed'
+    import { profilePublicInteractions } from 'src/ts/social/characterProfile'
     import SocialAvatar from './SocialAvatar.svelte'
 
-    let { feed, initialExpanded = false, onpost }: { feed: SocialFeedState; initialExpanded?: boolean; onpost?: (id: string) => void } = $props()
+    let { feed, characterId, personaId, initialExpanded = true, onpost }: { feed: SocialFeedState; characterId: string; personaId?: string; initialExpanded?: boolean; onpost?: (id: string) => void } = $props()
     let copy = $derived(language.social)
-    let relationships = $derived(derivePublicRelationships(feed))
+    let relationships = $derived(profilePublicInteractions(feed, characterId, personaId))
     let expanded = $state(untrack(() => initialExpanded))
     let visiblePairs = $state(6)
     let visibleEvents = $state<Record<string, number>>({})
@@ -19,7 +20,7 @@
 <details class="mb-5 rounded-xl border border-textcolor/10 bg-textcolor/5" bind:open={expanded}>
     <summary class="flex cursor-pointer list-none items-center gap-3 p-4">
         <Users size={22} />
-        <span class="min-w-0 grow font-semibold">{copy.relationships} <span class="text-xs font-normal text-textcolor2">({relationships.length})</span></span>
+        <span class="min-w-0 grow font-semibold">Public interactions <span class="text-xs font-normal text-textcolor2">({relationships.length})</span></span>
         <ChevronDown size={18} class={expanded ? 'rotate-180' : ''} />
     </summary>
     {#if expanded}

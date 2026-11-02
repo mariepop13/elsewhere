@@ -4,18 +4,14 @@
     import { createWorldMessageReadState, reconcileWorldMessages } from './ts/social/worldMessages';
     import ElsewordsWorkspace from './lib/Elsewords/ElsewordsWorkspace.svelte';
     import { elsewordsOpen } from './ts/elsewords/entry';
-    import { DynamicGUI, selectedCharID, settingsOpen, sideBarStore, ShowRealmFrameStore, openPresetList, openPersonaList, MobileGUI, CustomGUISettingMenuStore, loadedStore, alertStore, LoadingStatusState, bookmarkListOpen, popupStore, easyPanelStore, popUpEditorStore, loadoutModalStore, irisStore, customSideBarConfigDialogStore } from './ts/stores.svelte';
+    import { selectedCharID, settingsOpen, ShowRealmFrameStore, openPresetList, openPersonaList, CustomGUISettingMenuStore, loadedStore, alertStore, LoadingStatusState, bookmarkListOpen, popupStore, easyPanelStore, popUpEditorStore, loadoutModalStore, irisStore, customSideBarConfigDialogStore } from './ts/stores.svelte';
     import { socialFeedOpen } from './ts/stores.svelte';
     import SocialFeed from './lib/Social/SocialFeed.svelte';
-    import Sidebar from './lib/SideBars/Sidebar.svelte';
     import { DBState } from './ts/stores.svelte';
-    import ChatScreen from './lib/ChatScreens/ChatScreen.svelte';
     import AlertComp from './lib/Others/AlertComp.svelte';
     import RealmPopUp from './lib/UI/Realm/RealmPopUp.svelte';
-    import GridChars from './lib/Others/GridCatalog.svelte';
     import WelcomeRisu from './lib/Others/WelcomeRisu.svelte';
     import BookmarkList from './lib/Others/BookmarkList.svelte';
-    import Settings from './lib/Setting/Settings.svelte';
     import { showRealmInfoStore, importCharacterProcess, upstreamRealmEnabled } from './ts/characterCards';
     import { importPreset, getDatabase, setDatabase } from './ts/storage/database.svelte';
     import { readModule } from './ts/process/modules';
@@ -25,9 +21,6 @@
     import SavePopupIconComp from './lib/Others/SavePopupIcon.svelte';
     import Botpreset from './lib/Setting/botpreset.svelte';
     import ListedPersona from './lib/Setting/listedPersona.svelte';
-    import MobileHeader from './lib/Mobile/MobileHeader.svelte';
-    import MobileBody from './lib/Mobile/MobileBody.svelte';
-    import MobileFooter from './lib/Mobile/MobileFooter.svelte';
     import CustomGUISettingMenu from './lib/Setting/Pages/CustomGUISettingMenu.svelte';
     import { checkCharOrder } from './ts/globalApi.svelte';
     import { ArrowUpIcon, GlobeIcon, PlusIcon } from '@lucide/svelte';
@@ -53,6 +46,8 @@
     let localNoticeRead = $state(localStorage.getItem(localNoticeKey) === 'acknowledged');
 
     let didFirstSetup: boolean  = $derived(DBState.db?.didFirstSetup)
+    // World is the single ready workspace, including legacy saves.
+    $effect(() => { if ($loadedStore && didFirstSetup && !$socialFeedOpen) socialFeedOpen.set(true) })
     let observedWorldDatabase: typeof DBState.db | undefined;
     // Observe native arrivals globally, including while the world or message list is hidden.
     $effect(() => {
@@ -64,7 +59,6 @@
             worldNavigation.page = 'Feed';
         });
         observedWorldDatabase = db;
-        if (!db.socialFeed?.enabled) return;
         const activeCard = db.characters[$selectedCharID];
         const activeChat = activeCard?.chats[activeCard.chatPage];
         const exactConversation = worldNavigation.conversation && activeCard?.chaId === worldNavigation.conversation.characterId && activeChat?.id === worldNavigation.conversation.chatId;
@@ -77,7 +71,6 @@
             db.worldWorkspace.messageReadState = next;
         });
     });
-    let gridOpen = $state(false)
     let aprilFools = $state(new Date().getMonth() === 3 && new Date().getDate() === 1)
     let aprilFoolsPage = $state(0)
     let keepingSessionAlive = $state(false)
@@ -253,33 +246,8 @@
         <CustomGUISettingMenu />
     {:else if !didFirstSetup}
         <WelcomeRisu />
-    {:else if $socialFeedOpen}
-        {#key DBState.db}<SocialFeed />{/key}
-    {:else if $settingsOpen}
-        <Settings />
-    {:else if $MobileGUI}
-        <div class="w-full h-full flex flex-col">
-            <MobileHeader />
-            <MobileBody />
-            <MobileFooter />
-        </div>
     {:else}
-        {#if gridOpen}
-            <GridChars endGrid={() => {gridOpen = false}} />
-        {:else}
-            {#if (!$DynamicGUI)}
-                <Sidebar openGrid={() => {gridOpen = true}} hidden={!$sideBarStore} />
-            {:else}
-                <div class="top-0 w-full h-full left-0 z-30 flex flex-row items-center" class:fixed={$sideBarStore} class:hidden={!$sideBarStore} >
-                    <!-- svelte-ignore a11y_click_events_have_key_events -->
-                    <Sidebar openGrid={() => {gridOpen = true}}  hidden={false} />
-
-
-
-                </div>
-            {/if}
-            <ChatScreen />
-        {/if}
+        {#key DBState.db}<SocialFeed />{/key}
     {/if}
     {#if $elsewordsOpen && $loadedStore && didFirstSetup}
         <ElsewordsWorkspace />

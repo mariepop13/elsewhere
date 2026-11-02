@@ -1,0 +1,16 @@
+import { createRelationshipLedger } from './relationshipLedger';
+import type { RelationshipKey } from './relationshipLedger';
+import type { ExplicitRelationshipCommand, AdapterContext } from './relationshipEventAdapter';
+import type { SourceReference, SourceSnapshot, AccessContext } from './relationshipSourceAccess';
+export const A = { kind: 'persona', id: 'persona-A' } as const;
+export const B = { kind: 'character', id: 'character-B' } as const;
+export const C = { kind: 'character', id: 'character-C' } as const;
+export const binding = { saveId: 'save-uuid-one', worldId: 'world-uuid-one', ownerId: 'local-owner' };
+export const relation: RelationshipKey = { worldId: binding.worldId, subject: A, other: B };
+export const dm: Extract<SourceReference, { kind: 'dm_message' }> = { saveId: binding.saveId, worldId: binding.worldId, kind: 'dm_message', participants: [A,B], characterId: B.id, chatId: 'native-chat', messageId: 'native-message', storyId: 'story-one', sender: A };
+export const post: Extract<SourceReference, { kind: 'public_post' }> = { saveId: binding.saveId, worldId: binding.worldId, kind: 'public_post', participants: [A,B], postId: 'post-one', author: B };
+export const note: Extract<SourceReference, { kind: 'authored_note' }> = { ...binding, kind: 'authored_note', participants: [A,B], recordId: 'owner-note-one' };
+export const access: AccessContext = { ...binding, audience: { mode: 'participant', viewer: A }, personaId: A.id, characterId: B.id, storyId: 'story-one' };
+export const snapshot = (source: SourceReference = dm): SourceSnapshot => ({ source, exists: true, visibility: source.kind.startsWith('public_') ? 'public' : 'private', knownBy: [A,B] });
+export const context = (source: SourceReference = dm): AdapterContext => ({ ledger: createRelationshipLedger(), registry: [], access, sources: [snapshot(source)] });
+export const initialize = (source: SourceReference = dm): Extract<ExplicitRelationshipCommand, { actionType: 'relationship.initialized' }> => ({ commandId: 'command-one', relation, source, time: 1000, scope: source.kind.startsWith('public_') ? 'public' : 'private', knownBy: [A,B], actionType: 'relationship.initialized', explanation: 'A explicitly establishes trust after this conversation.', description: 'A has chosen to open up to B.', values: { trust: 35 } });

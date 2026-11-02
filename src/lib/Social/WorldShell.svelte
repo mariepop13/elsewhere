@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onMount, type Snippet } from 'svelte'
-    import { ArrowLeft, BookOpen, ChevronDown, ChevronRight, Globe, LockKeyhole, MessageCircle, Moon, Settings, Sparkles, Sun, Users } from '@lucide/svelte'
+    import { BookOpen, ChevronDown, ChevronRight, Globe, LockKeyhole, MessageCircle, Moon, Settings, Sparkles, Sun, Users } from '@lucide/svelte'
     import type { SocialAuthor } from 'src/ts/social/socialFeed'
     import type { WorldPage, WorldConversationHeading } from 'src/ts/social/worldNavigation.svelte'
     import SocialAvatar from './SocialAvatar.svelte'
@@ -19,20 +19,18 @@
         children: Snippet
         onNavigate: (page: WorldPage) => void
         onSetup: () => void
-        onExit: () => void
         onTheme: (appearance: Appearance) => void
         onProfile: () => void
     }
 
     let { page, worldName, you, appearance, compact = false, unreadConversations = 0, activeConversation, children,
-        onNavigate, onSetup, onExit, onTheme, onProfile }: Props = $props()
+        onNavigate, onSetup, onTheme, onProfile }: Props = $props()
     let systemLight = $state(false)
     let light = $derived(appearance === 'Light' || (appearance === 'System' && systemLight))
     let privateConversation = $derived(page === 'Messages' && !!activeConversation)
     const navigation = [
         { page: 'Feed', label: 'World', icon: Globe },
         { page: 'Messages', label: 'Messages', icon: MessageCircle },
-        { page: 'Relationships', label: 'Relationships', icon: Users },
         { page: 'Library', label: 'Library', icon: BookOpen },
         { page: 'Settings', label: 'Settings', icon: Settings },
     ] as const
@@ -60,8 +58,8 @@
             {:else}
                 <span aria-current="page">{pageLabel}</span>
             {/if}
-            <button class="world-shell-mobile-action world-shell-mobile-setup" onclick={onSetup} aria-label="Edit world setup"><ChevronDown size={16} /></button>
-            <button class="world-shell-mobile-action" onclick={onProfile} aria-label={`View profile for ${you.name}`}><Users size={16} /></button>
+            <button class="world-shell-mobile-action world-shell-mobile-setup" onclick={onSetup} aria-label="Edit world setup"><Settings size={16} /><span>World</span></button>
+            <button class="world-shell-mobile-action" onclick={onProfile} aria-label={`View profile for ${you.name}`}><SocialAvatar name={you.name} image={you.image} size={28} /></button>
         </nav>
         <div class="world-shell-header-actions">
             {#if privateConversation}
@@ -70,7 +68,6 @@
             <button class="world-shell-icon" aria-label={light ? 'Switch to dark appearance' : 'Switch to light appearance'} onclick={() => onTheme(light ? 'Dark' : 'Light')}>
                 {#if light}<Moon size={18} />{:else}<Sun size={18} />{/if}
             </button>
-            <button class="world-shell-icon" aria-label="Return to classic Elsewhere" title="Return to classic Elsewhere" onclick={onExit}><ArrowLeft size={18} /></button>
         </div>
     </header>
     <div class="world-shell-body">
