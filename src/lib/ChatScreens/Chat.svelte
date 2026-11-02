@@ -22,6 +22,11 @@
     import { HideIconStore, ReloadGUIPointer, selIdState } from "../../ts/stores.svelte"
     import AutoresizeArea from "../UI/GUI/TextAreaResizable.svelte"
     import ChatBody from './ChatBody.svelte'
+    import { captureMessageActionTarget, isMessageActionTargetCurrent, type MessageActionTarget } from 'src/ts/messageActions'
+    import WorldDialog from '../Social/WorldDialog.svelte'
+    import { worldNavigation } from 'src/ts/social/worldNavigation.svelte'
+    let worldActionsOpen = $state(false)
+    let worldActionDialog: { close: () => void } | undefined = $state()
     import PopupButton from "../UI/PopupButton.svelte";
     import PartialEditController from './PartialEditController.svelte';
     import { getLLMCache, setLLMCache } from "../../ts/translator/translator"
@@ -37,6 +42,7 @@
     let chatBodyRevision = $state(0)
     let bodyRoot:HTMLElement|null = $state(null)
     interface Props {
+        presentation?: 'native' | 'world';
         message?: string;
         name?: string;
         largePortrait?: boolean;
@@ -62,6 +68,7 @@
     }
 
     let {
+        presentation = 'native',
         message = $bindable(''),
         name = '',
         largePortrait = false,
@@ -103,6 +110,12 @@
         rawStreamingText = state.rawStreamingText
     }
 
+    let actionOwnerAlive = true
+    onDestroy(() => { actionOwnerAlive = false })
+    function actionTarget() { return actionOwnerAlive ? captureMessageActionTarget(DBState.db, selIdState.selId, idx) : undefined }
+    function targetCurrent(target: MessageActionTarget): target is NonNullable<MessageActionTarget> { return actionOwnerAlive && (presentation !== 'world' || (worldNavigation.page === 'Messages' && worldNavigation.conversationOpen && !worldNavigation.conversationObscured)) && isMessageActionTargetCurrent(target, DBState.db, selIdState.selId) }
+    let originalEditTarget: MessageActionTarget
+
     function setGroupSpeaker(speakerId: string) {
         const group = DBState.db.characters[selIdState.selId]
         if (group?.type !== 'group' || idx < 0) return
@@ -120,40 +133,48 @@
     }
 
     async function rm(e:MouseEvent, rec?:boolean){
+        const target = actionTarget()
+        if (!target) return
+        if (presentation === 'world') worldActionDialog?.close()
         if(e.shiftKey){
-            let msg = DBState.db.characters[selIdState.selId].chats[DBState.db.characters[selIdState.selId].chatPage].message
-            msg = msg.slice(0, idx)
-            DBState.db.characters[selIdState.selId].chats[DBState.db.characters[selIdState.selId].chatPage].message = msg
+            let msg = target.chat.message
+            msg = msg.slice(0, target.messageIndex)
+            target.chat.message = msg
             return
         }
 
         const rm = DBState.db.askRemoval ? await alertConfirm(language.removeChat) : true
-        if(rm){
+        if(rm && targetCurrent(target)){
             if(DBState.db.instantRemove || rec){
                 const r = await alertConfirm(language.instantRemoveConfirm)
-                let msg = DBState.db.characters[selIdState.selId].chats[DBState.db.characters[selIdState.selId].chatPage].message
+                if (!targetCurrent(target)) return
+                let msg = target.chat.message
                 if(!r){
-                    msg = msg.slice(0, idx)
+                    msg = msg.slice(0, target.messageIndex)
                 }
                 else{
-                    msg.splice(idx, 1)
+                    msg.splice(target.messageIndex, 1)
                 }
-                DBState.db.characters[selIdState.selId].chats[DBState.db.characters[selIdState.selId].chatPage].message = msg
+                target.chat.message = msg
             }
             else{
-                let msg = DBState.db.characters[selIdState.selId].chats[DBState.db.characters[selIdState.selId].chatPage].message
-                msg.splice(idx, 1)
-                DBState.db.characters[selIdState.selId].chats[DBState.db.characters[selIdState.selId].chatPage].message = msg
+                let msg = target.chat.message
+                msg.splice(target.messageIndex, 1)
+                target.chat.message = msg
             }
         }
     }
 
     async function edit(){
-        DBState.db.characters[selIdState.selId].chats[DBState.db.characters[selIdState.selId].chatPage].message[idx].data = message
+        const target = originalEditTarget
+        originalEditTarget = undefined
+        if (targetCurrent(target)) target.message.data = message
     }
 
     function startOriginalEdit() {
         if (originalEditControlDisabled) return
+        originalEditTarget = actionTarget()
+        if (!originalEditTarget) return
         editMode = true
     }
 
@@ -188,8 +209,10 @@
             return
         }
 
+        const target = actionTarget()
+        if (!target) return
         message = e.detail.newData
-        DBState.db.characters[selIdState.selId].chats[DBState.db.characters[selIdState.selId].chatPage].message[idx].data = e.detail.newData
+        target.message.data = e.detail.newData
         displaya(e.detail.newData)
     }
 
@@ -887,27 +910,28 @@
     {/if}
 {/snippet}
 
-{#snippet rerolls()}
+{#snippet rerolls(showNames = false)}
     {#if rerollIcon || altGreeting}
         {#if DBState.db.swipe || altGreeting}
             <button class="flex items-center hover:text-focus transition-colors button-icon-unreroll" class:dyna-icon={rerollIcon === 'dynamic'} onclick={unReroll}>
-                <ArrowLeft size={22}/>
+                <ArrowLeft size={22}/>{#if showNames}<span>Previous reply</span>{/if}
             </button>
             {#if firstMessage && DBState.db.swipe && DBState.db.showFirstMessagePages}
                 <span class="flex items-center text-xs text-textcolor2">{currentPage}/{totalPages}</span>
             {/if}
             <button class="flex items-center hover:text-focus transition-colors button-icon-reroll" class:dyna-icon={rerollIcon === 'dynamic'} onclick={onReroll}>
-                <ArrowRight size={22}/>
+                <ArrowRight size={22}/>{#if showNames}<span>Next reply</span>{/if}
             </button>
         {:else}
             <button class="flex items-center hover:text-focus transition-colors button-icon-reroll" class:dyna-icon={rerollIcon === 'dynamic'} onclick={onReroll}>
-                <RefreshCcwIcon size={20}/>
+                <RefreshCcwIcon size={20}/>{#if showNames}<span>Regenerate reply</span>{/if}
             </button>
         {/if}
     {/if}
 {/snippet}
 
 {#snippet minorIconButtonsBody(showNames:boolean)}
+    {#if actionTarget()}
     {#if role === 'char' && idx >= 0 && DBState.db.characters[selIdState.selId]?.type === 'group'}
         {@const group = DBState.db.characters[selIdState.selId] as groupChat}
         <span class="text-xs text-textcolor2">{language.character}</span>
@@ -923,8 +947,9 @@
     
     {#if DBState.db.enableBookmark}
         <button class="flex items-center hover:text-focus transition-colors button-icon-bookmark {isBookmarked ? 'text-ambient' : ''}" onclick={async () => {
+            const target = actionTarget()
             await sleep(1)
-            toggleBookmark()
+            if (targetCurrent(target)) toggleBookmark()
         }}>
             <BookmarkIcon size={20}/>
             {#if showNames}
@@ -934,8 +959,10 @@
     {/if}
 
     <button class="flex items-center hover:text-focus transition-colors" onclick={async () => {
+        const target = actionTarget()
         await sleep(1)
-        const currentChat = DBState.db.characters[selIdState.selId].chats[DBState.db.characters[selIdState.selId].chatPage]
+        if (!targetCurrent(target)) return
+        const currentChat = target.chat
         
         if(DBState.db.createFolderOnBranch && !currentChat.folderId){
             const folderId = v4()
@@ -948,14 +975,14 @@
             currentChat.folderId = folderId
         }
         
-        const currentMessage = currentChat.message[idx]
+        const currentMessage = target.message
         const newChat = $state.snapshot(currentChat)
         newChat.name = createChatCopyName(newChat.name, 'Branch')
         newChat.id = v4()
         newChat.message = newChat.message.slice(0, idx + 1)
         newChat.message.push({
             role: 'char',
-            data: '{{specialcomment::branchedfrom::' + currentChat.id + '::' + currentChat.name + '::' + currentMessage.chatId + '::}}',
+            data: '{{specialcomment::branchedfrom::' + currentChat.id + '::' + currentChat.name + '::' + (currentMessage.chatId ?? '') + '::}}',
             isComment: true,
             disabled: true,
             chatId: v4(),
@@ -971,9 +998,11 @@
     </button>
 
     <button class="flex items-center hover:text-focus transition-colors" onclick={async () => {
+        const target = actionTarget()
         await sleep(1)
-        const currentMessage = DBState.db.characters[selIdState.selId].chats[DBState.db.characters[selIdState.selId].chatPage].message[idx]
-        DBState.db.characters[selIdState.selId].chats[DBState.db.characters[selIdState.selId].chatPage].message[idx].disabled = !currentMessage.disabled
+        if (!targetCurrent(target)) return
+        const currentMessage = target.message
+        currentMessage.disabled = !currentMessage.disabled
     }}>
         <PowerOff size={20}/>
         {#if showNames}
@@ -982,15 +1011,18 @@
     </button>
 
     <button class="flex items-center hover:text-focus transition-colors" onclick={async () => {
+        const target = actionTarget()
         await sleep(1)
-        const currentMessage = DBState.db.characters[selIdState.selId].chats[DBState.db.characters[selIdState.selId].chatPage].message[idx]
-        DBState.db.characters[selIdState.selId].chats[DBState.db.characters[selIdState.selId].chatPage].message[idx].disabled = currentMessage.disabled === 'allBefore' ? false : 'allBefore'
+        if (!targetCurrent(target)) return
+        const currentMessage = target.message
+        currentMessage.disabled = currentMessage.disabled === 'allBefore' ? false : 'allBefore'
     }}>
         <Scissors size={20}/>
         {#if showNames}
             <span class="ml-1">{language.disableAbove}</span>
         {/if}
     </button>
+    {/if}
 {/snippet}
 
 {#snippet senderIcon(options:{rounded?:boolean,styleFix?:string} = {})}
@@ -1169,10 +1201,40 @@
 <div class="w-full border-t-2 border-dashed border-focus"></div>
 {/if}
 <div class="flex max-w-full justify-center risu-chat"
+     class:world-chat-message={presentation === 'world'}
+     data-world-role={presentation === 'world' ? role : undefined}
      data-chat-index={idx}
      data-chat-id={DBState.db.characters?.[selIdState.selId]?.chats?.[DBState.db.characters?.[selIdState.selId]?.chatPage]?.message?.[idx]?.chatId ?? ''}
      style={isLastMemory ? `border-top:${DBState.db.memoryLimitThickness}px solid rgba(98, 114, 164, 0.7);` : ''}
      onclickcapture={handleButtonTriggerWithin}>
+    {#if presentation === 'world'}
+        {@const normalBody = !isComment && !blankMessage && (role === 'char' || role === 'user')}
+        {#if normalBody && !$HideIconStore}
+            <div class="world-message-avatar">{@render senderIcon({rounded: true, styleFix: 'width:32px;height:32px;min-width:32px;'})}</div>
+        {/if}
+        <div class="world-message-content">
+            <div class="world-message-meta">
+                {#if !blankMessage}<strong>{name}</strong>{/if}
+                {@render genInfo()}
+                <button type="button" class="world-message-more" aria-label={`Message actions for ${name || 'message'}`} aria-haspopup="dialog" aria-expanded={worldActionsOpen} onclick={() => worldActionsOpen = true}>⋯</button>
+            </div>
+            <div class:world-message-bubble={normalBody}>{@render textBox()}</div>
+            <div class="world-message-actions">
+                <WorldDialog bind:this={worldActionDialog} bind:open={worldActionsOpen} title="Message actions" active={worldNavigation.page === 'Messages' && worldNavigation.conversationOpen && !worldNavigation.conversationObscured} resetKey={getCurrentChat()} closeOnAction>
+                    <div class="world-message-menu">
+                        {#if isComment}<button type="button" onclick={async e => await rm(e, true)}><TrashIcon size={20}/> {language.remove}</button>
+                        {:else}
+                            {@render translationButton(true)}
+                            {@render majorIconButtonsBody(true)}
+                            {#if DBState.db.characters[selIdState.selId]}{@render minorIconButtonsBody(true)}{/if}
+                            {@render rerolls(true)}
+                        {/if}
+                    </div>
+                </WorldDialog>
+            </div>
+            {#if statusMessage}<span class="text-xs" role="status">{statusMessage}</span>{/if}
+        </div>
+    {:else}
     <div class="text-textcolor mt-1 ml-4 mr-4 mb-1 p-2 bg-transparent grow border-t-gray-900 border-opacity/30 border-transparent flexium items-start max-w-full" >
         {#if DBState.db.theme === 'mobilechat' && !blankMessage}
             <div class={role === 'user' ? "flex items-start w-full justify-end" : "flex items-start"}>
@@ -1255,6 +1317,7 @@
             </span>
         {/if}
     </div>
+    {/if}
 </div>
 
 {#if disabled}

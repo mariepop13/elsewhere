@@ -74,17 +74,19 @@
 
     let assetFileExtensions:string[] = $state([])
     let assetFilePath:string[] = $state([])
-    let licensed = $state((DBState.db.characters[$selectedCharID].type === 'character') ? (DBState.db.characters[$selectedCharID] as character).license : '')
+    let licensed = $state((DBState.db.characters[$selectedCharID]?.type === 'character') ? (DBState.db.characters[$selectedCharID] as character).license : '')
 
     $effect.pre(() => {
+        if (!DBState.db.characters[$selectedCharID] || DBState.db.characters[$selectedCharID].trashTime) return
         emos = DBState.db.characters[$selectedCharID].emotionImages
     });
 
     $effect.pre(() => {
+        if (!DBState.db.characters[$selectedCharID] || DBState.db.characters[$selectedCharID].trashTime) return
         const chara = DBState.db.characters[$selectedCharID]
         const desc = chara.type !== 'group' ? (chara as character).desc : null
         const firstMsg = chara.type !== 'group' ? chara.firstMessage : null
-        const localNote = chara.chats[chara.chatPage].note
+        const localNote = chara.chats[chara.chatPage]?.note ?? ''
 
         untrack(() => {
             loadTokenize(desc, firstMsg, localNote)
@@ -92,6 +94,7 @@
     });
 
     $effect.pre(() => {
+        if (!DBState.db.characters[$selectedCharID] || DBState.db.characters[$selectedCharID].trashTime) return
         if(DBState.db.characters[$selectedCharID].type ==='character' && DBState.db.useAdditionalAssetsPreview){
             if((DBState.db.characters[$selectedCharID] as character).additionalAssets){
                 for(let i = 0; i < (DBState.db.characters[$selectedCharID] as character).additionalAssets.length; i++){
@@ -108,9 +111,11 @@
     });
 
     $effect.pre(() => {
+        if (!DBState.db.characters[$selectedCharID] || DBState.db.characters[$selectedCharID].trashTime) return
         licensed = (DBState.db.characters[$selectedCharID].type === 'character') ? (DBState.db.characters[$selectedCharID] as character).license : ''
     });
     $effect.pre(() => {
+        if (!DBState.db.characters[$selectedCharID] || DBState.db.characters[$selectedCharID].trashTime) return
         if (DBState.db.characters[$selectedCharID].ttsMode === 'novelai' && (DBState.db.characters[$selectedCharID] as character).naittsConfig === undefined) {
             (DBState.db.characters[$selectedCharID] as character).naittsConfig = {
                 customvoice: false,
@@ -120,6 +125,7 @@
         }
     });
     $effect.pre(() => {
+        if (!DBState.db.characters[$selectedCharID] || DBState.db.characters[$selectedCharID].trashTime) return
         if (DBState.db.characters[$selectedCharID].ttsMode === 'gptsovits' && (DBState.db.characters[$selectedCharID] as character).gptSoVitsConfig === undefined) {
             (DBState.db.characters[$selectedCharID] as character).gptSoVitsConfig = {
                 url: '',
@@ -151,6 +157,7 @@
     }[] = $state([])
 
     $effect.pre(() => {
+        if (!DBState.db.characters[$selectedCharID] || DBState.db.characters[$selectedCharID].trashTime) return
         if (DBState.db.characters[$selectedCharID].ttsMode === 'fishspeech' && (DBState.db.characters[$selectedCharID] as character).fishSpeechConfig === undefined) {
             (DBState.db.characters[$selectedCharID] as character).fishSpeechConfig = {
                 model: {
@@ -165,6 +172,7 @@
     });
 
     $effect.pre(() => {
+        if (!DBState.db.characters[$selectedCharID] || DBState.db.characters[$selectedCharID].trashTime) return
         if (DBState.db.characters[$selectedCharID].ttsMode === 'openai' && (DBState.db.characters[$selectedCharID] as character).oaiTTSConfig === undefined) {
             (DBState.db.characters[$selectedCharID] as character).oaiTTSConfig = {
                 enabled: false,
@@ -174,6 +182,7 @@
     });
 
     $effect.pre(() => {
+        if (!DBState.db.characters[$selectedCharID] || DBState.db.characters[$selectedCharID].trashTime) return
         if(DBState.db.characters[$selectedCharID].type === 'group' && ($CharConfigSubMenu === 4 || $CharConfigSubMenu === 5)){
             $CharConfigSubMenu = 0
         }
@@ -230,6 +239,8 @@
     }
 
 </script>
+
+{#if DBState.db.characters[$selectedCharID] && !DBState.db.characters[$selectedCharID].trashTime}
 
 {#if licensed !== 'private' && !$MobileGUI}
     <div class="flex mb-2" class:gap-2={iconButtonSize === 24} class:gap-1={iconButtonSize < 24}>
@@ -1276,6 +1287,8 @@
     {/if}
 {/if}
 
+
+{/if}
 
 <style>
 
