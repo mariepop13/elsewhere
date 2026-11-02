@@ -260,3 +260,7 @@ Language files are located in `/src/lang/`.
 3. Ensure your code is well-tested
 4. Format code with Prettier before committing
 5. Open GitHub issues, create pull requests, and push branches only to the `origin` fork (`mariepop13/elsewhere`). Treat `upstream` (`kwaroran/Risuai`) as a read-only reference remote unless the user explicitly authorizes an upstream contribution.
+
+## Native UI deployment acceptance
+
+Before deploying changes to native message/card flows, follow `docs/native-ui-acceptance.md`: run the fixture-based native UI gate against the exact production artifact after types, unit tests and build checks. Require a passing report, matching source/build hashes and successful resource cleanup. Do not substitute unit counts or debug interfaces for actual native clicks, downloads, reimports and reload acceptance. Never use real data or paid providers for this gate.

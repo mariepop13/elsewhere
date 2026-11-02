@@ -63,6 +63,8 @@ self.onfetch = event => {
     if (requestedHeaders.has(name)) headers.set(name, requestedHeaders.get(name))
   }
 
-  event.respondWith(new Response(download.stream, { headers }))
+  // Transferred readable streams arrive asynchronously over the message port.
+  // Passing the pending Promise to Response would download '[object Promise]'.
+  event.respondWith(Promise.resolve(download.stream).then(stream => new Response(stream, { headers })))
   download.port.postMessage({ debug: 'Download started' })
 }

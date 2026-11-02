@@ -21,23 +21,32 @@ window.onmessage = event => messages.push(event)
 let sw = null
 let scope = ''
 
-function registerWorker() {
-  return navigator.serviceWorker.getRegistration('./').then(registration => {
-    return registration || navigator.serviceWorker.register('sw.js', { scope: './' })
-  }).then(registration => {
-    const pendingWorker = registration.installing || registration.waiting
-    scope = registration.scope
-
-    return (sw = registration.active) || new Promise(resolve => {
-      pendingWorker.addEventListener('statechange', function onStateChange() {
-        if (pendingWorker.state === 'activated') {
+async function registerWorker() {
+  const expectedScope = new URL('./', location.href).href
+  let registration = await navigator.serviceWorker.getRegistration('./')
+  if (registration && registration.scope === expectedScope) {
+    // Existing browser profiles must activate the current transport before export.
+    await registration.update()
+  } else {
+    registration = await navigator.serviceWorker.register('sw.js', { scope: './' })
+  }
+  scope = registration.scope
+  const pendingWorker = registration.installing || registration.waiting
+  if (pendingWorker && pendingWorker.state !== 'activated') {
+    await new Promise((resolve, reject) => {
+      function onStateChange() {
+        if (pendingWorker.state === 'activated' || pendingWorker.state === 'redundant') {
           pendingWorker.removeEventListener('statechange', onStateChange)
-          sw = registration.active
-          resolve()
+          if (pendingWorker.state === 'redundant') reject(new Error('[StreamSaver] Worker activation failed'))
+          else resolve()
         }
-      })
+      }
+      pendingWorker.addEventListener('statechange', onStateChange)
+      onStateChange()
     })
-  })
+  }
+  sw = registration.active
+  if (!sw) throw new Error('[StreamSaver] No active download worker')
 }
 
 function onMessage(event) {

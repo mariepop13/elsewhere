@@ -19,7 +19,8 @@
     "runserver": "node server/node/server.cjs",
     "sync": "node electron/sync",
     "electron": "node electron/dist/electron",
-    "hono:build": "vite build --sourcemap && node server/hono/src/utils/postbuild.js"
+    "hono:build": "vite build --sourcemap && node server/hono/src/utils/postbuild.js",
+    "test:native-ui": "node scripts/qa/nativeUiGate.cjs"
   },
   "dependencies": {
     "@adobe/css-tools": "4.4.4",
