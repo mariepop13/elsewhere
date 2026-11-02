@@ -11,6 +11,8 @@
     import BackgroundDom from "./BackgroundDom.svelte";
     import SideBarArrow from "../UI/GUI/SideBarArrow.svelte";
     import ModuleChatMenu from "../Setting/Pages/Module/ModuleChatMenu.svelte";
+    import type { WorldChatDraft } from 'src/ts/social/worldNavigation.svelte'
+    let { presentation = 'native', workspace, workspaceVisible = true }: { presentation?: 'native' | 'world'; workspace?: WorldChatDraft; workspaceVisible?: boolean } = $props()
     let openChatList = $state(false)
     let openModuleList = $state(false)
 
@@ -32,7 +34,9 @@
     });
 </script>
 
-{#if DBState.db.theme === 'waifu'}
+{#if presentation === 'world'}
+    <div class="world-native-engine h-full w-full min-w-0 relative"><DefaultChatScreen {workspace} {workspaceVisible} bind:openChatList bind:openModuleList /></div>
+{:else if DBState.db.theme === 'waifu'}
     <div class="grow h-full flex justify-center relative" style="{bgImg.length < 4 ? wallPaper : bgImg}">
         <SideBarArrow />
         <BackgroundDom />
