@@ -1,0 +1,135 @@
+@import './worldPalette.css';
+
+/* Native palette values stay inherited so user themes also apply here. */
+.world-shell {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    isolation: isolate;
+    background: var(--risu-theme-canvas);
+    color: var(--risu-theme-textcolor);
+    font-size: 14px;
+    line-height: 1.5;
+}
+.world-shell :is(.world-shell-header, .world-shell-sidebar, .world-shell-bottomnav) button:focus-visible {
+    outline: 2px solid var(--risu-theme-focus);
+    outline-offset: 3px;
+}
+.world-shell .world-shell-header {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    min-height: 76px;
+    flex: none;
+    padding: 16px 28px;
+    border-bottom: 1px solid var(--ew-native-line);
+    background: var(--risu-theme-darkbg);
+}
+.world-shell .world-shell-brand { width: 191px; flex: none; }
+.world-shell .world-shell-breadcrumbs {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    flex: 1;
+    color: var(--risu-theme-textcolor2);
+    font-size: 12px;
+}
+.world-shell .world-shell-breadcrumbs :is(button, span) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.world-shell .world-shell-breadcrumbs svg { flex: none; }
+.world-shell .world-shell-breadcrumbs [aria-current] { color: var(--risu-theme-textcolor); }
+.world-shell .world-shell-mobile-action { display: none; }
+.world-shell .world-shell-header-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; flex: none; }
+.world-shell .world-shell-icon { display: grid; place-items: center; width: 40px; min-height: 40px; border-radius: 10px; color: var(--risu-theme-textcolor2); }
+.world-shell .world-shell-private { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border: 1px solid var(--ew-native-line); border-radius: 20px; font-size: 11px; color: var(--world-accent-text); }
+.world-shell .world-shell-body { display: flex; flex: 1; min-height: 0; min-width: 0; }
+.world-shell .world-shell-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    flex: none;
+    width: 247px;
+    padding: 28px 24px 22px;
+    overflow-y: auto;
+    border-right: 1px solid var(--ew-native-line);
+    background: var(--risu-theme-darkbg);
+}
+.world-shell .world-shell-world-picker { display: flex; align-items: center; gap: 9px; padding: 12px; border-radius: 10px; background: var(--risu-theme-surface-subtle); font-size: 12px; font-weight: 600; text-align: left; }
+.world-shell .world-shell-world-picker span:nth-child(2) { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.world-shell .world-shell-world-picker svg { flex: none; }
+.world-shell .world-shell-dot { width: 6px; height: 6px; flex: none; border-radius: 50%; background: var(--risu-theme-action-primary); }
+.world-shell .world-shell-setup { align-self: flex-start; margin-top: -7px; padding: 4px 12px; font-size: 11px; color: var(--risu-theme-textcolor2); }
+.world-shell .world-shell-navigation { display: flex; flex-direction: column; gap: 7px; }
+.world-shell .world-shell-navigation button { display: flex; align-items: center; gap: 13px; min-height: 46px; padding: 10px 14px; border-radius: 10px; text-align: left; color: var(--risu-theme-textcolor2); }
+.world-shell .world-shell-navigation button[aria-current="page"] { color: var(--world-accent-text); background: var(--risu-theme-selected); font-weight: 600; }
+.world-shell .world-shell-note { margin-top: auto; padding: 24px 12px; color: var(--world-accent-text); }
+.world-shell .world-shell-note p { margin: 16px 0 12px; font-size: 19px; line-height: 1.6; font-weight: 500; }
+.world-shell .world-shell-note small { color: var(--risu-theme-textcolor2); font-size: 11px; }
+.world-shell .world-shell-person { display: flex; align-items: center; gap: 11px; padding-top: 19px; border-top: 1px solid var(--ew-native-line); text-align: left; }
+.world-shell .world-shell-person > span { min-width: 0; }
+.world-shell .world-shell-person :is(strong, small) { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.world-shell .world-shell-person strong { font-size: 12px; }
+.world-shell .world-shell-person small { margin-top: 3px; font-size: 10px; color: var(--risu-theme-textcolor2); }
+/* Keep the supplied panels mounted. Their scroll containers belong to the integrator. */
+.world-shell .world-shell-content { display: flex; flex-direction: column; flex: 1; min-width: 0; min-height: 0; overflow: hidden; position: relative; }
+.world-shell .world-shell-bottomnav { display: none; }
+.world-shell.world-shell-compact .world-shell-navigation button { min-height: 40px; padding-block: 7px; }
+@media (hover: hover) {
+    .world-shell :is(.world-shell-icon, .world-shell-navigation button):hover { color: var(--risu-theme-textcolor); background: var(--risu-theme-selected); }
+    .world-shell :is(.world-shell-breadcrumbs button, .world-shell-setup):hover { color: var(--world-accent-text); }
+}
+@media (max-width: 1050px) {
+    .world-shell .world-shell-sidebar { width: 210px; padding-inline: 16px; }
+    .world-shell .world-shell-brand { width: 154px; }
+    .world-shell .world-shell-header { padding-inline: 20px; }
+}
+@media (max-width: 720px) {
+    .world-shell .world-shell-sidebar { display: none; }
+    .world-shell .world-shell-header { flex-wrap: wrap; gap: 8px; min-height: 68px; padding: max(12px, env(safe-area-inset-top)) 16px 12px; }
+    .world-shell .world-shell-brand { width: auto; }
+    .world-shell .world-shell-brand .ew-brand { font-size: 1rem; gap: 0.3rem; }
+    .world-shell .world-shell-brand .ew-brand img { width: 22px; height: 22px; }
+    .world-shell .world-shell-breadcrumbs { order: 3; flex-basis: 100%; font-size: 11px; }
+    .world-shell .world-shell-mobile-action { display: grid; place-items: center; flex: none; min-width: 44px; min-height: 44px; gap: 6px; border-radius: 8px; }
+    .world-shell .world-shell-mobile-setup { margin-left: auto; display: flex; padding-inline: 8px; }
+    .world-shell .world-shell-private { font-size: 0; gap: 0; padding: 8px; }
+    .world-shell .world-shell-private svg { width: 14px; height: 14px; }
+    .world-shell .world-shell-header-actions { gap: 4px; }
+    .world-shell .world-shell-icon { width: 36px; min-height: 40px; }
+    .world-shell .world-shell-bottomnav { display: flex; flex: none; gap: 2px; padding: 7px max(4px, env(safe-area-inset-right)) max(7px, env(safe-area-inset-bottom)) max(4px, env(safe-area-inset-left)); border-top: 1px solid var(--ew-native-line); background: var(--risu-theme-darkbg); }
+    .world-shell .world-shell-bottomnav button { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; min-width: 0; min-height: 48px; gap: 4px; border-radius: 9px; color: var(--risu-theme-textcolor2); font-size: 10px; }
+    .world-shell .world-shell-bottomnav button[aria-current="page"] { color: var(--world-accent-text); background: var(--risu-theme-selected); }
+}
+@media (max-width: 360px) {
+    .world-shell .world-shell-header { padding-inline: 10px; }
+    .world-shell .world-shell-bottomnav button { font-size: 9px; }
+}
+
+.world-shell .world-unread{margin-left:auto;border-radius:999px;padding:2px 7px;background:var(--world-action-fill);color:var(--world-on-action);font-size:11px;line-height:1.5}
+.world-shell .world-shell-bottomnav .world-unread{position:absolute;top:4px;right:8px}
+.world-shell .world-shell-bottomnav button{position:relative}
+
+/* Original menu grid and glow, scoped to the existing World layout. */
+.world-shell .world-shell-content {
+    background:
+        linear-gradient(90deg, color-mix(in srgb, var(--risu-theme-focus) 5%, transparent) 1px, transparent 1px),
+        linear-gradient(color-mix(in srgb, var(--risu-theme-focus) 5%, transparent) 1px, transparent 1px),
+        radial-gradient(circle at 82% 7%, color-mix(in srgb, var(--risu-theme-action-primary) 17%, transparent), transparent 34%),
+        var(--risu-theme-canvas);
+    background-size: 40px 40px, 40px 40px, auto, auto;
+}
+
+.world-shell .world-shell-header {
+    background: linear-gradient(115deg, color-mix(in srgb, var(--risu-theme-darkbg) 92%, var(--risu-theme-action-primary)), var(--risu-theme-darkbg));
+    box-shadow: 0 0 35px color-mix(in srgb, var(--risu-theme-focus) 9%, transparent);
+}
+
+.world-shell .world-shell-navigation button[aria-current="page"],
+.world-shell .world-shell-bottomnav button[aria-current="page"] {
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--risu-theme-focus) 35%, transparent);
+}

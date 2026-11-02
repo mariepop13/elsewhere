@@ -6,6 +6,7 @@
     import { createSimpleCharacter, DBState, selectedCharID, ReloadChatPointer } from 'src/ts/stores.svelte';
     import { chatFoldedStateMessageIndex } from 'src/ts/globalApi.svelte';
     import { get } from 'svelte/store';
+    import { isWorldChatAtBottom } from 'src/ts/social/worldChatViewport';
     
     const getCurrentChatRoomId = () => {
         const charId = get(selectedCharID);
@@ -16,7 +17,9 @@
     };
 
     let {
+        presentation = 'native',
         messages,
+        viewportActive,
         currentCharacter,
         onReroll,
         unReroll,
@@ -26,6 +29,8 @@
         userIconPortrait,
         hasNewUnreadMessage = $bindable(false)
     }:{
+        presentation?: 'native' | 'world'
+        viewportActive?: boolean
         messages: Message[]
         currentCharacter: character|groupChat
         onReroll: () => void
@@ -106,17 +111,19 @@
             const reloadPointer = reloadPointerMap[i] ?? 0;
             const activeStreamingMessage = i === activeStreamingIndex && message.role === 'char';
             const hashMessageData = activeStreamingMessage ? '' : message.data;
-            let hashd = hashMessageData + (message.chatId ?? '') + i.toString() + messageLargePortrait.toString() + message.disabled?.toString() + reloadPointer.toString()
+            let hashd = presentation + hashMessageData + (message.chatId ?? '') + i.toString() + messageLargePortrait.toString() + message.disabled?.toString() + reloadPointer.toString()
                 + (message.saying ?? '') + (message.name ?? '') + (groupSpeaker?.name ?? '') + (groupSpeaker?.image ?? '');
             const currentHash = hashCode(hashd);
             currentHashes.add(currentHash);
             if(!hashes.has(currentHash)){
                 const b = document.createElement('div');
                 b.setAttribute('x-hashed', currentHash.toString());
+                b.dataset.worldMessageId = message.chatId ? `id:${message.chatId}` : `hash:${currentHash}`;
                 b.classList.add('chat-message-container');
                 const inst = mount(Chat, {
                     target: b,
                     props: {
+                        presentation,
                         message: message.data,
                         isLastMemory: false,
                         idx: i,
@@ -176,7 +183,11 @@
         
     };
 
+    let viewportRevision = 0;
+    let scrollTimer: ReturnType<typeof setTimeout> | undefined;
+    $effect.pre(() => { void viewportActive; viewportRevision++; });
     onDestroy(() => {
+        clearTimeout(scrollTimer);
         console.log('Unmounting Chats');
         hashes.clear();
         mountInstances.forEach((inst) => {
@@ -188,6 +199,7 @@
     function checkIfAtBottom() {
         if (!chatBody || !chatBody.parentElement) return true;
         const sc = chatBody.parentElement;
+        if (viewportActive !== undefined) return sc.clientHeight > 0 && isWorldChatAtBottom(sc.scrollTop);
         const lastEl = chatBody.firstElementChild;
         if (!lastEl) return true;
         const rect = lastEl.getBoundingClientRect();
@@ -220,10 +232,23 @@
         if(isSameChat && messages.length > previousLength){
             const lastMsg = messages[messages.length - 1];
             if(lastMsg && lastMsg.role === 'char' && DBState.db.autoScrollToNewMessage){
-                if(wasAtBottom || DBState.db.alwaysScrollToNewMessage){
+                if (viewportActive === false) {
+                    hasNewUnreadMessage = true;
+                } else if(wasAtBottom || DBState.db.alwaysScrollToNewMessage){
                     const element = chatBody.firstElementChild;
                     if(element){
-                        setTimeout(() => {
+                        const revision = viewportRevision;
+                        clearTimeout(scrollTimer);
+                        scrollTimer = setTimeout(() => {
+                            if (!element.isConnected) return;
+                            if (viewportActive !== undefined && (!viewportActive || revision !== viewportRevision)) {
+                                if (!viewportActive || !checkIfAtBottom()) hasNewUnreadMessage = true;
+                                return;
+                            }
+                            if (viewportActive !== undefined && !DBState.db.alwaysScrollToNewMessage && !checkIfAtBottom()) {
+                                hasNewUnreadMessage = true;
+                                return;
+                            }
                             element.scrollIntoView({ behavior: 'instant', block: 'start' });
                         }, 700);
                     }

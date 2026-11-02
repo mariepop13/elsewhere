@@ -39,6 +39,8 @@ interface requestDataArgument{
     currentChar?: character
     temperature?: number
     inputTokenEstimate?: number
+    /** Explicit caller context budget, keeping public flows independent of private chats. */
+    tokenContext?: number
     maxTokens?:number
     PresensePenalty?: number
     frequencyPenalty?: number,
@@ -57,6 +59,8 @@ interface requestDataArgument{
     escape?:boolean
     tools?: MCPTool[]
     rememberToolUsage?: boolean
+    /** Isolated public context: disable transport extensions that can inject private data. */
+    publicOnly?:boolean
     blockPlugins?:boolean
     /** Card-only work excludes implicit character/persona context in serializers. */
     isolatedContext?:boolean
@@ -72,7 +76,6 @@ export interface RequestDataArgumentExtended extends requestDataArgument{
     key?:string
     tokenCapabilities?: TokenCapabilities
     tokenSelection?: TokenSelection
-    tokenContext?: number
     additionalOutput?:string
     saveSignatures?:boolean
 }
@@ -80,6 +83,8 @@ export interface RequestDataArgumentExtended extends requestDataArgument{
 export type requestDataResponse = {
     type: 'success'|'fail'
     result: string
+    /** Safe public-flow metadata, excluding provider bodies and credentials. */
+    publicDiagnostic?: { code: 'request_error' | 'invalid_response' | 'incomplete_response' | 'invalid_limits'; status?: number }
     noRetry?: boolean,
     special?: {
         emotion?: string
@@ -357,7 +362,7 @@ export async function requestChatData(arg:requestDataArgument, model:ModelModeEx
     }
 }
 
-export function reformater(formated:OpenAIChat[],modelInfo:LLMModel|LLMFlags[]){
+export function reformater(formated:OpenAIChat[],modelInfo:LLMModel|LLMFlags[], publicOnly = false){
 
     const flags = Array.isArray(modelInfo) ? modelInfo : modelInfo.flags
     
@@ -379,8 +384,8 @@ export function reformater(formated:OpenAIChat[],modelInfo:LLMModel|LLMFlags[]){
 
         for(let i=0;i<formated.length;i++){
             if(formated[i].role === 'system'){
-                formated[i].content = db.systemContentReplacement ? db.systemContentReplacement.replace('{{slot}}', formated[i].content) : `system: ${formated[i].content}`
-                formated[i].role = db.systemRoleReplacement || 'user'
+                formated[i].content = !publicOnly && db.systemContentReplacement ? db.systemContentReplacement.replace('{{slot}}', formated[i].content) : `system: ${formated[i].content}`
+                formated[i].role = publicOnly ? 'user' : db.systemRoleReplacement || 'user'
             }
         }
     }
@@ -507,15 +512,18 @@ export async function requestChatDataMain(arg:requestDataArgument, model:ModelMo
     targ.tokenCapabilities = await loadTokenCapabilities(targ.tokenSelection)
     if (abortSignal?.aborted) return { type: 'fail', result: 'The request was cancelled. Previous output was retained.', noRetry: true }
     if (requestIdentity() !== initialRequestIdentity) return { type: 'fail', result: 'The configured model changed. Start this operation again.', noRetry: true }
-    targ.tokenContext = model === 'model' ? db.maxContext : undefined
+    targ.tokenContext = arg.publicOnly ? arg.tokenContext : model === 'model' ? db.maxContext : undefined
     const tokenErrors = validateTokenBudget(targ.tokenCapabilities, { context: targ.tokenContext, output: targ.maxTokens, input: targ.inputTokenEstimate,
-        reasoning: targ.aiModel === 'openrouter' && db.openrouterReasoning?.enabled !== false ? db.openrouterReasoning?.maxTokens : undefined,
+        reasoning: !arg.publicOnly && targ.aiModel === 'openrouter' && db.openrouterReasoning?.enabled !== false ? db.openrouterReasoning?.maxTokens : undefined,
         reasoningKind: 'openrouter' })
-    if (tokenErrors.length) return { type: 'fail', result: tokenErrors.join('\n'), noRetry: true }
+    if (tokenErrors.length) return { type: 'fail', result: tokenErrors.join('\n'), noRetry: true, publicDiagnostic: arg.publicOnly ? { code: 'invalid_limits' } : undefined }
 
     const format = targ.modelInfo.format
+    if(arg.publicOnly && !([LLMFormat.OpenAICompatible, LLMFormat.Anthropic, LLMFormat.GoogleCloud] as LLMFormat[]).includes(format)){
+        return { type: 'fail', result: 'This transport does not support isolated public requests.' }
+    }
 
-    targ.formated = reformater(targ.formated, targ.modelInfo)
+    targ.formated = reformater(targ.formated, targ.modelInfo, !!arg.publicOnly)
 
     switch(format){
         case LLMFormat.OpenAICompatible:

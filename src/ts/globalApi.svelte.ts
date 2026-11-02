@@ -1,3 +1,4 @@
+import { socialAssetReferences } from './social/socialSetup'
 import {
     writeFile,
     BaseDirectory,
@@ -282,7 +283,8 @@ export async function loadAsset(id: string) {
 
 let lastSave = ''
 export let saving = $state({
-    state: false
+    state: false,
+    error: false
 })
 
 /**
@@ -327,7 +329,8 @@ export async function saveDb() {
     }
 
     let encoder = new RisuSaveEncoder()
-    await encoder.init(getDatabase(), {
+    let encoderDatabase = getDatabase()
+    await encoder.init(encoderDatabase, {
         compression: forageStorage.isAccount
     })
 
@@ -419,14 +422,24 @@ export async function saveDb() {
         saving.state = true
         changed = false
         try {
-
-            if (requiresFullEncoderReload.state) {
-                encoder = new RisuSaveEncoder()
-                await encoder.init(getDatabase(), {
+            const attemptDatabase = getDatabase()
+            const attemptCurrent = () => getDatabase() === attemptDatabase && !requiresFullEncoderReload.state
+            const restartAttempt = () => {
+                requiresFullEncoderReload.state = true
+                changed = true
+                saving.state = false
+            }
+            if (requiresFullEncoderReload.state || encoderDatabase !== attemptDatabase) {
+                // Consume the request before awaiting. A newer request must survive.
+                requiresFullEncoderReload.state = false
+                const nextEncoder = new RisuSaveEncoder()
+                await nextEncoder.init(attemptDatabase, {
                     compression: forageStorage.isAccount,
                     skipRemoteSavingOnCharacters: false
                 })
-                requiresFullEncoderReload.state = false
+                if (!attemptCurrent()) { restartAttempt(); continue }
+                encoder = nextEncoder
+                encoderDatabase = attemptDatabase
             }
 
             let toSave = safeStructuredClone(changeTracker)
@@ -442,13 +455,14 @@ export async function saveDb() {
             if (channel) {
                 channel.postMessage(sessionID)
             }
-            let db = getDatabase()
+            let db = attemptDatabase
             if (!db.characters) {
                 await sleep(1000)
                 continue
             }
 
             await encoder.set(db, toSave)
+            if (!attemptCurrent()) { restartAttempt(); continue }
             const encoded = encoder.encode()
             if (!encoded) {
                 await sleep(1000)
@@ -457,11 +471,13 @@ export async function saveDb() {
             const dbData = new Uint8Array(encoded)
             if (isTauri) {
                 await writeFile('database/database.bin', dbData, { baseDir: BaseDirectory.AppData });
+                if (!attemptCurrent()) { restartAttempt(); continue }
                 await writeFile(`database/dbbackup-${(Date.now() / 100).toFixed()}.bin`, dbData, { baseDir: BaseDirectory.AppData });
             }
             else {
 
                 await forageStorage.setItem('database/database.bin', dbData)
+                if (!attemptCurrent()) { restartAttempt(); continue }
                 if (!forageStorage.isAccount) {
                     await forageStorage.setItem(`database/dbbackup-${(Date.now() / 100).toFixed()}.bin`, dbData)
                 }
@@ -472,16 +488,24 @@ export async function saveDb() {
             if (!forageStorage.isAccount) {
                 await getDbBackups()
             }
+            if (!attemptCurrent()) { restartAttempt(); continue }
             savetrys = 0
+            saving.error = false
             await sleep(500)
         } catch (error) {
             savetrys += 1
-            if (savetrys > 4) {
+            saving.error = true
+            // The failed attempt consumed its change flags. Rebuild from the current
+            // database so retrying cannot skip dirty sections or replay an old save.
+            requiresFullEncoderReload.state = true
+            changed = true
+            if (savetrys === 5) {
                 alertError(error)
             }
             else {
                 console.error(error)
             }
+            await sleep(Math.min(1000 * 2 ** Math.min(savetrys - 1, 3), 8000))
         }
 
         saving.state = false
@@ -931,6 +955,7 @@ export function getUncleanablesSync(db: Database, uptype: 'basename' | 'pure' = 
 
     addUncleanable(db.customBackground);
     addUncleanable(db.userIcon);
+    socialAssetReferences(db.socialFeed).forEach(addUncleanable);
     const chars = options?.chars ?? db.characters
 
     for (let cha of chars) {

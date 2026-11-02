@@ -1,0 +1,215 @@
+/* Opt-in World DM presentation. Requires the semantic wrappers in DM-HOOKS.md.
+   No viewport, message anchor, global popup or native engine state is styled. */
+.world-private .world-native-engine .world-chat-message[data-world-role] {
+    --world-chat-action-ink: color-mix(in srgb, var(--world-muted, var(--risu-theme-textcolor2)) 80%, var(--world-text, var(--risu-theme-textcolor)));
+    --world-chat-link-ink: color-mix(in srgb, var(--world-mint, var(--risu-theme-action-primary)) 80%, var(--world-text, var(--risu-theme-textcolor)));
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    padding: 8px 12px;
+    color: var(--world-text, var(--risu-theme-textcolor));
+}
+.world-private .world-native-engine .world-chat-message[data-world-role="user"] {
+    justify-content: flex-end;
+}
+.world-private .world-native-engine .world-message-avatar {
+    flex: 0 0 32px;
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    margin-top: 3px;
+    border-radius: 50%;
+}
+.world-private .world-native-engine .world-chat-message[data-world-role="user"] > .world-message-avatar {
+    order: 2;
+}
+.world-private .world-native-engine .world-message-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+.world-private .world-native-engine .world-message-content {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 100%;
+}
+/* Only actual user/character bodies receive compact bubbles. Neutral rows
+   omit world-message-bubble, so comments/branches/empty rows stay full width. */
+.world-private .world-native-engine .world-chat-message:is([data-world-role="char"], [data-world-role="user"]) > .world-message-content:has(> .world-message-bubble) {
+    flex: 0 1 auto;
+    max-width: 83%;
+}
+.world-private .world-native-engine .world-message-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px 8px;
+    margin: 0 2px 5px;
+    color: var(--world-chat-action-ink);
+    font-size: 0.75rem;
+    overflow-wrap: anywhere;
+}
+.world-private .world-native-engine .world-message-meta strong {
+    color: var(--world-text, var(--risu-theme-textcolor));
+    font-weight: 600;
+}
+.world-private .world-native-engine .world-message-bubble {
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+    padding: 10px 13px;
+    border: 1px solid var(--world-line, var(--risu-theme-darkborderc));
+    border-radius: 10px;
+    background: var(--world-panel, var(--risu-theme-surface-elevated));
+    color: var(--world-text, var(--risu-theme-textcolor));
+    overflow-wrap: anywhere;
+}
+.world-private .world-native-engine .world-chat-message[data-world-role="char"] .world-message-bubble {
+    border-radius: 16px 16px 16px 4px;
+}
+.world-private .world-native-engine .world-chat-message[data-world-role="user"] .world-message-bubble {
+    border-radius: 16px 16px 4px 16px;
+    background: color-mix(in srgb, var(--world-mint, var(--risu-theme-action-primary)) 18%, var(--world-panel, var(--risu-theme-surface-elevated)));
+}
+.world-private .world-native-engine .world-message-bubble .chattext {
+    display: block;
+    min-width: 0;
+    max-width: 100%;
+    color: inherit;
+    overflow-wrap: anywhere;
+    --tw-prose-body: var(--world-text, var(--risu-theme-textcolor));
+    --tw-prose-headings: var(--world-text, var(--risu-theme-textcolor));
+    --tw-prose-bold: var(--world-text, var(--risu-theme-textcolor));
+    --tw-prose-links: var(--world-chat-link-ink);
+    --tw-prose-code: var(--world-text, var(--risu-theme-textcolor));
+    --tw-prose-quotes: var(--world-text, var(--risu-theme-textcolor));
+    --tw-prose-invert-body: var(--world-text, var(--risu-theme-textcolor));
+    --tw-prose-invert-headings: var(--world-text, var(--risu-theme-textcolor));
+    --tw-prose-invert-bold: var(--world-text, var(--risu-theme-textcolor));
+    --tw-prose-invert-links: var(--world-chat-link-ink);
+    --tw-prose-invert-code: var(--world-text, var(--risu-theme-textcolor));
+    --tw-prose-invert-quotes: var(--world-text, var(--risu-theme-textcolor));
+}
+.world-private .world-native-engine .world-message-bubble pre {
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow-x: auto;
+    white-space: pre;
+    overflow-wrap: normal;
+    word-break: normal;
+}
+.world-private .world-native-engine .world-message-bubble .chattext a {
+    color: var(--world-chat-link-ink);
+    text-decoration: underline;
+}
+.world-private .world-native-engine .world-message-bubble pre code {
+    white-space: inherit;
+    overflow-wrap: normal;
+    word-break: normal;
+}
+.world-private .world-native-engine .world-message-bubble table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+}
+.world-private .world-native-engine .world-message-bubble :is(img, video, audio, iframe, canvas, svg) {
+    max-width: 100%;
+    min-width: 0;
+}
+.world-private .world-native-engine .world-message-bubble :is(img, video) {
+    height: auto;
+}
+.world-private .world-native-engine .world-message-bubble :is(a, button, summary):focus-visible {
+    outline: 2px solid var(--risu-theme-focus, var(--world-mint));
+    outline-offset: 3px;
+}
+.world-private .world-native-engine .world-message-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 2px;
+    margin-top: 4px;
+    color: var(--world-chat-action-ink);
+}
+/* iconButtons returns nested flex wrappers; wrap them without changing guards. */
+.world-private .world-native-engine .world-message-actions :is(div, span):has(> button) {
+    flex-wrap: wrap;
+    min-width: 0;
+    max-width: 100%;
+    gap: 2px;
+}
+.world-private .world-native-engine :is(.world-message-actions, .world-message-meta) button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    min-width: 44px;
+    min-height: 44px;
+    box-sizing: border-box;
+    padding: 8px;
+    border-radius: 9px;
+}
+.world-private .world-native-engine .world-message-actions button:not(:disabled) {
+    color: var(--world-chat-action-ink);
+}
+.world-private .world-native-engine :is(.world-message-actions, .world-message-meta, .composer-region) button:focus-visible {
+    outline: 2px solid var(--risu-theme-focus, var(--world-mint));
+    outline-offset: 2px;
+}
+.world-private .world-native-engine .world-message-actions:focus-within button:not(:disabled) {
+    color: var(--world-text, var(--risu-theme-textcolor));
+}
+.world-private .world-native-engine :is(.message-edit-area, textarea.text-input-area, #messageInputTranslate) {
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+    color: var(--world-text, var(--risu-theme-textcolor));
+    background: var(--world-panel, var(--risu-theme-surface-elevated));
+    border-color: var(--world-line, var(--risu-theme-darkborderc));
+    border-radius: 12px;
+}
+.world-private .world-native-engine :is(.message-edit-area, textarea.text-input-area, #messageInputTranslate):focus-visible {
+    outline: 2px solid var(--risu-theme-focus, var(--world-mint));
+    outline-offset: 2px;
+}
+.world-private .world-native-engine .composer-region :is(.button-icon-send, .button-icon-menu) {
+    min-width: 44px;
+    min-height: 44px;
+    flex-shrink: 0;
+    border-radius: 12px;
+}
+@media (hover: hover) {
+    .world-private .world-native-engine .world-message-actions button:not(:disabled):hover {
+        color: var(--world-text, var(--risu-theme-textcolor));
+        background: var(--world-panel, var(--risu-theme-surface-elevated));
+    }
+}
+@media (max-width: 640px) {
+    .world-private .world-native-engine .world-chat-message[data-world-role] {
+        padding: 6px 8px;
+        gap: 8px;
+    }
+    .world-private .world-native-engine .world-chat-message:is([data-world-role="char"], [data-world-role="user"]) > .world-message-content:has(> .world-message-bubble) {
+        max-width: calc(100% - 40px);
+    }
+    .world-private .world-native-engine .world-message-bubble { padding: 10px 11px; }
+    .world-private .world-native-engine .world-chat-message:is([data-world-role="char"], [data-world-role="user"]) > .world-message-content:only-child:has(> .world-message-bubble) {
+        max-width: 100%;
+    }
+    .world-private .world-native-engine .composer-region textarea.text-input-area {
+        margin-inline: 4px;
+        padding-inline: 10px;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .world-private .world-native-engine .world-message-actions button { transition: none; }
+}
+
+.world-private .world-message-more { min-width:44px; min-height:44px; margin-left:auto; border-radius:8px; font-size:24px; color:var(--world-muted); }
+.world-private .world-message-more:focus-visible { outline:2px solid var(--world-mint); outline-offset:2px; }
+.world-private .world-message-menu { display:flex; flex-direction:column; align-items:stretch; gap:4px; }
+.world-private .world-native-engine .world-message-menu > button { justify-content:flex-start; }

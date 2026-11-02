@@ -700,7 +700,9 @@ function convertOffSpecCards(charaData:OldTavernChar|CharacterCardV2Risu, imgp:s
 
 export async function exportChar(charaID:number):Promise<string> {
     const db = getDatabase({snapshot: true})
-    let char = safeStructuredClone(db.characters[charaID])
+    const source = db.characters[charaID]
+    if (!source || source.trashTime) return ''
+    let char = safeStructuredClone(source)
 
     if(char.type === 'group'){
         return ''
@@ -714,10 +716,10 @@ export async function exportChar(charaID:number):Promise<string> {
 
     const option = await alertCardExport()
     if(option.type === ''){
-        exportCharacterCard(char, option.type2 === 'json' ? 'json' : (option.type2 === 'charx' ? 'charx' : option.type2 === 'charxJpeg' ? 'charxJpeg' : 'png'), {spec: 'v3'})
+        await exportCharacterCard(char, option.type2 === 'json' ? 'json' : (option.type2 === 'charx' ? 'charx' : option.type2 === 'charxJpeg' ? 'charxJpeg' : 'png'), {spec: 'v3'})
     }
     else if(option.type === 'ccv2'){
-        exportCharacterCard(char,'png', {spec: 'v2'})
+        await exportCharacterCard(char,'png', {spec: 'v2'})
     }
     else if(option.type === 'realm' && upstreamRealmEnabled){
         ShowRealmFrameStore.set("character")
@@ -1263,9 +1265,9 @@ export async function exportCharacterCard(char:character, type:'png'|'json'|'cha
     writer?:LocalWriter|VirtualWriter,
     spec?:'v2'|'v3'
 } = {}) {
-    let img = await readImage(char.image)
     const spec:'v2'|'v3' = arg.spec ?? 'v2' //backward compatibility
     try{
+        let img = await readImage(char.image)
         char.image = ''
         img = type === 'png' ? (await reencodeImage(img)) : img
         const localWriter = arg.writer ?? (new LocalWriter())

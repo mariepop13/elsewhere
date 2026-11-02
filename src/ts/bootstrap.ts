@@ -13,7 +13,7 @@ import { get } from "svelte/store";
 import { setDatabase, defaultSdDataFunc, getDatabase } from "./storage/database.svelte";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { checkElsewhereUpdate } from "./update";
-import { MobileGUI, botMakerMode, selectedCharID, loadedStore, DBState, LoadingStatusState } from "./stores.svelte";
+import { MobileGUI, botMakerMode, selectedCharID, loadedStore, socialFeedOpen, DBState, LoadingStatusState } from "./stores.svelte";
 import { loadPlugins } from "./plugins/plugins.svelte";
 import { alertError, alertMd, alertTOS, waitAlert, alertConfirm } from "./alert";
 import { characterURLImport } from "./characterCards";
@@ -43,7 +43,7 @@ import { registerModelDynamic } from "./model/modellist";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { appDataDir, join } from "@tauri-apps/api/path";
 
-import { privateLocalMode } from "./firstRun";
+import { privateSourceMode, privatePreviewMode } from "./firstRun";
 
 const appWindow = isTauri ? getCurrentWebviewWindow() : null
 
@@ -151,7 +151,8 @@ export async function loadData() {
                 }
 
                 LoadingStatusState.text = "Checking Service Worker..."
-                if (navigator.serviceWorker) {
+                // The temporary preview uses direct authenticated asset reads, without altering existing browser caches.
+                if (navigator.serviceWorker && !privatePreviewMode) {
                     setUsingSw(true)
                     await registerSw()
                 }
@@ -201,6 +202,7 @@ export async function loadData() {
             await makeColdData()
             loadedStore.set(true)
             selectedCharID.set(-1)
+            socialFeedOpen.set(true)
             startObserveDom()
             assignIds()
             registerModelDynamic()
@@ -209,7 +211,7 @@ export async function loadData() {
             cleanChunks()
             // A local setup notice is separate from third-party contract acceptance.
             // Service-specific alertTOS calls and their acceptance storage are unchanged.
-            const startupAcceptance = privateLocalMode ? Promise.resolve(true) : alertTOS()
+            const startupAcceptance = privateSourceMode ? Promise.resolve(true) : alertTOS()
             startupAcceptance.then((a) => {
                 if (a === false) {
                     location.reload()

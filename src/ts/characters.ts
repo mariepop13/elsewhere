@@ -1,3 +1,4 @@
+import { captureCharacterActionTarget, currentCharacterActionIndex } from './characterActions'
 import { get, writable } from "svelte/store";
 import { saveImage, type character, type Chat, defaultSdDataFunc, type loreBook, getDatabase, getCharacterByIndex, setCharacterByIndex } from "./storage/database.svelte";
 import { alertAddCharacter, alertConfirm, alertError, alertNormal, alertSelect, alertStore, alertWait } from "./alert";
@@ -808,6 +809,8 @@ function dataURLtoBuffer(string:string){
 
 export async function removeChar(identifier:string|number,name:string, type:'normal'|'permanent'|'permanentForce' = 'normal'){
     const db = getDatabase()
+    const target = captureCharacterActionTarget(db, identifier)
+    if (!target) return
     if(type !== 'permanentForce'){
         const conf = await alertConfirm(language.removeConfirm + name)
         if(!conf){
@@ -818,15 +821,10 @@ export async function removeChar(identifier:string|number,name:string, type:'nor
             return
         }
     }
-    let chars = db.characters
-    // Resolve identifier to actual index at the time of deletion to avoid
-    // race conditions when concurrent deletions shift the array.
-    const index = typeof identifier === 'string'
-        ? findCharacterIndexbyId(identifier)
-        : identifier
-    if (index === -1 || index >= chars.length) {
-        return
-    }
+    const index = currentCharacterActionIndex(target, getDatabase())
+    if (index < 0) return
+    const chars = db.characters
+    const selected = chars[get(selectedCharID)]
     if(type === 'normal'){
         chars[index].trashTime = Date.now()
     }
@@ -836,7 +834,7 @@ export async function removeChar(identifier:string|number,name:string, type:'nor
     checkCharOrder()
     DBState.db.characters = chars
     requiresFullEncoderReload.state = true
-    selectedCharID.set(-1)
+    selectedCharID.set(selected === target.character ? -1 : chars.indexOf(selected))
 }
 
 export async function addCharacter(arg:{

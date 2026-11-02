@@ -4,7 +4,9 @@
     import Suggestion from './Suggestion.svelte';
     import { CameraIcon, DatabaseIcon, DicesIcon, GlobeIcon, ImagePlusIcon, LanguagesIcon, Laugh, MenuIcon, MicOffIcon, PackageIcon, Plus, RefreshCcwIcon, ReplyIcon, Send, StepForwardIcon, XIcon, BrainIcon, ArrowDown, SparkleIcon } from "@lucide/svelte";
     import { selectedCharID, PlaygroundStore, createSimpleCharacter, hypaV3ModalOpen, ScrollToMessageStore, additionalChatMenu, additionalFloatingActionButtons, easyPanelStore, chatPanelStore } from "../../ts/stores.svelte";
-    import { tick } from 'svelte';
+    import { tick, untrack } from 'svelte';
+    import { createWorldChatViewport, isWorldChatAtBottom } from 'src/ts/social/worldChatViewport';
+    import type { WorldChatDraft } from 'src/ts/social/worldNavigation.svelte';
     import Chat from "./Chat.svelte";
     import { type Message } from "../../ts/storage/database.svelte";
     import { DBState } from 'src/ts/stores.svelte';
@@ -40,25 +42,57 @@
         openModuleList?: boolean;
         openChatList?: boolean;
         customStyle?: string;
+        workspace?: WorldChatDraft;
+        workspaceVisible?: boolean;
     }
 
-    let messageInput:string = $state('')
-    let messageInputTranslate:string = $state('')
+    let { openModuleList = $bindable(false), openChatList = $bindable(false), customStyle = '', workspace, workspaceVisible = true }: Props = $props();
+    let messageInput:string = $state(untrack(() => workspace?.text ?? ''))
+    let messageInputTranslate:string = $state(untrack(() => workspace?.translatedText ?? ''))
     let openMenu = $state(false)
-    let loadPages = $state(getInitialChatLoadPages(DBState.db))
+    let loadPages = $state(untrack(() => workspace?.loadPages ?? getInitialChatLoadPages(DBState.db)))
     let autoMode = $state(false)
     let rerolls:Message[][] = []
     let rerollid = -1
     let lastCharId = -1
     let doingChatInputTranslate = false
     let toggleStickers:boolean = $state(false)
-    let fileInput:string[] = $state([])
+    let fileInput:string[] = $state(untrack(() => [...(workspace?.attachments ?? [])]))
     let showNewMessageButton = $state(false)
     let chatsInstance: any = $state()
     let isScrollingToMessage = $state(false)
-    let { openModuleList = $bindable(false), openChatList = $bindable(false), customStyle = '' }: Props = $props();
+    let scrollContainer = $state<HTMLDivElement>()
+    $effect(() => {
+        if (!workspace) return
+        workspace.text = messageInput
+        workspace.translatedText = messageInputTranslate
+        workspace.attachments = [...fileInput]
+        workspace.loadPages = loadPages
+    })
     let currentCharacter = $derived(DBState.db.characters[$selectedCharID])
     let currentChat = $derived(currentCharacter?.chats[currentCharacter.chatPage]?.message ?? [])
+    const viewportDatabase = untrack(() => DBState.db)
+    const viewportCharacterId = untrack(() => currentCharacter?.chaId)
+    const viewportChatId = untrack(() => currentCharacter?.chats[currentCharacter.chatPage]?.id)
+    let viewport: ReturnType<typeof createWorldChatViewport> | undefined
+    $effect.pre(() => {
+        const active = workspaceVisible && DBState.db === viewportDatabase
+            && currentCharacter?.chaId === viewportCharacterId
+            && currentCharacter?.chats[currentCharacter.chatPage]?.id === viewportChatId
+        untrack(() => viewport?.setVisible(active))
+    })
+    $effect(() => {
+        const element = scrollContainer, draft = workspace
+        if (!element || !draft) return
+        const controller = untrack(() => createWorldChatViewport(element, draft, () =>
+            workspace === draft && DBState.db === viewportDatabase
+            && currentCharacter?.chaId === viewportCharacterId
+            && currentCharacter?.chats[currentCharacter.chatPage]?.id === viewportChatId,
+            position => { if (isWorldChatAtBottom(position)) showNewMessageButton = false }))
+        viewport = controller
+        untrack(() => controller.setVisible(workspaceVisible))
+        return () => { controller.dispose(); if (viewport === controller) viewport = undefined }
+    })
 
     function scrollToBottom() {
         chatsInstance?.scrollToLatestMessage();
@@ -570,7 +604,8 @@
             {/await}
         {/if}
     {:else}
-        <div class="h-full w-full flex flex-col-reverse overflow-y-auto relative default-chat-screen" onscroll={(e) => {
+        <div class="h-full w-full flex flex-col-reverse overflow-y-auto relative default-chat-screen" bind:this={scrollContainer} onscroll={(e) => {
+            if (workspace && (!workspaceVisible || viewport?.capture() !== true)) return;
             //@ts-expect-error scrollHeight/clientHeight/scrollTop don't exist on EventTarget, but target is HTMLElement here
             const scrolled = (e.target.scrollHeight - e.target.clientHeight + e.target.scrollTop)
             if(scrolled < 100 && DBState.db.characters[$selectedCharID].chats[DBState.db.characters[$selectedCharID].chatPage].message.length > loadPages){
@@ -579,7 +614,7 @@
             const chatTarget = e.target as HTMLElement;
             const chatsContainer = (DBState.db.fixedChatTextarea && chatTarget.children[1]) ? chatTarget.children[1] : chatTarget.children[0];
             const lastEl = chatsContainer?.firstElementChild;
-            const isAtBottom = lastEl ? lastEl.getBoundingClientRect().top <= chatTarget.getBoundingClientRect().bottom + 100 : true;
+            const isAtBottom = workspace ? isWorldChatAtBottom(chatTarget.scrollTop) : lastEl ? lastEl.getBoundingClientRect().top <= chatTarget.getBoundingClientRect().bottom + 100 : true;
             if(isAtBottom){
                 showNewMessageButton = false;
             }
@@ -818,7 +853,9 @@
             {/if}
             
             <Chats
+                presentation={workspace ? 'world' : 'native'}
                 bind:this={chatsInstance}
+                viewportActive={workspace ? workspaceVisible : undefined}
                 messages={currentChat}
                 loadPages={loadPages}
                 onReroll={reroll}
@@ -833,6 +870,7 @@
             {#if DBState.db.characters[$selectedCharID].chats[DBState.db.characters[$selectedCharID].chatPage].message.length <= loadPages}
                 {#if DBState.db.characters[$selectedCharID].type !== 'group' }
                     <Chat
+                        presentation={workspace ? 'world' : 'native'}
                         character={createSimpleCharacter(DBState.db.characters[$selectedCharID])}
                         name={DBState.db.characters[$selectedCharID].name}
                         message={DBState.db.characters[$selectedCharID].chats[DBState.db.characters[$selectedCharID].chatPage].fmIndex === -1 ? DBState.db.characters[$selectedCharID].firstMessage :

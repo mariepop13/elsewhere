@@ -1,3 +1,4 @@
+import { socialAssetReferences } from '../social/socialSetup'
 import { BaseDirectory, exists, readFile, readDir, writeFile } from "@tauri-apps/plugin-fs";
 import localforage from "localforage";
 import { alertError, alertNormal, alertStore, alertWait, alertMd, alertConfirm } from "../alert";
@@ -252,6 +253,10 @@ export async function SavePartialLocalBackup(){
         assetMap.set(db.userIcon, { charName: 'User Settings', assetName: 'User Icon' })
     }
     
+    for (const image of socialAssetReferences(db.socialFeed)) {
+        assetMap.set(image, { charName: 'Social world', assetName: 'Profile Image' })
+    }
+
     // Persona icons
     if (db.personas) {
         for (const persona of db.personas) {

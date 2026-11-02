@@ -1,16 +1,17 @@
 <script lang="ts">
+    import { untrack } from 'svelte';
+    import { worldNavigation } from './ts/social/worldNavigation.svelte';
+    import { createWorldMessageReadState, reconcileWorldMessages } from './ts/social/worldMessages';
     import ElsewordsWorkspace from './lib/Elsewords/ElsewordsWorkspace.svelte';
     import { elsewordsOpen } from './ts/elsewords/entry';
-    import { DynamicGUI, settingsOpen, sideBarStore, ShowRealmFrameStore, openPresetList, openPersonaList, MobileGUI, CustomGUISettingMenuStore, loadedStore, alertStore, LoadingStatusState, bookmarkListOpen, popupStore, easyPanelStore, popUpEditorStore, loadoutModalStore, irisStore, customSideBarConfigDialogStore } from './ts/stores.svelte';
-    import Sidebar from './lib/SideBars/Sidebar.svelte';
+    import { selectedCharID, settingsOpen, ShowRealmFrameStore, openPresetList, openPersonaList, CustomGUISettingMenuStore, loadedStore, alertStore, LoadingStatusState, bookmarkListOpen, popupStore, easyPanelStore, popUpEditorStore, loadoutModalStore, irisStore, customSideBarConfigDialogStore } from './ts/stores.svelte';
+    import { socialFeedOpen } from './ts/stores.svelte';
+    import SocialFeed from './lib/Social/SocialFeed.svelte';
     import { DBState } from './ts/stores.svelte';
-    import ChatScreen from './lib/ChatScreens/ChatScreen.svelte';
     import AlertComp from './lib/Others/AlertComp.svelte';
     import RealmPopUp from './lib/UI/Realm/RealmPopUp.svelte';
-    import GridChars from './lib/Others/GridCatalog.svelte';
     import WelcomeRisu from './lib/Others/WelcomeRisu.svelte';
     import BookmarkList from './lib/Others/BookmarkList.svelte';
-    import Settings from './lib/Setting/Settings.svelte';
     import { showRealmInfoStore, importCharacterProcess, upstreamRealmEnabled } from './ts/characterCards';
     import { importPreset, getDatabase, setDatabase } from './ts/storage/database.svelte';
     import { readModule } from './ts/process/modules';
@@ -20,9 +21,6 @@
     import SavePopupIconComp from './lib/Others/SavePopupIcon.svelte';
     import Botpreset from './lib/Setting/botpreset.svelte';
     import ListedPersona from './lib/Setting/listedPersona.svelte';
-    import MobileHeader from './lib/Mobile/MobileHeader.svelte';
-    import MobileBody from './lib/Mobile/MobileBody.svelte';
-    import MobileFooter from './lib/Mobile/MobileFooter.svelte';
     import CustomGUISettingMenu from './lib/Setting/Pages/CustomGUISettingMenu.svelte';
     import { checkCharOrder } from './ts/globalApi.svelte';
     import { ArrowUpIcon, GlobeIcon, PlusIcon } from '@lucide/svelte';
@@ -43,12 +41,36 @@
 
   
     import LocalSourceNotice from './lib/Others/LocalSourceNotice.svelte';
-    import { privateLocalMode, localNoticeKey } from './ts/firstRun';
+    import { privateSourceMode, privatePreviewMode, localNoticeKey } from './ts/firstRun';
 
     let localNoticeRead = $state(localStorage.getItem(localNoticeKey) === 'acknowledged');
 
     let didFirstSetup: boolean  = $derived(DBState.db?.didFirstSetup)
-    let gridOpen = $state(false)
+    // World is the single ready workspace, including legacy saves.
+    $effect(() => { if ($loadedStore && didFirstSetup && !$socialFeedOpen) socialFeedOpen.set(true) })
+    let observedWorldDatabase: typeof DBState.db | undefined;
+    // Observe native arrivals globally, including while the world or message list is hidden.
+    $effect(() => {
+        if (!$loadedStore) return;
+        const db = DBState.db;
+        if (observedWorldDatabase && observedWorldDatabase !== db) untrack(() => {
+            worldNavigation.conversation = undefined;
+            worldNavigation.conversationOpen = false;
+            worldNavigation.page = 'Feed';
+        });
+        observedWorldDatabase = db;
+        const activeCard = db.characters[$selectedCharID];
+        const activeChat = activeCard?.chats[activeCard.chatPage];
+        const exactConversation = worldNavigation.conversation && activeCard?.chaId === worldNavigation.conversation.characterId && activeChat?.id === worldNavigation.conversation.chatId;
+        const visible = exactConversation && $socialFeedOpen && !$settingsOpen && worldNavigation.page === 'Messages' && worldNavigation.conversationOpen && !worldNavigation.conversationObscured
+            ? worldNavigation.conversation : undefined;
+        const previous = untrack(() => db.worldWorkspace?.messageReadState ?? createWorldMessageReadState());
+        const next = reconcileWorldMessages(db, previous, visible);
+        if (next !== previous) untrack(() => {
+            db.worldWorkspace ??= {};
+            db.worldWorkspace.messageReadState = next;
+        });
+    });
     let aprilFools = $state(new Date().getMonth() === 3 && new Date().getDate() === 1)
     let aprilFoolsPage = $state(0)
     let keepingSessionAlive = $state(false)
@@ -129,14 +151,15 @@
     }
 
 }}>
-    {#if privateLocalMode && !localNoticeRead}
+    {#if privateSourceMode && !localNoticeRead}
         <LocalSourceNotice
+            preview={privatePreviewMode}
             oncontinue={() => {
                 localStorage.setItem(localNoticeKey, 'acknowledged')
                 localNoticeRead = true
             }}
         />
-    {:else if !privateLocalMode && !import.meta.env.VITE_RISU_LEGAL_CONFIGURED}
+    {:else if !privateSourceMode && !import.meta.env.VITE_RISU_LEGAL_CONFIGURED}
         <Legal />
     {:else if aprilFools}
 
@@ -223,31 +246,8 @@
         <CustomGUISettingMenu />
     {:else if !didFirstSetup}
         <WelcomeRisu />
-    {:else if $settingsOpen}
-        <Settings />
-    {:else if $MobileGUI}
-        <div class="w-full h-full flex flex-col">
-            <MobileHeader />
-            <MobileBody />
-            <MobileFooter />
-        </div>
     {:else}
-        {#if gridOpen}
-            <GridChars endGrid={() => {gridOpen = false}} />
-        {:else}
-            {#if (!$DynamicGUI)}
-                <Sidebar openGrid={() => {gridOpen = true}} hidden={!$sideBarStore} />
-            {:else}
-                <div class="top-0 w-full h-full left-0 z-30 flex flex-row items-center" class:fixed={$sideBarStore} class:hidden={!$sideBarStore} >
-                    <!-- svelte-ignore a11y_click_events_have_key_events -->
-                    <Sidebar openGrid={() => {gridOpen = true}}  hidden={false} />
-
-
-
-                </div>
-            {/if}
-            <ChatScreen />
-        {/if}
+        {#key DBState.db}<SocialFeed />{/key}
     {/if}
     {#if $elsewordsOpen && $loadedStore && didFirstSetup}
         <ElsewordsWorkspace />
@@ -271,7 +271,11 @@
         <BookmarkList />
     {/if}
     {#if $hypaV3ModalOpen}
-        <HypaV3Modal />
+        {#if DBState.db.characters[$selectedCharID]?.chats[DBState.db.characters[$selectedCharID].chatPage]?.hypaV3Data}
+            <HypaV3Modal />
+        {:else}
+            <div class="fixed inset-0 z-50 flex items-center justify-center bg-darkbg/90 p-4" role="dialog" aria-modal="true" aria-label="Conversation memory"><div class="rounded-xl border border-borderc bg-bgcolor p-6 text-textcolor"><p>No Hypa V3 summaries saved in this story yet.</p><button class="mt-4 rounded-lg border border-borderc px-4 py-2" onclick={() => hypaV3ModalOpen.set(false)}>Close memory</button></div></div>
+        {/if}
     {/if}
     <SavePopupIconComp />
     {#if $hypaV3ProgressStore.open}

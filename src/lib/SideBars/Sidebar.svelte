@@ -5,6 +5,7 @@
     botMakerMode,
     selectedCharID,
     settingsOpen,
+    socialFeedOpen,
     sideBarClosing,
     sideBarStore,
     OpenRealmStore,
@@ -21,6 +22,7 @@
     import SidebarIndicator from "./SidebarIndicator.svelte";
     import {
     ShellIcon,
+    UsersIcon,
     Settings,
     LayoutGridIcon,
     FolderIcon,
@@ -507,6 +509,7 @@
       reseter();
       openGrid();
     }}><LayoutGridIcon /></button>
+    <button class="signal-action" aria-label={language.social.title} title={language.social.title} onclick={() => socialFeedOpen.set(true)}><UsersIcon /></button>
     <button class="signal-action" aria-label={language.playground.playground} title={language.playground.playground} onclick={() => {
       reseter()
       if($selectedCharID === -1 && $PlaygroundStore !== 0){
@@ -823,6 +826,7 @@
       reseter();
       openGrid();
     }}><LayoutGridIcon /></button>
+    <button class="signal-action" aria-label={language.social.title} title={language.social.title} onclick={() => socialFeedOpen.set(true)}><UsersIcon /></button>
     <button class="signal-action" aria-label={language.playground.playground} title={language.playground.playground} onclick={() => {
       reseter()
       if($selectedCharID === -1 && $PlaygroundStore !== 0){

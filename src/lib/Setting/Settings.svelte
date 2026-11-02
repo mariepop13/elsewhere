@@ -1,4 +1,6 @@
 <script lang="ts">
+    import "../UI/nativeWorkspace.css";
+    import SocialBrand from "../Social/SocialBrand.svelte";
     import { openElsewords } from 'src/ts/elsewords/entry';
     import { AccessibilityIcon, ActivityIcon, PackageIcon, BotIcon, CodeIcon, ContactIcon, ImageIcon, LanguagesIcon, MonitorIcon, Sailboat, UserIcon, CircleXIcon, KeyboardIcon, SparkleIcon } from "@lucide/svelte";
     import { language } from "src/lang";
@@ -61,7 +63,7 @@
                 class:bg-darkbg={!$MobileGUI} class:bg-bgcolor={$MobileGUI}
             >
                 <div class="settings-index-heading">
-                    <span class="settings-index-wordmark">ELSE<span aria-hidden="true">//</span>WHERE</span>
+                    <span class="settings-index-wordmark"><SocialBrand /></span>
                     <span class="settings-index-caption">{language.settings}</span>
                 </div>
                 <nav class="settings-index-list" aria-label={language.settings}>
@@ -224,7 +226,7 @@
                 {/if}
                 </nav>
                 {#if window.innerWidth < 700 && !$MobileGUI}
-                    <button class="settings-close absolute top-2 right-2 text-textcolor" onclick={() => {
+                    <button aria-label={language.goback} class="settings-close absolute top-2 right-2 text-textcolor" onclick={() => {
                         settingsOpen.set(false)
                     }}> <CircleXIcon size={DBState.db.settingsCloseButtonSize} /> </button>
                 {/if}
@@ -282,7 +284,7 @@
             </div>
             {/key}
             {#if !$MobileGUI}
-                <button class="settings-close absolute top-2 right-2 text-textcolor" onclick={() => {
+                <button aria-label={language.goback} class="settings-close absolute top-2 right-2 text-textcolor" onclick={() => {
                     if(window.innerWidth >= 700){
                         settingsOpen.set(false)
                     }
@@ -301,15 +303,12 @@
 {/if}
 <style>
     .setting-bg {
-        background: linear-gradient(
-            to right,
-            var(--risu-theme-surface-elevated) 50%,
-            var(--risu-theme-canvas) 50%
-        );
+        background: var(--ew-native-backdrop);
+        background-size: 40px 40px, 40px 40px, auto, auto;
     }
 
     .settings-layout {
-        border-inline: 1px solid var(--risu-theme-darkborderc);
+        border-inline: 1px solid var(--ew-native-line);
         background-color: var(--risu-theme-canvas);
     }
 
@@ -317,7 +316,7 @@
         min-width: 0;
         width: 16.5rem;
         background-color: var(--risu-theme-surface-elevated);
-        border-right: 1px solid var(--risu-theme-darkborderc);
+        border-right: 1px solid var(--ew-native-line);
     }
 
     .settings-index-heading {
@@ -325,7 +324,7 @@
         flex-direction: column;
         gap: 0.2rem;
         padding: 0 0.75rem 1.5rem;
-        border-bottom: 1px solid var(--risu-theme-darkborderc);
+        border-bottom: 1px solid var(--ew-native-line);
     }
 
     .settings-index-wordmark {
@@ -337,10 +336,6 @@
 
     .settings-index-wordmark {
         color: var(--risu-theme-textcolor);
-    }
-
-    .settings-index-wordmark span {
-        color: var(--risu-theme-focus);
     }
 
     .settings-index-caption {
@@ -396,15 +391,15 @@
 
     .settings-workspace-header {
         padding: 0.5rem 0 1.75rem;
-        border-bottom: 1px solid var(--risu-theme-darkborderc);
+        border-bottom: 1px solid var(--ew-native-line);
     }
 
     .settings-workspace-header h1 {
         margin: 0;
         color: var(--risu-theme-textcolor);
         font-size: clamp(1.75rem, 3vw, 2.25rem);
-        font-weight: 500;
-        letter-spacing: -0.035em;
+        font-weight: 700;
+        letter-spacing: -0.02em;
         line-height: 1.1;
     }
 
