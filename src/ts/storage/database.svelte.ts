@@ -1,3 +1,4 @@
+import type { WorldWorkspacePreferences } from '../social/worldNavigation.svelte'
 import type { SocialFeedState } from '../social/socialFeed'
 import { get } from 'svelte/store';
 import { checkNullish, decryptBuffer, encryptBuffer, selectSingleFile } from '../util';
@@ -848,6 +849,7 @@ export interface RisuPersona {
 
 export interface Database{
     socialFeed?: SocialFeedState
+    worldWorkspace?: WorldWorkspacePreferences
     characters: (character|groupChat)[],
     apiType: string
     openAIKey: string
