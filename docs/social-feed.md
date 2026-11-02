@@ -1,6 +1,6 @@
 # Optional social feed
 
-Open **Social feed** from the desktop rail or mobile navigation, then enable the mode. Pausing preserves its publications, cast and public profiles. Returning to chats cancels pending generation.
+The application opens in the World workspace (see "World workspace" below). Open the World feed, then enable the mode. Pausing preserves its publications, cast and public profiles. Returning to chats cancels pending generation.
 
 ## First version
 
@@ -163,3 +163,15 @@ Public audience has no fictional cast restriction. My circle captures the curren
 Starting notes can be public, private or paused. Only public notes enter social generation; private and paused notes remain local to the user's editable social state. Explicit public comments and character responses provide relationship evidence, with replies attributed to their parent author and familiarity counted per distinct thread. Existing private memories and chats are not imported. Every character post and reaction remains an explicit request using the selected native provider and the social token limits; there are no timed simulations or automatic paid calls.
 
 The five-step setup edits the current world and preserves existing posts, native cards and personas. Optional time/era, places and mood are explicit public context. The interface intentionally exposes setup/edit for this single world rather than a decorative multiple-world selector. Separate world libraries, reputation, events, followers and aura progression remain future work.
+
+## World workspace
+
+World is now the application's only workspace. It opens at startup, even when social generation is disabled, and the classic layout and its return button are removed. Saved `defaultHome` values are kept without migration but no longer select a classic start. Social generation itself stays optional, and native settings, Elsewords and advanced tools open inside World.
+
+Messages lists the existing private conversations and opens the selected one directly through the single native chat component. Composer drafts, attachments and scroll position are kept per story and per save. Unread counts use stable native message IDs and ignore your own messages and incomplete streaming. Alternative histories and persona bindings are managed under **Conversation details → Conversation versions**; no history is deleted and no generation starts automatically.
+
+The global Relationships page is removed. Selecting a character's name or avatar in the feed or in a private conversation opens that character's profile. It shows the relationship with the conversation's bound persona, or the selected persona elsewhere, with gauges, source-backed recent events and authored memories. Public views exclude private evidence and notes the persona may not know. Missing or ambiguous identities show an unavailable state instead of another persona. The existing relationship ledger is kept without migration or automatic scoring.
+
+The knowledge panel separates explicit public facts from private settings and links to the native memory, lorebook and card editors. It does not open the Hypa V3 memory view when no summaries exist.
+
+Native UI changes are validated with the fixture-based gate described in `docs/native-ui-acceptance.md`.
